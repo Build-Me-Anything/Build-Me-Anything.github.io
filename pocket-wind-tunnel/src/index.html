@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pocket Wind Tunnel</title>
+<!-- INLINE:style -->
+<!-- INLINE:build -->
+</head>
+<body>
+<div id="app">
+  <header>
+    <svg class="logo" viewBox="0 0 40 40" aria-hidden="true">
+      <defs><linearGradient id="lg" x1="0" x2="1"><stop offset="0" stop-color="#4cc9f0"/><stop offset="1" stop-color="#a78bfa"/></linearGradient></defs>
+      <path d="M4 22 C 10 10, 26 8, 36 16 C 28 20, 16 24, 4 22 Z" fill="url(#lg)"/>
+      <path d="M2 30 Q 12 27 22 30 T 38 30" stroke="#4cc9f0" stroke-width="1.4" fill="none" opacity=".7"/>
+      <path d="M2 35 Q 12 32 22 35 T 38 35" stroke="#4cc9f0" stroke-width="1.4" fill="none" opacity=".4"/>
+    </svg>
+    <div>
+      <h1>Pocket Wind Tunnel</h1>
+      <div class="sub">2D aerofoil analysis · <b id="foilName">NACA 2412</b> <span id="foilStats"></span></div>
+    </div>
+    <div class="spacer"></div>
+    <div class="segmented" id="modeSwitch" style="width:450px;margin-right:6px"><button data-mode="sub" class="active">Subsonic</button><button data-mode="tunnel">Tunnel</button><button data-mode="cfd">CFD</button><button data-mode="hyper">Hypersonic</button><button data-mode="ns">NSLab</button></div>
+    <button class="btn" id="btnImport" title="Load any aerofoil coordinate file (UIUC .dat, Selig or Lednicer)">Import aerofoil…</button>
+    <div class="menu" id="exportMenu">
+      <button class="btn" id="btnExport">Export ▾</button>
+      <div class="dropdown">
+        <button data-export="cp">Cp distribution / time series (CSV)<small>x/c, y/c, Cp, surface — at current α; NSLab: E, Z, ε, max|ω| vs t</small></button>
+        <button data-export="polar">Polar / spectrum (CSV)<small>α, Cl, Cd, Cm, L/D, transition &amp; separation; NSLab: E(k)</small></button>
+        <button data-export="bl">Boundary layer / field / dossier<small>BL march (subsonic), surface table (hypersonic), field (CFD), evidence dossier JSON (NSLab)</small></button>
+        <button data-export="dat">Coordinates (.dat)<small>Selig format, XFOIL-compatible</small></button>
+        <button data-export="png">Flow image (PNG)<small>Snapshot of the tunnel view</small></button>
+      </div>
+    </div>
+    <button class="btn" id="btnAssist" title="Local AI assistant (Ctrl+K)">✦ Assistant</button>
+    <button class="btn" id="btnHelp" title="Method, limitations, references">?</button>
+  </header>
+
+  <main>
+    <aside>
+      <section class="ctl-group" data-mode="sub tunnel cfd hyper">
+        <h2>Aerofoil</h2>
+        <div class="row"><select id="preset"></select></div>
+        <div class="banner" id="importBanner"><span id="importKind">Imported:</span> <b id="importName"></b><br><button class="btn small" id="btnBackNaca" style="margin-top:6px">Back to NACA sliders</button></div>
+        <div id="nacaControls">
+          <label class="ctl"><span class="lbl">Max camber <em>M</em></span><input type="range" id="M" min="0" max="9.5" step="0.5" value="2"><output id="MOut"></output></label>
+          <label class="ctl"><span class="lbl">Camber position <em>P</em></span><input type="range" id="P" min="1" max="9" step="1" value="4"><output id="POut"></output></label>
+          <label class="ctl"><span class="lbl">Thickness <em>T</em></span><input type="range" id="T" min="4" max="30" step="0.5" value="12"><output id="TOut"></output></label>
+        </div>
+        <label class="ctl"><span class="lbl">Panels <em>N</em></span><input type="range" id="panels" min="60" max="240" step="20" value="120"><output id="panelsOut"></output></label>
+      </section>
+
+      <section class="ctl-group" data-mode="tunnel" hidden>
+        <h2>Test section</h2>
+        <div class="row"><select id="tType"><option value="closed">Closed test section (solid walls)</option><option value="open">Open jet (free boundaries)</option></select></div>
+        <label class="ctl"><span class="lbl">Tunnel height <em>h/c</em></span><input type="range" id="tHc" min="1.5" max="12" step="0.1" value="4"><output id="tHcOut"></output></label>
+        <label class="ctl"><span class="lbl">Model offset from centreline</span><input type="range" id="tOff" min="-0.3" max="0.3" step="0.02" value="0"><output id="tOffOut"></output></label>
+        <div class="note">Walls are represented exactly by the infinite image system of every panel (closed-form row kernels). The flow conditions below set α, speed and Reynolds number; "measured" values come from the tunnel solution, then the classical Barlow–Rae–Pope / Allen–Vincenti corrections are applied and compared with free air.</div>
+      </section>
+      <section class="ctl-group" data-mode="sub tunnel">
+        <h2>Flow conditions</h2>
+        <label class="ctl"><span class="lbl">Angle of attack <em>α</em></span><input type="range" id="alpha" min="-15" max="20" step="0.25" value="4"><output id="alphaOut"></output></label>
+        <label class="ctl"><span class="lbl">Airspeed <em>V∞</em></span><input type="range" id="V" min="5" max="340" step="1" value="50"><output id="VOut"></output></label>
+        <label class="ctl"><span class="lbl">Chord <em>c</em></span><input type="range" id="chord" min="0.1" max="10" step="0.05" value="1"><output id="chordOut"></output></label>
+        <label class="ctl"><span class="lbl">Altitude <em>ISA</em></span><input type="range" id="alt" min="0" max="20000" step="100" value="0"><output id="altOut"></output></label>
+        <div class="row"><label><input type="checkbox" id="compressible" checked> Prandtl–Glauert compressibility correction</label></div>
+        <div class="note">Use <span class="kbd">↑</span> <span class="kbd">↓</span> to nudge α by 0.5°, <span class="kbd">←</span> <span class="kbd">→</span> for airspeed.</div>
+      </section>
+
+      <section class="ctl-group" data-mode="sub tunnel">
+        <h2>Boundary layer</h2>
+        <div class="row"><label><input type="checkbox" id="trip"> Force transition (trip strip)</label></div>
+        <div class="row" id="tripRow" style="opacity:.45">
+          <span>upper x/c</span><input type="number" id="xtrU" min="0.01" max="0.95" step="0.01" value="0.05">
+          <span>lower</span><input type="number" id="xtrL" min="0.01" max="0.95" step="0.01" value="0.05">
+        </div>
+        <div class="note">Free transition uses Michel's criterion; laminar separation is treated as a transition trigger (short bubble).</div>
+      </section>
+
+      <section class="ctl-group" data-mode="sub tunnel">
+        <h2>Display</h2>
+        <div class="segmented" id="fieldMode">
+          <button data-field="cp" class="active">Pressure Cp</button>
+          <button data-field="speed">Speed</button>
+          <button data-field="off">Plain</button>
+        </div>
+        <div class="row" style="margin-top:8px"><label><input type="checkbox" id="streamlines" checked> Streamlines</label></div>
+        <div class="row"><label><input type="checkbox" id="smoke" checked> Smoke particles</label></div>
+        <div class="row"><label><input type="checkbox" id="blMarkers" checked> Transition / separation markers</label></div>
+        <div class="row"><label><input type="checkbox" id="cpVectors"> Surface pressure arrows</label></div>
+      </section>
+
+      <section class="ctl-group" data-mode="hyper" hidden>
+        <h2>Hypersonic flow</h2>
+        <label class="ctl"><span class="lbl">Mach number <em>M∞</em></span><input type="range" id="hM" min="1.5" max="25" step="0.1" value="6"><output id="hMOut"></output></label>
+        <label class="ctl"><span class="lbl">Altitude <em>US76</em></span><input type="range" id="hAlt" min="0" max="86000" step="500" value="30000"><output id="hAltOut"></output></label>
+        <label class="ctl"><span class="lbl">Angle of attack <em>α</em></span><input type="range" id="hAlpha" min="-20" max="30" step="0.5" value="5"><output id="hAlphaOut"></output></label>
+        <label class="ctl"><span class="lbl">Chord <em>c</em></span><input type="range" id="hChord" min="0.1" max="20" step="0.1" value="2"><output id="hChordOut"></output></label>
+        <label class="ctl"><span class="lbl">Ratio of specific heats <em>γ</em></span><input type="range" id="hGamma" min="1.1" max="1.67" step="0.01" value="1.4"><output id="hGammaOut"></output></label>
+        <label class="ctl"><span class="lbl">Wall temperature <em>Tw</em></span><input type="range" id="hTw" min="200" max="2500" step="10" value="600"><output id="hTwOut"></output></label>
+        <div class="note"><span class="kbd">↑</span> <span class="kbd">↓</span> nudge α by 0.5°, <span class="kbd">←</span> <span class="kbd">→</span> Mach by 0.5. Lower γ (≈1.3) mimics vibrationally excited air.</div>
+      </section>
+      <section class="ctl-group" data-mode="hyper" hidden>
+        <h2>Method</h2>
+        <div class="row"><select id="hMethod">
+          <option value="se">Shock-expansion (Newtonian blunt nose)</option>
+          <option value="wedge">Tangent-wedge</option>
+          <option value="newton">Modified Newtonian</option>
+          <option value="newtonClassic">Classic Newtonian (Cp,max = 2)</option>
+        </select></div>
+        <div class="row"><span>Boundary layer</span><select id="hBL" style="width:auto;flex:1">
+          <option value="lam">Laminar</option><option value="turb">Turbulent</option><option value="trans" selected>Transition at Re<sub>x</sub></option>
+        </select></div>
+        <div class="row"><span>Re<sub>x,tr</sub></span><input type="number" id="hRexTr" value="2000000" step="100000" min="1000" style="width:110px"><span>Nose r (mm)</span><input type="number" id="hRn" placeholder="auto" min="0" step="0.5" style="width:70px"></div>
+        <div class="note">Skin friction and heating from Eckert's reference-temperature flat-plate correlations along each surface; stagnation heating from Sutton–Graves.</div>
+      </section>
+      <section class="ctl-group" data-mode="hyper" hidden>
+        <h2>Display</h2>
+        <div class="row"><span>Surface colour</span><select id="hColour" style="width:auto;flex:1">
+          <option value="cp">Pressure coefficient</option><option value="p">Pressure ratio p/p∞</option><option value="q">Wall heat flux</option><option value="M">Local Mach</option><option value="T">Edge temperature</option>
+        </select></div>
+        <div class="row"><label><input type="checkbox" id="hMachLines" checked> Expansion fans &amp; Mach lines</label></div>
+      </section>
+
+      <section class="ctl-group" data-mode="ns" hidden>
+        <h2>Experiment</h2>
+        <div class="row"><select id="nIc">
+          <option value="tgv" selected>Taylor–Green vortex (3D)</option>
+          <option value="tubes">Antiparallel vortex tubes</option>
+          <option value="random">Random solenoidal field</option>
+          <option value="abc">Arnold–Beltrami–Childress (exact)</option>
+          <option value="tgv2d">Taylor–Green 2D (exact decay)</option>
+        </select></div>
+        <div class="note" id="nIcNote"></div>
+        <div class="row" id="nP0Row"><span id="nP0L" style="flex:1"></span><input type="number" id="nP0" step="any" style="width:80px"></div>
+        <div class="row" id="nP1Row"><span id="nP1L" style="flex:1"></span><input type="number" id="nP1" step="any" style="width:80px"></div>
+        <div class="row" id="nP2Row"><span id="nP2L" style="flex:1"></span><input type="number" id="nP2" step="any" style="width:80px"></div>
+        <div class="row" id="nP3Row"><span id="nP3L" style="flex:1"></span><input type="number" id="nP3" step="any" style="width:80px"></div>
+        <label class="ctl"><span class="lbl">Reynolds number <em>Re</em></span><input type="range" id="nRe" min="0" max="4.3" step="0.05" value="3.2"><output id="nReOut"></output></label>
+        <div class="row"><span>Grid N³</span><select id="nN" style="width:auto;flex:1"><option>16</option><option>24</option><option selected>32</option><option>48</option><option>64</option><option>96</option><option>128</option></select></div>
+        <label class="ctl"><span class="lbl">End time <em>t</em></span><input type="range" id="nTEnd" min="0.5" max="30" step="0.5" value="10"><output id="nTEndOut"></output></label>
+        <div class="row" style="gap:6px"><button class="btn primary" id="nRun" style="flex:1">Run</button><button class="btn" id="nPause" style="flex:1" disabled>Pause</button><button class="btn" id="nReset">Reset</button></div>
+        <div class="note" id="nStatus">Idle — set up the experiment and press Run.</div>
+      </section>
+      <section class="ctl-group" data-mode="ns" hidden>
+        <h2>Numerics &amp; refinement</h2>
+        <label class="ctl"><span class="lbl">CFL (adaptive Δt)</span><input type="range" id="nCfl" min="0.1" max="0.8" step="0.05" value="0.4"><output id="nCflOut"></output></label>
+        <div class="row"><span style="flex:1">Fixed Δt (0 = adaptive)</span><input type="number" id="nDt" step="any" min="0" value="0" style="width:80px"></div>
+        <div class="row"><span>Snapshot every</span><select id="nOut" style="width:auto;flex:1"><option value="0.1">0.1</option><option value="0.25">0.25</option><option value="0.5" selected>0.5</option><option value="1">1</option></select></div>
+        <div class="row"><span>Study</span><select id="nStudy" style="width:auto;flex:1"><option value="none" selected>single run</option><option value="grid">grid refinement ladder</option><option value="time">time-step refinement ladder</option></select></div>
+        <div class="row" id="nGridRow" style="display:none"><span>N ladder</span><input type="text" id="nGrid" value="16,24,32" style="flex:1"></div>
+        <div class="row" id="nDtRow" style="display:none"><span>Δt ladder</span><input type="text" id="nDtLadder" value="0.08,0.04,0.02" style="flex:1"></div>
+        <div class="note">Pseudo-spectral (2/3 dealiased) + RK4 on the periodic 2π box. Cost grows as N³ log N: 32³ ≈ 35 ms/step, 64³ ≈ 0.3 s/step, 96³ ≈ 1 s/step. A refinement ladder reruns the case per level and grades whether the peaks converged.</div>
+      </section>
+      <section class="ctl-group" data-mode="ns" hidden>
+        <h2>Display</h2>
+        <div class="row"><span>Field</span><select id="nField" style="width:auto;flex:1">
+          <option value="vort" selected>|ω| vorticity magnitude</option><option value="q">Q-criterion</option><option value="stretch">ω·S·ω vortex stretching</option><option value="speed">|u|</option><option value="ke">kinetic energy ½|u|²</option><option value="u">u</option><option value="v">v</option><option value="w">w</option><option value="omx">ωx</option><option value="omy">ωy</option><option value="omz">ωz</option>
+        </select></div>
+        <div class="row"><span>Plane</span><select id="nAxis" style="width:auto;flex:1"><option value="z" selected>z = const (x–y plane)</option><option value="y">y = const (x–z plane)</option><option value="x">x = const (y–z plane)</option></select></div>
+        <label class="ctl"><span class="lbl">Slice index</span><input type="range" id="nSlice" min="0" max="31" step="1" value="0"><output id="nSliceOut"></output></label>
+      </section>
+      <section class="ctl-group" data-mode="ns" hidden>
+        <h2>Health report</h2>
+        <div id="nHealth"></div>
+      </section>
+      <section class="ctl-group" data-mode="cfd" hidden>
+        <h2>CFD case</h2>
+        <div class="row"><select id="cModel">
+          <option value="euler">Euler — inviscid compressible</option>
+          <option value="laminar">Laminar Navier–Stokes</option>
+          <option value="sa" selected>RANS — Spalart–Allmaras turbulence</option>
+          <option value="sst">RANS — k-ω SST turbulence (Menter 2003)</option>
+        </select></div>
+        <label class="ctl"><span class="lbl">Mach number <em>M∞</em></span><input type="range" id="cM" min="0.05" max="1.5" step="0.01" value="0.15"><output id="cMOut"></output></label>
+        <label class="ctl"><span class="lbl">Reynolds number <em>Re</em></span><input type="range" id="cRe" min="3" max="8" step="0.05" value="6.5"><output id="cReOut"></output></label>
+        <label class="ctl"><span class="lbl">Angle of attack <em>α</em></span><input type="range" id="cAlpha" min="-10" max="20" step="0.25" value="4"><output id="cAlphaOut"></output></label>
+        <label class="ctl"><span class="lbl">Altitude <em>ISA · T∞</em></span><input type="range" id="cAlt" min="0" max="20000" step="500" value="0"><output id="cAltOut"></output></label>
+        <div class="row" style="gap:6px"><button class="btn primary" id="cRun" style="flex:1">Run</button><button class="btn" id="cPause" style="flex:1" disabled>Pause</button><button class="btn" id="cReset">Reset</button></div>
+        <div class="note" id="cStatus">Idle — set up the case and press Run.</div>
+      </section>
+      <section class="ctl-group" data-mode="cfd" hidden>
+        <h2>Mesh &amp; numerics</h2>
+        <div class="row"><span>Normal layers</span><select id="cNJ" style="width:auto;flex:1"><option>32</option><option>48</option><option selected>64</option><option>96</option><option>128</option></select></div>
+        <div class="row" id="cYplusRow"><span>Target y+</span><select id="cYplus" style="width:auto;flex:1"><option>0.5</option><option selected>1</option><option>2</option><option>5</option></select></div>
+        <div class="row"><span>Far-field (chords)</span><select id="cFar" style="width:auto;flex:1"><option>15</option><option selected>25</option><option>40</option></select></div>
+        <label class="ctl"><span class="lbl">CFL number</span><input type="range" id="cCfl" min="5" max="100" step="5" value="30"><output id="cCflOut"></output></label>
+        <label class="ctl"><span class="lbl">Iteration limit</span><input type="range" id="cMaxIter" min="500" max="20000" step="500" value="4000"><output id="cMaxIterOut"></output></label>
+        <label class="ctl"><span class="lbl">Convergence target</span><input type="range" id="cTarget" min="2" max="8" step="0.5" value="4"><output id="cTargetOut"></output></label>
+        <div class="row"><label><input type="checkbox" id="cInit" checked> Initialise from panel-method flow + analytic boundary layer</label></div>
+        <div class="note">Around the section: Panels <em>N</em> above sets the cells around the body (use 160–240 for RANS). First-cell height follows the y+ target (RANS) or the Reynolds number (laminar).</div>
+      </section>
+      <section class="ctl-group" data-mode="cfd" hidden>
+        <h2>Display</h2>
+        <div class="row"><span>Field</span><select id="cField" style="width:auto;flex:1">
+          <option value="mach" selected>Mach number</option><option value="cp">Pressure coefficient</option><option value="p">Pressure p/p∞</option><option value="rho">Density</option><option value="V">Speed |V|/V∞</option><option value="T">Temperature</option><option value="mut">Eddy viscosity μt/μ</option><option value="vort">Vorticity</option><option value="tke">Turbulent kinetic energy k/V∞² (SST)</option><option value="omega">log10 ω (SST)</option><option value="f1">F1 blending function (SST)</option>
+        </select></div>
+        <div class="row"><label><input type="checkbox" id="cMesh"> Show mesh</label></div>
+        <div class="row"><label><input type="checkbox" id="cOverlay" checked> Overlay panel-method Cp</label></div>
+      </section>
+
+      <div class="note" style="margin-top:18px">Single file · no network · no dependencies.<br>Hess–Smith panel method + integral boundary layer. Press <span class="kbd">?</span> for method notes and limitations.</div>
+    </aside>
+
+    <div class="content">
+      <div class="canvasWrap">
+        <canvas id="flow"></canvas>
+        <div id="hover"></div>
+      </div>
+      <div class="tiles" id="tiles"></div>
+      <div class="plots">
+        <div class="plot">
+          <div class="head"><b id="cpHeadTitle">Pressure distribution</b> <span id="cpHeadSub">Cp vs x/c (inverted)</span><span class="spacer"></span><span id="cpLegend"><span style="color:var(--cyan)">— upper</span> &nbsp; <span style="color:var(--amber)">— lower</span></span></div>
+          <canvas id="cpPlot"></canvas>
+        </div>
+        <div class="plot">
+          <div class="head"><b>Polars</b> <span id="polarNote">sweep −8° … 20°</span><span class="spacer"></span>
+            <div class="tabs" id="polarTabs"><button data-tab="cla" class="active">Cl–α</button><button data-tab="clcd">Cl–Cd</button><button data-tab="cma">Cm–α</button><button data-tab="lda">L/D–α</button></div>
+          </div>
+          <canvas id="polarPlot"></canvas>
+        </div>
+      </div>
+    </div>
+    <aside id="assist" class="assist" hidden>
+      <div class="ahead"><b>Assistant</b><span id="aStatus" class="astatus off">○ not connected</span><button class="btn small" id="aClear" title="Clear conversation">Clear</button><button class="btn small" id="aSettingsBtn" title="Server settings and setup notes">⚙</button><button class="btn small" id="aClose" title="Close (Ctrl+K)">✕</button></div>
+      <div class="asettings" id="aSettings" hidden>
+        <div class="row"><span>Server</span><input type="text" id="aUrl" value="http://localhost:11434" spellcheck="false"><button class="btn small" id="aTest">Test</button></div>
+        <div class="row"><span>Model</span><select id="aModel"></select><span>temp</span><input type="number" id="aTemp" min="0" max="1" step="0.1" value="0.2" style="width:58px"></div>
+        <div class="row"><span>Tool format</span><select id="aToolFmt" style="width:auto;flex:1"><option value="auto">auto (Phi → functools, others → API tools)</option><option value="phi">Phi functools in prompt</option><option value="native">API-native tools</option></select></div>
+        <div class="note" id="aModels">—</div>
+        <details><summary>Setup notes (one-time)</summary>
+          <ol>
+            <li>Install <b>Ollama</b> (free, ollama.com) and run <code>ollama pull phi4-mini</code> (≈2.5 GB; Q4_K_M, ~2.8 GB VRAM or CPU).</li>
+            <li>Let this file talk to Ollama: in PowerShell run <code>[Environment]::SetEnvironmentVariable('OLLAMA_ORIGINS','*','User')</code>, then quit Ollama from the tray and start it again.</li>
+            <li>Press <b>Test</b>. Any OpenAI-compatible local server (llama.cpp <code>llama-server</code>, LM Studio) works too — set its URL.</li>
+          </ol>
+          <p>Privacy: nothing leaves this machine unless you point the server URL elsewhere (you will be warned). The model can only act through the app's own tools and is instructed to quote only computed numbers — it never does the maths.</p>
+        </details>
+      </div>
+      <div class="amsgs" id="aMsgs"></div>
+      <div class="achips" id="aChips">
+        <button data-q="Summarise the current result and tell me what drives it.">Summarise result</button>
+        <button data-q="Why is the drag what it is for this case? Break it into contributions and say what would reduce it.">Explain the drag</button>
+        <button data-q="Run a polar from -4 to 12 degrees and tell me the best L/D and where it occurs.">Best L/D</button>
+        <button data-q="Set up a NACA 0012 at 3 km altitude, 60 m/s, 1 m chord, 5 degrees and report Cl, Cd, transition and separation.">Set up a case</button>
+        <button data-q="Switch to CFD mode, run RANS at the current conditions and compare Cl and Cd with the subsonic panel-method result.">RANS vs panel</button>
+        <button data-q="Write a short engineering report (headings, key numbers, limitations) for the current case.">Write a report</button>
+      </div>
+      <div class="ainput"><textarea id="aText" rows="2" placeholder="Ask about the result, or tell me what to set up… (Enter to send)"></textarea><button class="btn primary" id="aSend">Send</button><button class="btn" id="aStop" hidden>Stop</button></div>
+    </aside>
+  </main>
+</div>
+
+<dialog id="dlgImport">
+  <div class="dhead"><h3>Import aerofoil coordinates</h3><button class="btn small" data-close>Close</button></div>
+  <div class="dbody">
+    <p>Paste coordinates from any UIUC-style <code>.dat</code> file (Selig: TE → upper → LE → lower → TE; or Lednicer with point counts on the first line), or choose a file. The section is normalised to unit chord and re-panelled with cosine spacing.</p>
+    <div class="row"><input type="file" id="fileInput" accept=".dat,.txt,.csv,.coords"></div>
+    <textarea id="pasteArea" placeholder="NACA 2412&#10;1.000000  0.001300&#10;0.950000  0.011400&#10;…"></textarea>
+    <div class="err" id="importErr"></div>
+  </div>
+  <div class="dfoot"><button class="btn" data-close>Cancel</button><button class="btn primary" id="btnDoImport">Import</button></div>
+</dialog>
+
+<dialog id="dlgHelp">
+  <div class="dhead"><h3>Pocket Wind Tunnel — how it works</h3><button class="btn small" data-close>Close</button></div>
+  <div class="dbody">
+    <p>A self-contained 2D aerofoil analysis tool: one HTML file, no libraries, no network access, runs from a USB stick or an air-gapped machine. Every number on screen comes from the methods below, computed live in your browser.</p>
+
+    <h4>Inviscid flow — Hess–Smith panel method</h4>
+    <p>The section is discretised into <em>N</em> straight panels with cosine spacing (dense at leading and trailing edges). Each panel carries a constant-strength source; a single vortex strength is shared by all panels. Flow tangency at every panel midpoint plus the Kutta condition at the trailing edge give an (<em>N</em>+1)×(<em>N</em>+1) linear system, factorised once per geometry (LU with partial pivoting) and re-solved for each angle of attack. Cp = 1 − (V<sub>t</sub>/V<sub>∞</sub>)². Lift and pitching moment are integrated from the surface pressures; lift is cross-checked against the Kutta–Joukowski circulation.</p>
+
+    <h4>Viscous effects — integral boundary layer</h4>
+    <p>Starting at the stagnation point on each surface: Thwaites' method for the laminar layer, Michel's criterion for natural transition (laminar separation, λ &lt; −0.09, is treated as a short-bubble transition trigger), then Head's entrainment method with Ludwieg–Tillmann skin friction for the turbulent layer, marched with a second-order scheme. Turbulent separation is flagged when the shape factor H exceeds 2.4. Profile drag comes from the Squire–Young formula at 97 % chord on both surfaces. The boundary layer is <strong>not</strong> coupled back into the inviscid solution, so Cl and Cm are inviscid values — they stay linear past stall. When more than about 20 % of the upper surface is separated the tiles turn amber and a warning appears: the real section is at or past Cl<sub>max</sub>, and the displayed lift should be treated as unreliable. Because the boundary layer is uncoupled, separation is predicted late — expect the flag a degree or two after the true stall.</p>
+
+    <h4>Atmosphere &amp; compressibility</h4>
+    <p>ISA temperature, pressure and density to 20 km; Sutherland's law for viscosity. Reynolds and Mach numbers follow from airspeed, chord and altitude. With the Prandtl–Glauert option on, Cp, Cl and Cm are scaled by 1/√(1 − M²). The critical Mach number is found by bisection where the scaled minimum Cp meets the isentropic sonic Cp*. Nothing here is valid near or above M<sub>crit</sub> — treat it as an indicator, not a prediction.</p>
+
+    <h4>CFD mode — 2D Navier–Stokes / RANS</h4>
+    <p>Solves the compressible Navier–Stokes equations (continuity, x- and y-momentum, energy — the NASA Glenn set without the z-terms) plus a turbulence model — Spalart–Allmaras (one transport equation) or Menter's k-ω SST (two) — as a cell-centred finite-volume scheme on a structured O-mesh generated around the section in the browser. Roe flux-difference splitting with an entropy fix on the acoustic waves, second-order MUSCL reconstruction with the van Albada limiter, Green–Gauss gradients with directional face correction for the viscous terms, Sutherland viscosity, matrix-free LU-SGS implicit time stepping with local time steps and a CFL ramp, characteristic far-field with a point-vortex lift correction, no-slip adiabatic wall. Spalart–Allmaras is the SA-noft2 form from NASA's Turbulence Modeling Resource; k-ω SST is the 2003 form (F1/F2 blending between the inner k-ω and outer k-ε sets, the strain-rate eddy-viscosity limiter μt = ρa₁k / max(a₁ω, S F2), production limited to 10 β*ρωk, cross-diffusion in the outer branch, Menter's wall condition ω = 60ν/(β₁d₁²) and the TMR free-stream values k∞ = 9·10⁻⁹ a∞², ω∞ = 10⁻⁶ ρ∞a∞²/μ∞). Turbulence scalars are convected with the discrete mass flux and integrated with their own point-implicit scalar operators. The run starts from the panel-method potential flow with an analytic boundary layer and log-law turbulence profiles, which cuts the transient by roughly an order of magnitude. The solver runs in a Web Worker; residuals, forces, the surface Cp/Cf and the selected field are streamed to the page as it converges.</p>
+    <p><strong>Validation</strong> (<code>node test/validate-cfd.js</code>, <code>node test/bench-cfd.js</code>): inviscid NACA 0012 at M 0.3 matches the panel method + Prandtl–Glauert lift within 1 %; the transonic AGARD case (M 0.8, α 1.25°) gives Cl 0.33 / Cd 0.023 against 0.35 / 0.022 on a coarse mesh; the NACA 0012 case from the NASA TMR (M 0.15, Re 6 × 10⁶) reaches Cl 1.11 at α 10° with both turbulence models against 1.091 (SA) and 1.080 (SST), with drag converging toward the reference values (0.0123 / 0.0126) as the mesh is refined (SST: 0.0179 on 128×48, 0.0147 on 192×64 — the excess is pressure drag); at α 0° SST gives Cd 0.0090 on the coarse mesh against 0.0081. Above α ≈ 12° both models fall into a separated state on these meshes while the reference codes stay attached to 15°, so near-stall results from either model are not trustworthy.</p>
+    <p><strong>Limits:</strong> steady solutions only (pseudo-time marching — separated or shedding flows will not converge and the residual will plateau; treat those results as time-averaged at best); mesh sizes of 10–30 k cells, so expect a few percent on lift and 10–20 % on drag compared with fine-mesh reference codes; no transition model (both RANS models are fully turbulent from the leading edge); no wall functions — keep y+ ≈ 1 (SST's ω wall condition assumes it); Roe's scheme without low-Mach preconditioning loses accuracy below M ≈ 0.1. One run takes tens of seconds to a few minutes depending on mesh and CFL.</p>
+
+    <h4>Test-section mode — wall interference and blockage</h4>
+    <p>Puts the section between the walls of a 2D test section (closed, or an open jet) and solves the flow <em>exactly</em>: every panel's source and vortex is reflected in both walls, giving two infinite rows of images with period 2h, and the infinite sums are evaluated in closed form (row kernels of the form cot(iπ(z − z₀)/2h)). The wall condition is satisfied to machine precision, so the "measured" Cl, Cm, Cd and Cp are what an ideal tunnel would report at the geometric incidence. The classical corrections are then applied: σ = π²/48 (c/h)², solid blockage ε_sb = Λσ with the shape factor Λ computed from the section's own doublet strength (8μ/πUc² — 0.235 for a NACA 0012, matching the charts), wake blockage ε_wb = c Cd,u/2h, streamline-curvature corrections Δα = (σ/2π)(Cl,u + 4 Cm,u), Cl = Cl,u(1 − σ − 2ε), Cm = Cm,u(1 − 2ε) + σCl,u/4, Cd = Cd,u(1 − 3ε_sb − 2ε_wb). The corrected point is compared with the free-air solution at the corrected incidence — the residual tells you how good the first-order corrections are for that h/c. Open jets use the opposite image signs (constant-pressure boundary, linearised); the classical formulae shown are the closed-section ones, so treat the open-jet residual as illustrative.</p>
+    <p>Validation (<code>node test/validate-tunnel.js</code>): wall normal velocity &lt; 10⁻¹⁴; cylinder solid blockage within 3 % of the exact doublet-row result (π²/12)(d/h)²; cylinder Λ = 4.03 vs 4 exact; classical corrections recover free air within 0.3 % (NACA 0006, h/c 3) and 0.6 % (NACA 2412 at α 6°, h/c 2.5).</p>
+
+    <h4>Assistant (optional, local LLM)</h4>
+    <h4>NSLab — 3D incompressible Navier–Stokes laboratory</h4>
+    <p>A research instrument, not an aircraft tool: the 3D incompressible Navier–Stokes equations on the periodic box [0, 2π]³, solved pseudo-spectrally (Fourier, 2/3-rule dealiasing, rotational form of the nonlinear term, exact projection so ∇·u = 0 to round-off) with classical RK4 in time, inside a Web Worker. Initial conditions: the Taylor–Green vortex (the standard benchmark for the development of small scales), antiparallel vortex tubes (the classic candidate for vortex-stretching singularities), a seeded random solenoidal field, and two exact decaying solutions (Arnold–Beltrami–Childress and the 2D Taylor–Green vortex) used to verify the code. Every run reports energy, enstrophy, palinstrophy, dissipation ε = 2νZ, max|ω|, the vortex-stretching term ⟨ω·S·ω⟩ computed two independent ways (spectrally and from physical-space gradients), the energy spectrum E(k), the Kolmogorov scale and kmax·η, velocity-derivative skewness, and the alignment of vorticity with the strain eigenvectors.</p>
+    <p><strong>Verification is built in.</strong> Each run is graded: divergence, exact nonlinear energy conservation, RK4-consistent energy and enstrophy budgets (Simpson-weighted over the stage states, so they test the scheme rather than a quadrature), resolution kmax·η, spectral tail decay, and agreement of the two stretching estimates. Refinement ladders (grid or time step) rerun the case and grade whether the peaks of ε and max|ω| have converged, with the observed order. The evidence dossier (Export → dossier) records build, parameters, series, health and study results with an explicit disclaimer. <code>node test/validate-ns.js</code> checks the FFT against a direct DFT, the exact solutions to 10⁻¹¹, fourth-order temporal convergence, and the Taylor–Green Re 1600 ladder against Brachet et al. (1983): ε<sub>max</sub> ≈ 0.0126 near t ≈ 9 (modern 512³ spectral runs give ≈ 0.013).</p>
+    <p><strong>What it cannot do:</strong> prove anything. The Clay Navier–Stokes problem asks for a proof of global regularity or of finite-time breakdown for all smooth finite-energy data in ℝ³ (or the periodic box); a simulation can only produce evidence, and numerical growth of max|ω| is a resolution failure until it survives refinement. NSLab is the first stage of that programme — verified numerics and diagnostics from which resolution-independent scaling relationships, and then candidate inequalities, can be extracted. The analysis and proof stages are mathematics, outside this file.</p>
+    <p>The ✦ Assistant panel connects to a language model running <em>on your own machine</em> (Ollama with Phi-4 Mini by default, or any OpenAI-compatible local server) and lets you drive the tool in plain English: set up cases, run polars and CFD, and get results explained or written up. The model never does any physics — it can only act through six tools that call the app's own solvers (read state, set mode, set geometry, set conditions, run CFD, sweep α), every tool call is shown in the conversation, and it is instructed to quote only numbers returned by those tools. Small models can still make mistakes in wording — check important conclusions against the tiles. Setup notes are under ⚙ in the panel.</p>
+
+    <h4>Hypersonic mode</h4>
+    <p>Switches to the perfect-gas supersonic/hypersonic toolkit used for early-stage design (the NASA HABP family of methods): exact oblique-shock and Prandtl–Meyer relations for any γ, applied panel by panel. <em>Shock-expansion</em> marches along each surface from the leading edge — an attached oblique shock or expansion fan at every turn; if the nose is too blunt for an attached shock, the nose is treated with modified Newtonian theory (p₀ from the Rayleigh pitot formula) up to the sonic point, then the flow expands isentropically downstream. <em>Tangent-wedge</em> and <em>Newtonian</em> are the simpler local-inclination alternatives. Skin friction and heating come from Eckert's reference-temperature flat-plate correlations along each surface (laminar, turbulent or Re<sub>x</sub> transition) with Reynolds analogy; stagnation-point heating from Sutton–Graves scaled for a 2D cylinder; bow-shock stand-off and shape from Billig's correlations. The atmosphere is the US Standard Atmosphere 1976 to 86 km, with the Knudsen number flagging rarefaction. The "Corridor" tab shows the altitude–velocity map with constant-q∞ lines.</p>
+    <p><strong>Limits:</strong> perfect gas (use γ ≈ 1.3 to mimic vibrational excitation; dissociation and ionisation are flagged, not modelled), no shock–shock or shock–boundary-layer interaction, no viscous interaction or entropy-layer effects, no leeward separation model, heating from correlations rather than a solved boundary layer. Typical accuracy for surface pressures on sharp shapes is a few percent against exact theory; heating to perhaps ±30 %.</p>
+
+    <h4>Validation (run <code>node test/validate.js</code> and <code>node test/validate-hyper.js</code>)</h4>
+    <table class="ref">
+      <tr><td>NACA 0012, α = 5°</td><td>Cl = 0.602 (panel-method reference ≈ 0.60; thin-aerofoil 0.548)</td></tr>
+      <tr><td>NACA 2412 / 4412</td><td>α<sub>0</sub> = −2.1° / −4.2°, Cm<sub>c/4</sub> = −0.054 / −0.108 (Abbott &amp; von Doenhoff: −2.0°/−4.0°, −0.05/−0.10)</td></tr>
+      <tr><td>NACA 0012, Re 3×10⁶, α = 0</td><td>Cd = 0.0064 (wind-tunnel ≈ 0.0060)</td></tr>
+      <tr><td>NACA 0012, Re 1×10⁶ / 1×10⁵</td><td>Cd = 0.0074 / 0.0139 (reference ≈ 0.0075 / 0.012–0.020)</td></tr>
+      <tr><td>ISA 11 km</td><td>p = 22 632 Pa, T = 216.65 K</td></tr>
+      <tr><td>Oblique shock M 2, θ 10° / M 3, θ 20°</td><td>β = 39.31° / 37.76°, p₂/p₁ = 1.707 / 3.771 (NACA 1135)</td></tr>
+      <tr><td>Prandtl–Meyer ν(2), ν(3); pitot M 5</td><td>26.38°, 49.76°; p₀₂/p∞ = 32.65</td></tr>
+      <tr><td>Flat plate, Newtonian</td><td>Cl = 2 sin²α cos α, L/D = cot α exactly</td></tr>
+      <tr><td>Diamond ε = 5°, M 3</td><td>Cd,wave = 0.0110 (linear theory 0.0108)</td></tr>
+      <tr><td>US76 30 / 50 / 80 km</td><td>p = 1197 / 79.8 / 1.05 Pa</td></tr>
+    </table>
+
+    <h4>Limitations</h4>
+    <ul>
+      <li>Attached, steady, 2D flow. No stall prediction beyond the separation flag; no laminar bubble bursting; no wake or displacement effects on lift.</li>
+      <li>Closed, single-element sections only. Blunt trailing edges are closed to a point on import.</li>
+      <li>Compressibility correction is linearised; results above M ≈ 0.7 or near M<sub>crit</sub> are indicative only.</li>
+      <li>This is an engineering sketchpad, not a certification tool. Cross-check anything that matters in XFOIL, a wind tunnel or CFD.</li>
+    </ul>
+
+    <h4>References</h4>
+    <ul>
+      <li>Hess &amp; Smith (1967) — <em>Calculation of potential flow about arbitrary bodies</em>.</li>
+      <li>Moran (1984) — <em>An Introduction to Theoretical and Computational Aerodynamics</em>, ch. 4 (panel method), ch. 7 (boundary layers).</li>
+      <li>Cebeci &amp; Bradshaw (1977) — <em>Momentum Transfer in Boundary Layers</em> (Thwaites, Head, Michel correlations).</li>
+      <li>Abbott &amp; von Doenhoff — <em>Theory of Wing Sections</em> (validation data).</li>
+      <li>Barlow, Rae &amp; Pope — <em>Low-Speed Wind Tunnel Testing</em>, 3rd ed., ch. 10 (2D wall corrections); Allen &amp; Vincenti (1944) NACA Report 782; Garner et al. AGARDograph 109.</li>
+      <li>Anderson — <em>Fundamentals of Aerodynamics</em> (Prandtl–Glauert, critical Mach, oblique shocks, Prandtl–Meyer).</li>
+      <li>Anderson — <em>Hypersonic and High-Temperature Gas Dynamics</em> (Newtonian, shock-expansion, reference-temperature method).</li>
+      <li>NACA Report 1135 — <em>Equations, Tables and Charts for Compressible Flow</em> (validation tables).</li>
+      <li>Billig (1967) — <em>Shock-wave shapes around spherical- and cylindrical-nosed bodies</em>, J. Spacecraft 4(6).</li>
+      <li>Sutton &amp; Graves (1971) — NASA TR R-376 (stagnation-point heating); Eckert (1955) — reference-temperature method.</li>
+      <li>US Standard Atmosphere 1976 (NASA-TM-X-74335).</li>
+    </ul>
+
+    <h4>Shortcuts</h4>
+    <p><span class="kbd">↑</span>/<span class="kbd">↓</span> α ± 0.5° &nbsp; <span class="kbd">←</span>/<span class="kbd">→</span> airspeed ± 5 m/s &nbsp; <span class="kbd">S</span> toggle smoke &nbsp; <span class="kbd">F</span> cycle field &nbsp; <span class="kbd">?</span> this panel</p>
+  </div>
+  <div class="dfoot"><button class="btn primary" data-close>Close</button></div>
+</dialog>
+
+<!-- INLINE:solver -->
+<!-- INLINE:hyper -->
+<!-- INLINE:worker -->
+<!-- INLINE:apphyper -->
+<!-- INLINE:cfd -->
+<!-- INLINE:cfdworker -->
+<!-- INLINE:appcfd -->
+<!-- INLINE:nslab -->
+<!-- INLINE:nslabworker -->
+<!-- INLINE:appnslab -->
+<!-- INLINE:appassist -->
+<!-- INLINE:apptunnel -->
+<!-- INLINE:app -->
+</body>
+</html>

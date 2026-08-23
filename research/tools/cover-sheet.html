@@ -1,0 +1,40 @@
+<!doctype html><html><head><meta charset="utf-8"><title>The Pocket Wind Tunnel — cover</title>
+<style>
+body{margin:0;background:#e9edf2;font-family:Calibri,"Segoe UI",Helvetica,Arial,sans-serif;color:#111}
+.page{width:794px;height:1123px;margin:0 auto;background:#fff;padding:80px 76px;box-sizing:border-box;position:relative}
+.kicker{font-size:12px;letter-spacing:4px;color:#666;margin-top:120px}
+.bar{height:4px;background:#1c8fb5;margin:10px 0 26px}
+h1{font-size:46px;margin:0 0 10px;color:#1f3a5f;letter-spacing:1px;line-height:1.05}
+.sub{font-size:20px;color:#2e5c8a;font-style:italic;margin-bottom:34px}
+.rule{height:1px;background:#1f3a5f;margin-bottom:22px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+td{padding:7px 0;border-bottom:1px solid #ddd;vertical-align:top}
+td:first-child{font-weight:700;color:#1f3a5f;width:220px;padding-right:10px}
+.disc{position:absolute;left:76px;right:76px;bottom:92px;font-size:12px;font-style:italic;color:#666}
+.foot{position:absolute;left:0;right:0;bottom:40px;text-align:center;font-size:11px;color:#888}
+.mark{position:absolute;right:70px;top:64px;width:150px;height:150px}
+</style></head><body><div class="page">
+<img class="mark" src="logo/pwt-logo-mark.svg" alt="The Pocket Wind Tunnel mark">
+<div class="kicker">PROJECT COVER SHEET</div>
+<div class="bar"></div>
+<h1>THE POCKET WIND TUNNEL</h1>
+<div class="sub">An offline aerodynamics toolkit that grew a verified Navier–Stokes laboratory</div>
+<div class="rule"></div>
+<table>
+<tr><td>Project</td><td>The Pocket Wind Tunnel (PWT)</td></tr>
+<tr><td>Research programme</td><td>NSLab — the Navier–Stokes Regularity Laboratory</td></tr>
+<tr><td>First study</td><td>NS-001 — Taylor–Green vortex resolution study, Re = 1600</td></tr>
+<tr><td>Second study</td><td>NS-002 — antiparallel vortex-tube reconnection, Re = 4000 (Re<sub>Γ</sub> ≈ 16 000), 96³ → 256³ on the GPU</td></tr>
+<tr><td>Third study</td><td>NS-003 — the same reconnection at Re = 2000 (Re<sub>Γ</sub> ≈ 8 000), with interpolated maxima, image diagnostic and worst-instant verdicts</td></tr>
+<tr><td>Principal investigator</td><td>Michael — aeronautical engineer</td></tr>
+<tr><td>Instrument, verification &amp; analysis</td><td>Claude (Anthropic)</td></tr>
+<tr><td>Deliverable</td><td>Pocket Wind Tunnel.html — one 376 kB file; runs from disk, no network, no dependencies</td></tr>
+<tr><td>Batch layer</td><td>run-ns-long.js (CPU, Node) · nslab_gpu.py (CuPy float64, RTX 3060)</td></tr>
+<tr><td>Evidence archive</td><td>research/nslab/ — build-stamped runs, ladders, dossiers, analyses</td></tr>
+<tr><td>Versions</td><td>Pocket Wind Tunnel 0.5.0 · NSLab 0.1.0 · GPU runner 0.1.1</td></tr>
+<tr><td>Verification</td><td>five suites ALL PASS; <code>node build.js --verify</code> refuses to build otherwise</td></tr>
+<tr><td>Date</td><td>23 August 2026</td></tr>
+</table>
+<div class="disc">Numerical evidence only. Nothing in this project is a proof of global regularity or of finite-time breakdown of the Navier–Stokes equations.</div>
+<div class="foot">The Pocket Wind Tunnel · project cover sheet · 23 August 2026 · page 1</div>
+</div></body></html>

@@ -1,0 +1,22 @@
+C:\Users\User\OneDrive\Build Me Anything\research\tools\logo-blender.py:35: DeprecationWarning: 'Material.use_nodes' is expected to be removed in Blender 6.0
+  m = bpy.data.materials.new(name); m.use_nodes = True
+C:\Users\User\OneDrive\Build Me Anything\research\tools\logo-blender.py:120: DeprecationWarning: 'World.use_nodes' is expected to be removed in Blender 6.0
+  world = bpy.data.worlds.new("W"); sc.world = world; world.use_nodes = True
+03:21.844  render           | Saved: 'C:\Users\User\OneDrive\Build Me Anything\research\tools\logo\pwt-logo-3d.png'
+05:55.281  render           | Saved: 'C:\Users\User\OneDrive\Build Me Anything\research\tools\logo\pwt-logo-3d-dark.png'
+06:17.172  render           | Saved: 'C:\Users\User\OneDrive\Build Me Anything\research\tools\logo\pwt-logo-mark-3d.png'
+BlenderMCP: cannot start server in background mode (blender -b) - commands would never execute
+BlenderMCP: run Blender with a GUI, or use a virtual display: xvfb-run -a blender
+BlenderMCP addon registered
+BlenderMCP server stopped
+BlenderMCP addon unregistered
+compositor glare: ['Image', 'Type', 'Quality', 'Threshold', 'Smoothness', 'Clamp', 'Maximum', 'Strength', 'Saturation', 'Tint', 'Size', 'Streaks', 'Streaks Angle', 'Iterations', 'Fade', 'Color Modulation', 'Diagonal', 'Sun Position', 'Jitter', 'Kernel Data Type', 'Kernel', 'Kernel']
+RENDERED C:\Users\User\OneDrive\Build Me Anything\research\tools\logo\pwt-logo-3d.png
+Info: Saved as "pwt-logo.blend"
+compositor glare: ['Image', 'Type', 'Quality', 'Threshold', 'Smoothness', 'Clamp', 'Maximum', 'Strength', 'Saturation', 'Tint', 'Size', 'Streaks', 'Streaks Angle', 'Iterations', 'Fade', 'Color Modulation', 'Diagonal', 'Sun Position', 'Jitter', 'Kernel Data Type', 'Kernel', 'Kernel']
+RENDERED C:\Users\User\OneDrive\Build Me Anything\research\tools\logo\pwt-logo-3d-dark.png
+compositor glare: ['Image', 'Type', 'Quality', 'Threshold', 'Smoothness', 'Clamp', 'Maximum', 'Strength', 'Saturation', 'Tint', 'Size', 'Streaks', 'Streaks Angle', 'Iterations', 'Fade', 'Color Modulation', 'Diagonal', 'Sun Position', 'Jitter', 'Kernel Data Type', 'Kernel', 'Kernel']
+RENDERED C:\Users\User\OneDrive\Build Me Anything\research\tools\logo\pwt-logo-mark-3d.png
+Blender 5.2.0 LTS (hash fbe6228777e7 built 2026-07-14 01:35:40)
+
+Blender quit

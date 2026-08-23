@@ -1,0 +1,64 @@
+# Build the NSLab logbook and publish it to GitHub Pages.
+#
+# The generator has no dependencies, so there is nothing to install: Node runs figures.js (which reads the
+# run archive in research/nslab/) and then build.js. Pushing an updated run file is therefore enough to
+# refresh the live numbers in the post about an experiment that is still going.
+name: Publish the logbook
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'outreach/blog/**'
+      - 'research/nslab/**'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Generate the figures from the run archive
+        working-directory: outreach/blog
+        run: node figures.js
+
+      - name: Build the site
+        working-directory: outreach/blog
+        env:
+          NSLAB_BLOG_URL: https://build-me-anything.github.io
+        run: node build.js
+
+      # build.js already exits non-zero on a missing figure, image or study, which fails the step above.
+      - name: Check the site was written
+        working-directory: outreach/blog
+        run: test -f site/index.html && test -f site/nslab-logbook.html
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: outreach/blog/site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

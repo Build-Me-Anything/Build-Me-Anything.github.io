@@ -1,0 +1,47 @@
+# What may be published, and nothing else.
+#
+# This repository is a curated slice of a larger working folder. The rule is: if a file is not needed to
+# understand, rebuild or reproduce the work, it stays out — and anything carrying private working context or
+# personal metadata stays out unconditionally. Check `git status` before every commit.
+#
+# Note: gitignore has no inline comments. Every comment here is on its own line, deliberately.
+
+# ---- never publish -------------------------------------------------------------------------------------
+# CLAUDE.md is the private working agreement: preferences, background, session context.
+CLAUDE.md
+# Office files carry author metadata; the .md twin is the source anyway.
+*.docx
+desktop.ini
+Thumbs.db
+__pycache__/
+*.pyc
+node_modules/
+.env
+
+# ---- generated output ------------------------------------------------------------------------------------
+# Built by `node build.js` / `node figures.js`; GitHub Actions rebuilds both on push.
+outreach/blog/site/
+outreach/blog/assets/figures/
+
+# ---- research archive: keep the evidence, drop the bulk ----------------------------------------------------
+# Each run folder is 33-491 MB, almost all of it restart checkpoints and raw slice fields. The JSON series,
+# the run log and the analysis are what a reader needs; the rest is reproducible from them plus the code.
+*.npz
+*.bin
+research/nslab/*/checkpoint.json
+research/nslab/*/partial.json
+research/nslab/*/slices/
+# Superseded duplicates of NS-003 under GPU runner 0.1.0.
+research/nslab/v0-*/
+# Stray file with a Windows-reserved name; it breaks clones on Windows.
+research/nslab/nul
+# Launcher console logs; the per-run run.log is kept.
+research/nslab/*.console.log
+
+# ---- large renders ---------------------------------------------------------------------------------------
+# 1.7 MB Blender renders; the vector set and the .blend are kept.
+research/tools/logo/*-3d*.png
+research/tools/logo/*.blend1
+
+# ---- working documents that are not part of the public record -----------------------------------------------
+research/CFD papers checked 2026-08-22.md
