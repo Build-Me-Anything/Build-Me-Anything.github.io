@@ -34,3 +34,6 @@
 [2026-08-23 18:37:14] t 12.505 step 2673 dt 5.29e-03  E 0.063320 Z 0.6049 ε 0.000605 max|ω| 40.433 (interp 40.652) ⟨ωSω⟩ 0.3933 (phys 0.3933) kmaxη 3.55 S -0.981 align 0.43/0.59/0.42 zgap 1.99  health FAIL (end FAIL)  ebal 3.1e-07 zbal 1.1e-06  0.60 h, ETA 0.17 h
 [2026-08-23 18:38:14] t 13.001 step 2764 dt 5.42e-03  E 0.063021 Z 0.5990 ε 0.000599 max|ω| 37.730 (interp 38.064) ⟨ωSω⟩ 0.3245 (phys 0.3245) kmaxη 3.55 S -0.821 align 0.43/0.59/0.42 zgap 1.92  health FAIL (end FAIL)  ebal 3.1e-07 zbal 1.1e-06  0.62 h, ETA 0.14 h
 [2026-08-23 18:39:16] t 13.505 step 2854 dt 5.93e-03  E 0.062722 Z 0.5840 ε 0.000584 max|ω| 32.859 (interp 32.940) ⟨ωSω⟩ 0.2450 (phys 0.2450) kmaxη 3.58 S -0.644 align 0.44/0.59/0.42 zgap 1.90  health FAIL (end FAIL)  ebal 3.1e-07 zbal 1.1e-06  0.63 h, ETA 0.12 h
+[2026-08-23 18:40:14] t 14.001 step 2939 dt 5.92e-03  E 0.062435 Z 0.5803 ε 0.000580 max|ω| 28.645 (interp 28.877) ⟨ωSω⟩ 0.2239 (phys 0.2239) kmaxη 3.58 S -0.595 align 0.46/0.59/0.41 zgap 1.83  health FAIL (end FAIL)  ebal 3.1e-07 zbal 1.1e-06  0.65 h, ETA 0.09 h
+[2026-08-23 18:40:14] checkpoint written at t=14.0006
+[2026-08-23 18:41:12] t 14.504 step 3023 dt 6.13e-03  E 0.062142 Z 0.5834 ε 0.000583 max|ω| 24.693 (interp 25.063) ⟨ωSω⟩ 0.2052 (phys 0.2052) kmaxη 3.58 S -0.540 align 0.47/0.59/0.40 zgap 1.68  health FAIL (end FAIL)  ebal 3.1e-07 zbal 1.1e-06  0.67 h, ETA 0.07 h
