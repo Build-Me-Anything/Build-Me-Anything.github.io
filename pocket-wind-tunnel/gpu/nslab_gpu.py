@@ -33,7 +33,7 @@ try:
 except Exception:  # no GPU / no CuPy
     cp = None
 
-VERSION = '0.1.1'
+VERSION = '0.1.2'
 TWO_PI = 2 * math.pi
 IC_INFO = {'tgv': 'Taylor–Green vortex (3D)', 'tgv2d': 'Taylor–Green 2D (exact decay)', 'abc': 'Arnold–Beltrami–Childress (exact decay)',
            'tubes': 'antiparallel vortex tubes', 'random': 'random solenoidal field'}
@@ -235,6 +235,7 @@ class Solver:
             else: Sc['zz'] = gz; Sc['xz'] += 0.5 * gx; Sc['yz'] += 0.5 * gy
             del gx, gy, gz
         divMax = float(xp.max(xp.abs(Sc['xx'] + Sc['yy'] + Sc['zz'])))
+        uL3 = float(xp.mean((u * u + v * v + w * w) ** 1.5)) ** (1.0 / 3.0)   # ‖u‖_{L³} (volume-averaged): the Escauriaza–Seregin–Šverák continuation quantity
         Q = 0.25 * o2 - 0.5 * G2; del G2
         Pphys = float(xp.mean(PST))
         # alignment with strain eigenvectors, in z-slabs to bound temporaries
@@ -276,7 +277,8 @@ class Solver:
         out = dict(t=self.st['t'], step=self.st['step'], E=d['E'], Z=d['Z'], P=d['P'], eps=d['eps'], omMax=d['omMax'], omMaxI=im['omMaxI'], omMaxIpos=im['omMaxIpos'], uMax=d['uMax'], Pspec=d['Pspec'], Pphys=Pphys, Tnl=d['Tnl'],
                    skew=(skew3 / 3) / (skew2 / 3) ** 1.5 if skew2 > 0 else 0.0, skewIso=-(6 * math.sqrt(15) / 7) * d['Pspec'] / max(2 * d['Z'], 1e-300) ** 1.5,
                    divMax=divMax, eta=eta, kmaxEta=self.kmax * eta, Rel=Rel, **{'lambda': lam},
-                   align=(asum / max(cnt, 1)).tolist(), alignHist=(hist / max(cnt, 1)).tolist(), spectrum=self.spectrum(), **img)
+                   align=(asum / max(cnt, 1)).tolist(), alignHist=(hist / max(cnt, 1)).tolist(), spectrum=self.spectrum(), uL3=uL3, **img)
+        out['pileUp'] = self.pileUp(out['spectrum'])
         self.st['outputs'].append(out)
         self.fields = dict(u=u, v=v, w=w, omx=ox, omy=oy, omz=oz, q=Q, stretch=PST, vort=xp.sqrt(o2))
         return out
@@ -346,6 +348,13 @@ class Solver:
             if best is None or f > best[0]: best = (f, x, f0)
         return dict(omMaxI=math.sqrt(max(best[0], 0.0)), omMaxIpos=[float(v % TWO_PI) for v in best[1]], omMaxNode=math.sqrt(max(best[2], 0.0)))
 
+    def pileUp(self, spec):
+        """max E(k)/E(0.8·kc) over the top of the spectrum: > 1 means energy is accumulating at the dealiasing cutoff
+        (the truncation bottleneck), which the E(kc)/E(peak) tail check can miss."""
+        kc = self.kc; k8 = int(round(0.8 * kc)); peak = max(spec[1:]) if len(spec) > 1 else 0.0
+        if not (spec[k8] > 1e-20 * peak): return None
+        return max(spec[k] / spec[k8] for k in range(k8, kc + 1))
+
     def spectrum(self):
         xp = self.xp; nb = int(math.ceil(math.sqrt(3) * self.kc)) + 2
         S = self.S; e = 0.5 * self.hw * (abs(S[0]) ** 2 + abs(S[1]) ** 2 + abs(S[2]) ** 2)
@@ -393,6 +402,8 @@ class Solver:
                 ['enstrophy budget residual', f"{st['maxZbal']:.2e}", grade(st['maxZbal'], 1e-4, 1e-2)],
                 ['resolution kmax·η', f'{ke:.2f}', grade(ke, 1.0, 0.5, False)], ['spectral tail E(kmax)/E(peak)', f'{tail:.2e}', grade(tail, 1e-4, 1e-2)],
                 ['stretching: spectral vs physical', f'{sv:.2e}' if o else '—', grade(sv, 1e-2, 1e-1) if o else ''],
+                ['cutoff pile-up E(k)/E(0.8kmax)', f"{o['pileUp']:.2f}" if o and o.get('pileUp') else '—', grade(o['pileUp'], 1.2, 2.0) if o and o.get('pileUp') else ''],
+                ['‖u‖_L³ (ESS criterion)', f"{o['uL3']:.5f}" if o and o.get('uL3') is not None else '—', ''],
                 ['max |ω|', f"{d['omMax']:.4f}", ''], ['enstrophy Z', f"{d['Z']:.5f}", ''], ['stretching ⟨ω·S·ω⟩', f"{d['Pspec']:.5f}", ''], ['dissipation ε = 2νZ', f"{d['eps']:.4e}", ''],
                 ['grid convergence', 'not run', 'N/A'], ['time-step convergence', 'not run', 'N/A']]
         worstEnd = 'FAIL' if any(r[2] == 'FAIL' for r in rows) else 'WARN' if any(r[2] == 'WARN' for r in rows) else 'PASS'
@@ -405,6 +416,9 @@ class Solver:
             oT = max(snaps, key=tl); inst.append(['worst instant: spectral tail', f'{tl(oT):.2e} at t {oT["t"]:.2f}', grade(tl(oT), 1e-4, 1e-2)])
             def sd(q): return abs(q['Pspec'] - q['Pphys']) / max(abs(q['Pspec']), 2 * nu * q['P'], 1e-300)
             oS = max(snaps, key=sd); inst.append(['worst instant: stretching spectral vs physical', f'{sd(oS):.2e} at t {oS["t"]:.2f}', grade(sd(oS), 1e-2, 1e-1)])
+            ps = [q for q in snaps if q.get('pileUp')]
+            if ps:
+                oP = max(ps, key=lambda q: q['pileUp']); inst.append(['worst instant: cutoff pile-up', f"{oP['pileUp']:.2f} at t {oP['t']:.2f}", grade(oP['pileUp'], 1.2, 2.0)])
         rows += inst
         worst = 'FAIL' if any(r[2] == 'FAIL' for r in rows) else 'WARN' if any(r[2] == 'WARN' for r in rows) else 'PASS'
         return dict(rows=rows, worst=worst, worstEnd=worstEnd, note='A run that does not PASS resolution, budgets and refinement cannot support any claim about the equations. Numerical growth ≠ mathematical singularity. The verdict includes the worst archived snapshot; worstEnd is the end-of-run verdict alone.')

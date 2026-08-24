@@ -1,7 +1,7 @@
 // Build: inline src/* into one self-contained HTML file. Run: node build.js [--verify]
 // --verify runs the fast validation suites first and refuses to build if any fails (the CFD suite is run separately).
 const fs = require('fs'), path = require('path');
-const APP_VERSION = '0.5.0';
+const APP_VERSION = '0.5.1';
 if (process.argv.includes('--verify')) {
   const { spawnSync } = require('child_process');
   for (const t of ['test/validate.js', 'test/validate-hyper.js', 'test/validate-tunnel.js', 'test/validate-ns.js']) {

@@ -1,3 +1,15 @@
+<div align="center">
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/Build-Me-Anything/.github/main/profile/assets/hero-dark.png">
+  <img alt="Build Me Anything" src="https://raw.githubusercontent.com/Build-Me-Anything/.github/main/profile/assets/hero-light.png">
+</picture>
+
+[![The logbook](https://img.shields.io/badge/logbook-build--me--anything.github.io-1c8fb5?style=for-the-badge)](https://build-me-anything.github.io)
+[![Build](https://img.shields.io/github/actions/workflow/status/Build-Me-Anything/Build-Me-Anything.github.io/pages.yml?style=for-the-badge&label=site%20build)](https://github.com/Build-Me-Anything/Build-Me-Anything.github.io/actions)
+
+</div>
+
 # Build Me Anything
 
 > "Build me anything. You can download any free tool you like."

@@ -1,6 +1,6 @@
 # Draft 3 — Hacker News (Show HN)
 
-**When:** after the CFD threads have stood up for a few days.
+**When:** FIRST of all the drafts. HN does not gate submissions on account age the way subreddits do, so this one is postable as soon as the site is live, while the Reddit account is still serving its 5-day and 30-day waits.
 **Type:** Show HN with the blog (or the single-file tool) as the URL, plus a first comment from you.
 **Timing:** weekday, 13:00–16:00 UK is the usual sweet spot for a European poster.
 **HN specifics:** the title must start with "Show HN:" and must not be editorialised or clickbaity; no
@@ -61,7 +61,7 @@ solver, the verification framework and most of the prose. The physics judgement 
 may be claimed are mine, which is why the claims are deliberately small and everything is checkable. If you
 find an error in the verification, that is the most useful thing that could happen to it.
 
-Blog and write-ups: [BLOG URL]
+Blog and write-ups: https://build-me-anything.github.io
 
 ---
 

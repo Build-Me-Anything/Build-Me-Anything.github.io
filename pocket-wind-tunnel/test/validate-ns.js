@@ -83,5 +83,47 @@ const t0 = Date.now();
   r.run(10); const dr = r.diagnose(); check('random field: divergence-free after stepping', dr.divMax, 0, 1e-10);
 }
 
+// --- diagnostics added for NS-003 (parity with GPU runner 0.1.1): interpolated max|ω|, image gap, pile-up, ‖u‖_L³ ---
+{
+  // (a) Taylor–Green shifted off the grid by a sub-cell offset in spectral space: the grid maximum must drop below the
+  // exact value 2, the spectrally interpolated maximum must recover it. This is the whole point of the diagnostic.
+  const N = 32, NH = N / 2 + 1, s = NS.createSolver({ N, Re: 1600, ic: 'tgv' });
+  const h = 2 * Math.PI / N, d0 = [0.37 * h, 0.21 * h, 0.44 * h], kw = new Float64Array(N);
+  for (let i = 0; i < N; i++) kw[i] = i <= N / 2 ? i : i - N;
+  const S = s._S;
+  for (let l = 0; l < N; l++) for (let j = 0; j < N; j++) for (let i = 0; i < NH; i++) {
+    const idx = (l * N + j) * NH + i, ph = -(i * d0[0] + kw[j] * d0[1] + kw[l] * d0[2]), c = Math.cos(ph), sn = Math.sin(ph);
+    for (let cc = 0; cc < 3; cc++) { const re0 = S[2 * cc][idx], im0 = S[2 * cc + 1][idx]; S[2 * cc][idx] = re0 * c - im0 * sn; S[2 * cc + 1][idx] = re0 * sn + im0 * c; }
+  }
+  const d = s.diagnose();
+  check('shifted TGV: grid maximum under-reports the exact 2 (sub-grid peak)', d.omMax, 1.90, 1.999);
+  check('shifted TGV: spectrally interpolated maximum recovers 2', Math.abs(d.omMaxI - 2), 0, 1e-9);
+  check('interpolated maximum ≥ grid maximum', d.omMaxI >= d.omMax ? 1 : 0, 1, 1);
+  // (b) cross-instrument: the GPU runner (nslab_gpu.py, float64) gives 7.73221 for the tubes field at 24³ Re 4000, t = 0
+  const t24 = NS.createSolver({ N: 24, Re: 4000, ic: 'tubes' }); const dt24 = t24.diagnose();
+  check('tubes 24³ interpolated max|ω| vs the GPU runner (7.73221)', Math.abs(dt24.omMaxI - 7.73221), 0, 2e-4);
+  check('tubes 24³ grid max|ω| vs the GPU runner (7.69712)', Math.abs(dt24.omMax - 7.69712), 0, 2e-4);
+  // (c) image diagnostic: the tube pair occupies a band in z, so the gap to its periodic image is positive;
+  //     Taylor–Green fills the box, so its gap is zero.
+  check('tubes: periodic-image gap in z is positive at t = 0', dt24.imageGap, 0.5, 6.0);
+  check('tubes: enstrophy band z-centroid at π (symmetric initial condition)', Math.abs(dt24.zCentroid - Math.PI), 0, 1e-6);
+  const tg = NS.createSolver({ N: 24, Re: 1600, ic: 'tgv' }); const dtg = tg.diagnose();
+  check('Taylor–Green fills the box in z: image gap zero', dtg.imageGap, 0, 1e-12);
+  // (d) ‖u‖_L³ of the Taylor–Green initial field: ⟨|u|³⟩^{1/3} with |u|² = sin²x cos²y cos²z + cos²x sin²y cos²z
+  const ref = (() => { const M = 96; let s3 = 0; for (let l = 0; l < M; l++) for (let j = 0; j < M; j++) for (let i = 0; i < M; i++) {
+    const x = i * 2 * Math.PI / M, y = j * 2 * Math.PI / M, z = l * 2 * Math.PI / M;
+    const u = Math.sin(x) * Math.cos(y) * Math.cos(z), v = -Math.cos(x) * Math.sin(y) * Math.cos(z);
+    s3 += Math.pow(u * u + v * v, 1.5); } return Math.pow(s3 / (M * M * M), 1 / 3); })();
+  check('TGV ‖u‖_L³ against a direct quadrature', Math.abs(dtg.uL3 / ref - 1), 0, 5e-3);
+  // (e) cutoff pile-up: a smooth, well-resolved field does not accumulate energy at the dealiasing edge
+  const sm = NS.createSolver({ N: 48, Re: 1600, ic: 'tgv' }); sm.run(20); const dsm = sm.diagnose();
+  check('resolved TGV: no energy pile-up at the cutoff (≤ 1.05)', dsm.pileUp == null ? 1 : dsm.pileUp, 0, 1.05);
+  // (f) the health verdict carries its worst archived instant, never only the last
+  const hh = sm.health();
+  check('health report exposes the worst-instant rows', hh.rows.filter(r => /worst instant/.test(r[0])).length, 3, 4);
+  check('health worst verdict is at least as severe as the end-of-run verdict',
+    ({ PASS: 0, WARN: 1, FAIL: 2 }[hh.worst] >= { PASS: 0, WARN: 1, FAIL: 2 }[hh.worstEnd]) ? 1 : 0, 1, 1);
+}
+
 console.log(`\n${fails === 0 ? 'ALL PASS' : fails + ' FAILURES'}  (${((Date.now() - t0) / 1000).toFixed(1)} s)`);
 process.exit(fails ? 1 : 0);

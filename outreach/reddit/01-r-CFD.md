@@ -85,7 +85,7 @@ sharply in a flow that concentrates vorticity into a sheet.
    2.7–3.3 box units through the event at Re 2000) and split the BKM integral at the crossing. Is that enough
    to call the event clean, or is a bigger box the only honest answer?
 
-Full write-up with the ladders, the health reports, the figures and the caveats: [BLOG URL]. The archive has
+Full write-up with the ladders, the health reports, the figures and the caveats: https://build-me-anything.github.io. The archive has
 every run's series, snapshots, spectra and grades; happy to hand over the data for anyone who wants to compare
 against a real code.
 
@@ -108,6 +108,6 @@ that matters.
 
 ## Notes
 
-- Replace `[BLOG URL]` with the live address before posting.
+- The blog link is live and already filled in: https://build-me-anything.github.io
 - If a moderator asks you to remove the blog link, the post still stands on its own — say so and leave it.
 - Do not reply to "so is Navier–Stokes solved?" with anything but "no, and nothing here bears on it."

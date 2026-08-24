@@ -49,7 +49,7 @@ grid is the signature of a structure the grid cannot represent. The point of the
 numbers, which diagnostics a given resolution can support — and the answer is that the one a
 Beale–Kato–Majda-style argument would need is the last one you get, if you get it at all.
 
-Full write-ups, refinement ladders, health reports and figures: [BLOG URL]. The runs are archived with their
+Full write-ups, refinement ladders, health reports and figures: https://build-me-anything.github.io. The runs are archived with their
 per-step series, snapshot diagnostics, spectra and grades.
 
 *Disclosure: I am an aeronautical engineer rather than a physicist, and the solver and analysis were built in

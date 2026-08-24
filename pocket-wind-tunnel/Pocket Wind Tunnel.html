@@ -168,7 +168,7 @@ main.with-assist { grid-template-columns: 300px 1fr 400px; }
 .hrow .hg.pass { color: var(--green); } .hrow .hg.warn { color: var(--amber); } .hrow .hg.fail { color: var(--red); }
 
 </style>
-<script>window.PWT_BUILD = {"version":"0.5.0","date":"2026-08-22","nslab":"0.1.0"};</script>
+<script>window.PWT_BUILD = {"version":"0.5.1","date":"2026-08-24","nslab":"0.1.1"};</script>
 </head>
 <body>
 <div id="app">
@@ -2751,7 +2751,7 @@ return { init, set, waitForDone, cs, TILES, tabsHtml, draw, drawCp, drawPolar, h
  */
 const NS = (() => {
 'use strict';
-const VERSION = '0.1.0';
+const VERSION = '0.1.1';
 const TWO_PI = 2 * Math.PI;
 
 // ============================================================
@@ -3094,11 +3094,12 @@ function createSolver(opts) {
       else if (c === 1) { for (let n = 0; n < N3; n++) { Syy[n] = gy[n]; Sxy[n] += 0.5 * gx[n]; Syz[n] += 0.5 * gz[n]; } }
       else { for (let n = 0; n < N3; n++) { Szz[n] = gz[n]; Sxz[n] += 0.5 * gx[n]; Syz[n] += 0.5 * gy[n]; } }
     }
-    // divergence (should be round-off), Q-criterion, physical stretching ⟨ω·S·ω⟩, alignment statistics
-    let Pphys = 0, align = [0, 0, 0], cnt = 0; const bins = 16, hist = [new Float64Array(bins), new Float64Array(bins), new Float64Array(bins)];
+    // divergence (should be round-off), Q-criterion, physical stretching ⟨ω·S·ω⟩, alignment statistics, ⟨|u|³⟩ (the L³ norm of the ESS criterion)
+    let Pphys = 0, align = [0, 0, 0], cnt = 0, u3 = 0; const bins = 16, hist = [new Float64Array(bins), new Float64Array(bins), new Float64Array(bins)];
     for (let n = 0; n < N3; n++) {
       const dv = Math.abs(Sxx[n] + Syy[n] + Szz[n]); if (dv > divMax) divMax = dv;
       const o2 = ox[n] * ox[n] + oy[n] * oy[n] + oz[n] * oz[n];
+      u3 += Math.pow(u[n] * u[n] + v[n] * v[n] + w[n] * w[n], 1.5);
       G2[n] = 0.25 * o2 - 0.5 * G2[n];   // Q = ¼|ω|² − ½ ‖∇u‖²
       Pphys += PST[n];
       if (o2 > 1e-20) {
@@ -3114,7 +3115,10 @@ function createSolver(opts) {
     const out = { t: st.t, step: st.step, E: d.E, Z: d.Z, P: d.P, eps: d.eps, omMax: d.omMax, uMax: d.uMax, Pspec: d.Pspec, Pphys: Pphys / N3, Tnl: d.Tnl,
       skew: skew2 > 0 ? (skew3 / 3) / Math.pow(skew2 / 3, 1.5) : 0, divMax, eta, kmaxEta: kmax * eta, Rel, lambda: lam,
       skewIso: -(6 * Math.sqrt(15) / 7) * d.Pspec / Math.pow(Math.max(2 * d.Z, 1e-300), 1.5),   // Brachet's form: S from enstrophy production via the isotropic relation ⟨ωSω⟩ = −(7/6√15) S ⟨ω²⟩^{3/2}
-      align: align.map(a => a / Math.max(cnt, 1)), alignHist: hist.map(h => Array.from(h, x => x / Math.max(cnt, 1))), spectrum: spec };
+      align: align.map(a => a / Math.max(cnt, 1)), alignHist: hist.map(h => Array.from(h, x => x / Math.max(cnt, 1))), spectrum: spec,
+      uL3: Math.pow(u3 / N3, 1 / 3), pileUp: cutoffPileUp(spec) };                       // ESS diagnostic ‖u‖_{L³} (volume-averaged) and the cutoff pile-up
+    Object.assign(out, imageDiag());                                                      // zCentroid, zExtent, imageGap, zBands
+    if (N <= interpMaxN) Object.assign(out, interpMax());                                 // omMaxI, omMaxIpos, omMaxNode — O(N³) per evaluation, gated by grid size
     st.outputs.push(out);
     return out;
   }
@@ -3145,6 +3149,143 @@ function createSolver(opts) {
       for (let i = 0; i < NH; i++) { const idx = row + i; if (!mask[idx]) continue; const k = Math.round(Math.sqrt(kx[i] * kx[i] + ky * ky + kz * kz)); if (k >= nb) continue;
         let e = 0; for (let c = 0; c < 6; c++) e += S[c][idx] * S[c][idx]; Ek[k] += 0.5 * hw[i] * e; } } }
     return Array.from(Ek);
+  }
+  /**
+   * Spectrally interpolated maximum of |ω| (parity with the GPU runner 0.1.1).
+   * The grid maximum samples the band-limited field at the nodes only and underestimates its continuous maximum by
+   * O(Δx²). Here the trigonometric interpolant ω(x) = Re Σ_k hw_k ω̂_k e^{ik·x} — exact for the field the solver
+   * represents — its gradient and its Hessian are evaluated at arbitrary x by staged contractions (kx, then ky, then
+   * kz), and |ω|² is maximised by a safeguarded Newton ascent from the largest grid values ∪ largest grid local
+   * maxima. Reported beside the grid maximum, never in its place.
+   */
+  const IW = [alloc(), alloc(), alloc(), alloc(), alloc(), alloc()];   // vorticity half-spectrum for the interpolant
+  const interpMaxN = 128;   // the interpolant costs O(N³) per evaluation; above this the diagnostic is skipped in diagnose() (call interpMax() explicitly if wanted)
+  function interpMax(top = 24, iters = 12) {
+    curlHat(S, IW);
+    // candidate start nodes from the physical |ω|² field (om holds ω after diagnose())
+    const [ox, oy, oz] = om, o2 = (n) => ox[n] * ox[n] + oy[n] * oy[n] + oz[n] * oz[n];
+    const cand = [];
+    for (let l = 0; l < N; l++) for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
+      const n = (l * N + j) * N + i, v = o2(n);
+      const lm = v >= o2(((l + 1) % N * N + j) * N + i) && v >= o2(((l + N - 1) % N * N + j) * N + i)
+        && v >= o2((l * N + (j + 1) % N) * N + i) && v >= o2((l * N + (j + N - 1) % N) * N + i)
+        && v >= o2((l * N + j) * N + (i + 1) % N) && v >= o2((l * N + j) * N + (i + N - 1) % N);
+      if (lm) cand.push([v, i, j, l]);
+    }
+    let flat = [];
+    for (let l = 0; l < N; l++) for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) flat.push([o2((l * N + j) * N + i), i, j, l]);
+    flat.sort((a, b) => b[0] - a[0]); cand.sort((a, b) => b[0] - a[0]);
+    const starts = [], seen = new Set();
+    for (const c of cand.slice(0, top).concat(flat.slice(0, top))) { const k = c[1] + ',' + c[2] + ',' + c[3]; if (!seen.has(k)) { seen.add(k); starts.push(c); } }
+    flat = null;
+    const h = TWO_PI / N;
+    // staged contraction: returns [f, g(3), H(6)] of ω_c at x, for c = 0,1,2
+    const A = new Float64Array(2 * N * N * 3), B = new Float64Array(2 * N * 3 * 3);
+    function tensors(x, c) {
+      const wr = IW[2 * c], wi = IW[2 * c + 1];
+      A.fill(0);
+      for (let l = 0; l < N; l++) for (let j = 0; j < N; j++) {
+        const row = (l * N + j) * NH; let s0r = 0, s0i = 0, s1r = 0, s1i = 0, s2r = 0, s2i = 0;
+        for (let i = 0; i < NH; i++) {
+          const idx = row + i, kxx = kx[i], ph = kxx * x[0], cr = Math.cos(ph), ci = Math.sin(ph), w = hw[i];
+          const ar = w * (wr[idx] * cr - wi[idx] * ci), ai = w * (wr[idx] * ci + wi[idx] * cr);   // hw·ŵ·e^{ikx x}
+          s0r += ar; s0i += ai;
+          s1r += -kxx * ai; s1i += kxx * ar;                                                     // ×(i kx)
+          s2r += -kxx * kxx * ar; s2i += -kxx * kxx * ai;                                        // ×(i kx)²
+        }
+        const b = ((l * N + j) * 3) * 2; A[b] = s0r; A[b + 1] = s0i; A[b + 2] = s1r; A[b + 3] = s1i; A[b + 4] = s2r; A[b + 5] = s2i;
+      }
+      B.fill(0);
+      for (let l = 0; l < N; l++) {
+        for (let j = 0; j < N; j++) {
+          const ky = kw[j], ph = ky * x[1], cy = Math.cos(ph), sy = Math.sin(ph), base = ((l * N + j) * 3) * 2;
+          for (let a = 0; a < 3; a++) {
+            const ar0 = A[base + 2 * a], ai0 = A[base + 2 * a + 1];
+            const er = ar0 * cy - ai0 * sy, ei = ar0 * sy + ai0 * cy;
+            for (let bb = 0; bb + a < 3; bb++) {
+              const f = bb === 0 ? 1 : bb === 1 ? ky : -ky * ky, rot = bb === 1;   // (i ky)^bb
+              const rr = rot ? -f * ei : f * er, ri = rot ? f * er : f * ei;
+              const o = ((l * 3 + a) * 3 + bb) * 2; B[o] += rr; B[o + 1] += ri;
+            }
+          }
+        }
+      }
+      const T = new Float64Array(27);
+      for (let l = 0; l < N; l++) {
+        const kz = kw[l], ph = kz * x[2], cz = Math.cos(ph), sz = Math.sin(ph);
+        for (let a = 0; a < 3; a++) for (let bb = 0; bb + a < 3; bb++) {
+          const o = ((l * 3 + a) * 3 + bb) * 2, br0 = B[o], bi0 = B[o + 1];
+          const er = br0 * cz - bi0 * sz, ei = br0 * sz + bi0 * cz;
+          for (let cc = 0; cc + a + bb < 3; cc++) {
+            const f = cc === 0 ? 1 : cc === 1 ? kz : -kz * kz, rot = cc === 1;
+            T[(a * 3 + bb) * 3 + cc] += rot ? -f * ei : f * er;   // real part only
+          }
+        }
+      }
+      return T;
+    }
+    const fgh = (x) => {
+      let f = 0; const g = [0, 0, 0], H = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
+      for (let c = 0; c < 3; c++) {
+        const T = tensors(x, c), w = T[0], gw = [T[(1 * 3 + 0) * 3 + 0], T[(0 * 3 + 1) * 3 + 0], T[(0 * 3 + 0) * 3 + 1]];
+        const Hw = [[T[(2 * 3 + 0) * 3 + 0], T[(1 * 3 + 1) * 3 + 0], T[(1 * 3 + 0) * 3 + 1]],
+                    [T[(1 * 3 + 1) * 3 + 0], T[(0 * 3 + 2) * 3 + 0], T[(0 * 3 + 1) * 3 + 1]],
+                    [T[(1 * 3 + 0) * 3 + 1], T[(0 * 3 + 1) * 3 + 1], T[(0 * 3 + 0) * 3 + 2]]];
+        f += w * w;
+        for (let p = 0; p < 3; p++) { g[p] += 2 * w * gw[p]; for (let q = 0; q < 3; q++) H[p][q] += 2 * (gw[p] * gw[q] + w * Hw[p][q]); }
+      }
+      return { f, g, H };
+    };
+    const solve3 = (M, r) => {   // Cramer
+      const d = M[0][0] * (M[1][1] * M[2][2] - M[1][2] * M[2][1]) - M[0][1] * (M[1][0] * M[2][2] - M[1][2] * M[2][0]) + M[0][2] * (M[1][0] * M[2][1] - M[1][1] * M[2][0]);
+      if (Math.abs(d) < 1e-300) return null;
+      const col = (i) => { const A2 = M.map(row => row.slice()); for (let q = 0; q < 3; q++) A2[q][i] = r[q]; return A2; };
+      const det = m => m[0][0] * (m[1][1] * m[2][2] - m[1][2] * m[2][1]) - m[0][1] * (m[1][0] * m[2][2] - m[1][2] * m[2][0]) + m[0][2] * (m[1][0] * m[2][1] - m[1][1] * m[2][0]);
+      return [det(col(0)) / d, det(col(1)) / d, det(col(2)) / d];
+    };
+    let best = null;
+    starts.sort((a, b) => b[0] - a[0]);
+    for (const [v0, i0, j0, l0] of starts) {
+      // the continuous maximum exceeds its nearest node value by a few per cent at most, so a start well below the best
+      // found so far cannot win: prune it (this is what keeps the O(N³)-per-evaluation search affordable)
+      if (best && Math.sqrt(v0) < 0.85 * Math.sqrt(best.f)) continue;
+      let x = [i0 * h, j0 * h, l0 * h], cur = fgh(x);
+      for (let it = 0; it < iters; it++) {
+        let stp = solve3(cur.H, cur.g.map(v => -v));
+        const gn = Math.hypot(cur.g[0], cur.g[1], cur.g[2]);
+        if (!stp || stp[0] * cur.g[0] + stp[1] * cur.g[1] + stp[2] * cur.g[2] <= 0) stp = cur.g.map(v => v / Math.max(gn, 1e-300) * 0.25 * h);
+        let n = Math.hypot(stp[0], stp[1], stp[2]); if (n > h) { stp = stp.map(v => v * h / n); n = h; }
+        let trial = fgh([x[0] + stp[0], x[1] + stp[1], x[2] + stp[2]]);
+        while (trial.f < cur.f && n > 1e-9 * h) { stp = stp.map(v => v * 0.5); n *= 0.5; trial = fgh([x[0] + stp[0], x[1] + stp[1], x[2] + stp[2]]); }
+        if (trial.f < cur.f) break;
+        x = [x[0] + stp[0], x[1] + stp[1], x[2] + stp[2]]; cur = trial;
+        if (n < 1e-7 * h) break;
+      }
+      if (!best || cur.f > best.f) best = { f: cur.f, x, node: v0 };
+    }
+    const mod = v => ((v % TWO_PI) + TWO_PI) % TWO_PI;
+    return { omMaxI: Math.sqrt(Math.max(best.f, 0)), omMaxIpos: best.x.map(mod), omMaxNode: Math.sqrt(Math.max(best.node, 0)) };
+  }
+  /** Periodic-image diagnostic (parity with GPU 0.1.1): enstrophy profile along z — circular centroid, extent of the
+   *  band carrying > 1 % of the profile maximum, and the gap left to its own periodic image. */
+  function imageDiag() {
+    const [ox, oy, oz] = om, Ez = new Float64Array(N);
+    for (let l = 0; l < N; l++) { let s = 0; for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) { const n = (l * N + j) * N + i; s += ox[n] * ox[n] + oy[n] * oy[n] + oz[n] * oz[n]; } Ez[l] = s; }
+    let mx = 0, cs = 0, sn = 0; for (let l = 0; l < N; l++) { mx = Math.max(mx, Ez[l]); const z = l * TWO_PI / N; cs += Ez[l] * Math.cos(z); sn += Ez[l] * Math.sin(z); }
+    const zc = ((Math.atan2(sn, cs) % TWO_PI) + TWO_PI) % TWO_PI;
+    const on = Array.from(Ez, v => v > 0.01 * mx); const runs = []; let start = null;
+    for (let l = 0; l < N; l++) { if (on[l] && start === null) start = l; if (!on[l] && start !== null) { runs.push([start, l]); start = null; } }
+    if (start !== null) runs.push([start, N]);
+    let rr = runs; if (runs.length > 1 && on[0] && on[N - 1]) rr = [[runs[runs.length - 1][0], runs[0][1] + N]].concat(runs.slice(1, -1));
+    const ext = Math.min((rr.length ? Math.max(...rr.map(r => r[1] - r[0])) : N) * TWO_PI / N, TWO_PI);
+    return { zCentroid: zc, zExtent: ext, imageGap: Math.max(TWO_PI - ext, 0), zBands: rr.length };
+  }
+  /** max E(k)/E(0.8·kc) over the top of the spectrum: > 1 means energy is piling up at the dealiasing cutoff. */
+  function cutoffPileUp(spec) {
+    const k8 = Math.round(0.8 * kc); let peak = 0; for (let k = 1; k < spec.length; k++) peak = Math.max(peak, spec[k]);
+    if (!(spec[k8] > 1e-20 * peak)) return null;
+    let m = 0; for (let k = k8; k <= kc; k++) m = Math.max(m, spec[k] / spec[k8]);
+    return m;
   }
   /** 2D slice (N×N, Float32) of a physical field after diagnose(). axis 'x'|'y'|'z', index 0..N−1. */
   function slice(kind, axis, index) {
@@ -3180,7 +3321,7 @@ function createSolver(opts) {
     const d = last, o = st.outputs.length ? st.outputs[st.outputs.length - 1] : null;
     const eta = Math.pow(nu * nu * nu / Math.max(d.eps, 1e-300), 0.25), kmax = Math.sqrt(3) * kc, ke = kmax * eta;
     const spec = o ? o.spectrum : spectrum(); let kp = 0; for (let k = 1; k < spec.length; k++) if (spec[k] > spec[kp]) kp = k;
-    const tail = spec[kc] / Math.max(spec[kp], 1e-300);
+    const tail = spec[kc] / Math.max(spec[kp], 1e-300), pile = cutoffPileUp(spec);
     const cflNow = d.uMax * st.dt / (TWO_PI / N);
     const grade = (v, good, warn, lowerIsBetter = true) => (lowerIsBetter ? (v <= good ? 'PASS' : v <= warn ? 'WARN' : 'FAIL') : (v >= good ? 'PASS' : v >= warn ? 'WARN' : 'FAIL'));
     const rows = [
@@ -3194,12 +3335,28 @@ function createSolver(opts) {
       ['resolution kmax·η', ke.toFixed(2), grade(ke, 1.0, 0.5, false)],
       ['spectral tail E(kmax)/E(peak)', tail.toExponential(2), grade(tail, 1e-4, 1e-2)],
       ['stretching: spectral vs physical', o ? (Math.abs(o.Pspec - o.Pphys) / Math.max(Math.abs(o.Pspec), 2 * nu * o.P, 1e-300)).toExponential(2) : '—', o ? grade(Math.abs(o.Pspec - o.Pphys) / Math.max(Math.abs(o.Pspec), 2 * nu * o.P, 1e-300), 1e-2, 1e-1) : ''],
-      ['max |ω|', d.omMax.toFixed(4), ''], ['enstrophy Z', d.Z.toFixed(5), ''], ['stretching ⟨ω·S·ω⟩', d.Pspec.toFixed(5), ''], ['dissipation ε = 2νZ', d.eps.toExponential(4), ''],
+      ['cutoff pile-up E(k)/E(0.8kmax)', pile != null ? pile.toFixed(2) : '—', pile != null ? grade(pile, 1.2, 2.0) : ''],   // > 1: energy accumulating at the dealiasing edge (the truncation bottleneck), even when the tail check passes
+      ['max |ω|', d.omMax.toFixed(4) + (o && o.omMaxI != null ? ` (interpolated ${o.omMaxI.toFixed(4)})` : ''), ''], ['enstrophy Z', d.Z.toFixed(5), ''], ['stretching ⟨ω·S·ω⟩', d.Pspec.toFixed(5), ''], ['dissipation ε = 2νZ', d.eps.toExponential(4), ''],
+      ['‖u‖_L³ (ESS criterion)', o && o.uL3 != null ? o.uL3.toFixed(5) : '—', ''],
+      ['periodic-image gap in z', o && o.imageGap != null ? o.imageGap.toFixed(2) : '—', ''],
       ['grid convergence', study && study.grid ? study.grid.text : 'not run', study && study.grid ? study.grid.verdict : 'N/A'],
       ['time-step convergence', study && study.time ? study.time.text : 'not run', study && study.time ? study.time.verdict : 'N/A'],
     ];
+    const worstEnd = rows.some(r => r[2] === 'FAIL') ? 'FAIL' : rows.some(r => r[2] === 'WARN') ? 'WARN' : 'PASS';
+    // worst archived instant: the event itself can be the least healthy part of a run whose last snapshot passes
+    const snaps = st.outputs;
+    if (snaps.length) {
+      const tailOf = q => { let kq = 0; for (let k = 1; k < q.spectrum.length; k++) if (q.spectrum[k] > q.spectrum[kq]) kq = k; return q.spectrum[kc] / Math.max(q.spectrum[kq], 1e-300); };
+      const sdOf = q => Math.abs(q.Pspec - q.Pphys) / Math.max(Math.abs(q.Pspec), 2 * nu * q.P, 1e-300);
+      const wKe = snaps.reduce((a, b) => b.kmaxEta < a.kmaxEta ? b : a), wT = snaps.reduce((a, b) => tailOf(b) > tailOf(a) ? b : a), wS = snaps.reduce((a, b) => sdOf(b) > sdOf(a) ? b : a);
+      const wP = snaps.filter(q => q.pileUp != null).reduce((a, b) => (a == null || b.pileUp > a.pileUp) ? b : a, null);
+      rows.push(['worst instant: kmax·η', `${wKe.kmaxEta.toFixed(2)} at t ${wKe.t.toFixed(2)}`, grade(wKe.kmaxEta, 1.0, 0.5, false)]);
+      rows.push(['worst instant: spectral tail', `${tailOf(wT).toExponential(2)} at t ${wT.t.toFixed(2)}`, grade(tailOf(wT), 1e-4, 1e-2)]);
+      rows.push(['worst instant: stretching spectral vs physical', `${sdOf(wS).toExponential(2)} at t ${wS.t.toFixed(2)}`, grade(sdOf(wS), 1e-2, 1e-1)]);
+      if (wP) rows.push(['worst instant: cutoff pile-up', `${wP.pileUp.toFixed(2)} at t ${wP.t.toFixed(2)}`, grade(wP.pileUp, 1.2, 2.0)]);
+    }
     const worst = rows.some(r => r[2] === 'FAIL') ? 'FAIL' : rows.some(r => r[2] === 'WARN') ? 'WARN' : 'PASS';
-    return { rows, worst, note: 'A run that does not PASS resolution, budgets and refinement cannot support any claim about the equations. Numerical growth ≠ mathematical singularity.' };
+    return { rows, worst, worstEnd, note: 'A run that does not PASS resolution, budgets and refinement cannot support any claim about the equations. Numerical growth ≠ mathematical singularity. The verdict includes the worst archived snapshot; worstEnd is the end-of-run verdict alone.' };
   }
   /** Evidence dossier: everything needed to reproduce and audit the run. */
   function dossier(extra) {
@@ -3213,7 +3370,7 @@ function createSolver(opts) {
   }
 
   setIC(st.ic, st.icParams);
-  return { st, get last() { return last; }, step, run, diagnose, spectrum, slice, exactError, health, dossier, setIC, norms: () => norms(S), fields, N, nu, Re, kc, _S: S, _sp: sp };
+  return { st, get last() { return last; }, step, run, diagnose, spectrum, slice, exactError, health, dossier, setIC, norms: () => norms(S), interpMax, imageDiag, fields, N, nu, Re, kc, _S: S, _sp: sp };
 }
 
 /** Refinement study: run the same case on a ladder of grids (or Δt values); returns per-level series and verdicts. */
@@ -4499,7 +4656,10 @@ const TILES = [
 function buildTiles(list = TILES) {
   $('tiles').innerHTML = list.map(([id, k, u]) => `<div class="tile" id="tile-${id}"><div class="k">${k}</div><div class="v" id="tv-${id}">—</div><div class="u" id="tu-${id}">${u}</div></div>`).join('');
 }
-function setTile(id, v, cls, u) { const t = $('tile-' + id); $('tv-' + id).textContent = v; t.className = 'tile' + (cls ? ' ' + cls : ''); if (u != null) $('tu-' + id).textContent = u; }
+function setTile(id, v, cls, u) {   // a mode may update a tile that the current layout does not render — skip silently rather than throwing
+  const t = $('tile-' + id), tv = $('tv-' + id); if (!t || !tv) return;
+  tv.textContent = v; t.className = 'tile' + (cls ? ' ' + cls : ''); const tu = $('tu-' + id); if (u != null && tu) tu.textContent = u;
+}
 function updateTiles() {
   if (state.mode === 'tunnel') return TunnelUI.updateTiles();
   const bl = an.bl, warn = bl && bl.stallWarning;

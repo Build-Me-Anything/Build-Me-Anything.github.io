@@ -415,7 +415,10 @@ const TILES = [
 function buildTiles(list = TILES) {
   $('tiles').innerHTML = list.map(([id, k, u]) => `<div class="tile" id="tile-${id}"><div class="k">${k}</div><div class="v" id="tv-${id}">—</div><div class="u" id="tu-${id}">${u}</div></div>`).join('');
 }
-function setTile(id, v, cls, u) { const t = $('tile-' + id); $('tv-' + id).textContent = v; t.className = 'tile' + (cls ? ' ' + cls : ''); if (u != null) $('tu-' + id).textContent = u; }
+function setTile(id, v, cls, u) {   // a mode may update a tile that the current layout does not render — skip silently rather than throwing
+  const t = $('tile-' + id), tv = $('tv-' + id); if (!t || !tv) return;
+  tv.textContent = v; t.className = 'tile' + (cls ? ' ' + cls : ''); const tu = $('tu-' + id); if (u != null && tu) tu.textContent = u;
+}
 function updateTiles() {
   if (state.mode === 'tunnel') return TunnelUI.updateTiles();
   const bl = an.bl, warn = bl && bl.stallWarning;
