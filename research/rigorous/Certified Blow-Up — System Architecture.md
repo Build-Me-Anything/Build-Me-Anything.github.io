@@ -91,6 +91,89 @@ search, and ideally re-verified in a proof assistant — Lean 4, or Coq with `Co
 arithmetic. Archive each certificate with the code version, the enclosure radii, and an explicit statement of what
 it does and does not establish, exactly as `research/nslab/README.md` archives runs.
 
+## 3b. Three machines, and the contract between them
+
+The four layers above split naturally into separate machines with separate obligations. Keeping them separate is
+not tidiness; it is the thing that makes aggressive search safe.
+
+| | machine | arithmetic | obligation | output |
+|---|---|---|---|---|
+| **A** | **Conjecture Engine** | ordinary float, GPU | find a candidate worth testing | a candidate package |
+| **B** | **Verifier** | certified ball arithmetic | close the contraction, or refuse | a certificate, or a failure with reasons |
+| **C** | **Auditor** | independent implementation | re-check B's inequalities | agreement, or a discrepancy |
+
+**A** searches for the profile *and* for the certificate's parameters — truncation order, norm and weight,
+working precision, the approximate inverse, the proposed radius. It makes no claims. **B** takes the package and
+returns a binary verdict. **C** exists because B is software, and software is wrong; the certificate is a finite
+list of inequalities, so a second implementation — ideally a proof assistant — can re-check it without rerunning
+the search.
+
+### The frozen contract
+
+**B's acceptance condition is fixed mathematics — the radii polynomial has a positive root — and A may vary only
+the inputs. A must never be able to weaken the test it is judged by.**
+
+This is the pre-registration rule from NS-005 moved up one level: you may improve the experiment, you may not move
+the threshold. If a failing search can widen B's tolerance, the pair stops being a proof system and becomes an
+elaborate way of agreeing with yourself.
+
+### The feedback that *is* allowed
+
+When B fails it must say **which bound was too large**, because each points somewhere different:
+
+| bound too large | what it means | what A should change |
+|---|---|---|
+| `Y₀` (residual) | the profile does not solve the equation well enough | more modes, tighter Newton solve |
+| `Z₀`, `Z₁` (operator) | the approximate inverse or the norm is poorly chosen | different weight `ν`, better preconditioner |
+| `Z₂` (nonlinear) | the ball is too large for the nonlinearity | smaller `r`, or a sharper `Y₀` to permit one |
+
+Diagnostic information flowing back changes the *experiment*. It does not touch the verdict. That distinction is
+the whole safety property.
+
+### Why this earns the right to search hard
+
+In the DNS half of this programme, search volume is a hazard: try enough grids and some pair will look converged,
+which is exactly what Re 1000 did at 192³ and 224³. Pre-registration exists to contain that.
+
+A verifier inverts it. A closed contraction is a proof, not a statistic — there is no multiple-comparisons
+problem, no look-elsewhere effect, and no threshold that a million attempts can erode. **A may therefore throw
+unlimited candidates at B, and the only cost is electricity.** This is the strongest single argument for the
+architecture, and it is the exact opposite of the discipline the DNS line requires.
+
+The one thing that breaks it is **B being wrong**, which is why C exists and why the ladder below starts at a
+problem with a closed-form answer. B is graded before it is trusted, exactly as the rented A100 was graded against
+the archive before any money was spent on it.
+
+### The interface, written down
+
+A frozen contract has to be a file, not an intention. Both artefacts are archived and hashed, in the same idiom as
+`final.json`.
+
+`candidate.json` — **A → B**
+
+```
+problem:        equation, ansatz (self-similar exponents), parameters
+discretisation: basis, number of modes, working precision in bits
+profile:        coefficients of the approximate solution, plus a hash
+operator:       the approximate inverse A, and the norm (type and weight)
+proposed:       the radius r to attempt
+```
+
+`certificate.json` — **B → archive, and → C**
+
+```
+verdict:        CLOSED | FAILED
+bounds:         Y0, Z0, Z1, Z2 as enclosures, not floats
+polynomial:     the radii polynomial's coefficients and its roots
+interval:       [r_min, r_max] over which the contraction holds
+arithmetic:     library, version, precision — the instrument, recorded
+candidate_hash: what exactly was verified
+statement:      the theorem, in prose, including what it is NOT about
+```
+
+That last field is not decoration. A certificate about Constantin–Lax–Majda is a certificate about
+Constantin–Lax–Majda, and the file should say so in words a reader cannot skip.
+
 ## 4. The validation ladder
 
 Same discipline as every other line in this programme: start where the answer is already known, and grade the
