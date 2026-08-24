@@ -65,8 +65,13 @@ if ! command -v python3 >/dev/null 2>&1; then
     echo "STOP: could not install python3. Use a RunPod PyTorch template instead of a bare base image."; exit 1; }
 fi
 echo "=== installing CuPy"
-python3 -m pip install -q --upgrade pip 2>/dev/null || python3 -m pip install -q --upgrade pip --break-system-packages
-python3 -m pip install -q cupy-cuda12x numpy 2>/dev/null || python3 -m pip install -q cupy-cuda12x numpy --break-system-packages
+# The [ctk] extra is not optional on a non-CUDA base image. CuPy JIT-compiles its elementwise kernels at first
+# use and needs the CUDA headers to do it; without them the very first array expression dies with "Failed to find
+# CUDA headers". The CUDA *runtime* comes with the wheel, the headers do not. Observed on runpod/base:1.0.2 with
+# CuPy 14.2.0, and caught by the bench gate before it could waste an hour.
+PIPFLAGS=""
+python3 -m pip install -q --upgrade pip 2>/dev/null || PIPFLAGS="--break-system-packages"
+python3 -m pip install -q $PIPFLAGS "cupy-cuda12x[ctk]" numpy
 python3 -c "import cupy; print('cupy', cupy.__version__, '| runtime CUDA', cupy.cuda.runtime.runtimeGetVersion())"
 
 # --- 2. the code -----------------------------------------------------------------------------------------
