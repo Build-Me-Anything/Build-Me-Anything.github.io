@@ -5,8 +5,10 @@ Same role as `node build.js --verify` on the tool side: one command, and it fail
 import subprocess, sys, os
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-SUITES = [('R0  Krawczyk root enclosure', 'test_r0.py'),
-          ('R1  Constantin-Lax-Majda blow-up time', 'test_r1.py')]
+SUITES = [('R0   Krawczyk root enclosure', 'test_r0.py'),
+          ('R1a  Constantin-Lax-Majda, closed-form route', 'test_r1.py'),
+          ('R1b  radii polynomials in ell^1_nu (the route that transfers)', 'test_r1b.py'),
+          ('R2   De Gregorio steady state, Galerkin', 'test_r2.py')]
 
 failed = []
 for label, script in SUITES:
