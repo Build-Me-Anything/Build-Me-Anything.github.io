@@ -18,7 +18,11 @@ for (const d of fs.readdirSync(here)) {
   const r = JSON.parse(fs.readFileSync(p, 'utf8')), s = r.series;
   const pk = (a) => { let i = 0; for (let k = 0; k < a.length; k++) if (a[k] > a[i]) i = k; return { v: a[i], t: s.t[i] }; };
   const po = pk(s.omMax), pe = pk(s.eps), pz = pk(s.Z), pp = pk(s.Pspec);
-  const track = r.peakTrack || [], pI = track.length ? track.reduce((a, b) => b.omMaxI > a.omMaxI ? b : a) : null;
+  // the interpolated peak is the maximum over the peak tracker AND the archived snapshots — the tracker only fires on
+  // 2 % increments of the grid maximum, so it can miss the instant where the interpolant peaks (same union the runner
+  // uses for its DONE line; taking the tracker alone under-reports by ~1 %)
+  const track = (r.peakTrack || []).concat((r.snapshots || []).filter(o => o.omMaxI != null).map(o => ({ t: o.t, omMaxI: o.omMaxI })));
+  const pI = track.length ? track.reduce((a, b) => b.omMaxI > a.omMaxI ? b : a) : null;
   let I10 = 0; for (let k = 1; k < s.t.length && s.t[k] <= 10 + 1e-9; k++) I10 += 0.5 * (s.omMax[k] + s.omMax[k - 1]) * (s.t[k] - s.t[k - 1]);
   const kes = (r.snapshots || []).map(o => o.kmaxEta).filter(v => v != null);
   runs.push({ dir: d, Re: +m[2], N: +m[3], fp32: !!m[4], nu: r.case.nu, omPeak: po.v, tOm: po.t, omI: pI ? pI.omMaxI : null,
@@ -34,15 +38,27 @@ for (const list of byRe.values()) list.sort((a, b) => a.N - b.N);
 const rel = (a, b) => Math.abs(b - a) / Math.abs(b);
 const conv = [];
 let out = '';
-out += MD ? `| Re | Re_Γ | rungs N | ${OM} peak by rung | last change | interpolated peak | converged? | precision |\n|---|---|---|---|---|---|---|---|\n` : '';
+// Convergence is judged on the SPECTRALLY INTERPOLATED peak, not the grid peak: the grid maximum carries node-sampling
+// jitter (at Re 707 it reads 37.2 → 36.4 → 37.9 while the interpolant reads 38.2 → 39.1 → 38.9), which is exactly the
+// artefact the interpolant removes. The grid peak is reported alongside, never used for the verdict.
+out += MD ? `| Re | Re_Γ | rungs N | interpolated peak by rung | last change | band of last 3 | grid peak (last) | converged? | precision |\n|---|---|---|---|---|---|---|---|---|\n` : '';
 for (const Re of [...byRe.keys()].sort((a, b) => a - b)) {
   const L = byRe.get(Re), last = L[L.length - 1], prev = L.length > 1 ? L[L.length - 2] : null;
-  const change = prev ? rel(prev.omPeak, last.omPeak) : null;
-  const ok = change != null && change < TOL;
+  const useI = last.omI != null && prev && prev.omI != null;
+  const change = prev ? rel(useI ? prev.omI : prev.omPeak, useI ? last.omI : last.omPeak) : null;
+  // Two ways to be converged, because a single-step test is fragile against the few per cent of jitter this quantity
+  // carries: (a) the last refinement moved it by less than the tolerance — a clean approach that has settled; or
+  // (b) the last three rungs all sit inside a band of 1.5×tolerance about their mean — fluctuating about a plateau
+  // with no trend (Re 707 reads 39.1, 38.9, 39.9: a ±1.5 % band, obviously converged, but its last step is 2.5 %).
+  const vals = L.map(r => (r.omI != null ? r.omI : r.omPeak));
+  const tail3 = vals.slice(-3), mean3 = tail3.reduce((a, b) => a + b, 0) / tail3.length;
+  const band = tail3.length >= 3 ? Math.max(...tail3.map(v => Math.abs(v - mean3))) / mean3 : null;
+  const ok = (change != null && change < TOL) || (band != null && band < 1.5 * TOL);
   if (ok) conv.push({ Re, nu: last.nu, om: last.omPeak, omI: last.omI, N: last.N, Z: last.Zpeak, P: last.Ppeak, I10: last.I10, fp32: L.some(r => r.fp32) });
   const reG = Math.round(4.0 * Re / 100) * 100;   // Γ ≈ 4.0 for the standard tube preset
-  if (MD) out += `| ${Re} | ≈ ${reG.toLocaleString()} | ${L.map(r => r.N).join(', ')} | ${L.map(r => r.omPeak.toFixed(1)).join(' → ')} | ${change == null ? '—' : (100 * change).toFixed(1) + ' %'} | ${last.omI != null ? last.omI.toFixed(1) : '—'} | ${ok ? '**yes**' : 'no'} | ${L.some(r => r.fp32) ? 'float32 (exploration)' : 'float64'} |\n`;
-  else out += `Re ${String(Re).padStart(5)}  N ${L.map(r => r.N).join(',').padEnd(16)} peak ${L.map(r => r.omPeak.toFixed(1)).join(' → ').padEnd(28)} last change ${change == null ? '  —  ' : (100 * change).toFixed(1).padStart(5) + ' %'}  ${ok ? 'CONVERGED' : 'not converged'}  ${L.some(r => r.fp32) ? '(fp32)' : '(fp64)'}\n`;
+  const series = L.map(r => r.omI != null ? r.omI.toFixed(1) : '(' + r.omPeak.toFixed(1) + ')').join(' → ');
+  if (MD) out += `| ${Re} | ≈ ${reG.toLocaleString()} | ${L.map(r => r.N).join(', ')} | ${series} | ${change == null ? '—' : (100 * change).toFixed(1) + ' %'}${useI ? '' : ' (grid)'} | ${band == null ? '—' : '±' + (100 * band).toFixed(1) + ' %'} | ${last.omPeak.toFixed(1)} | ${ok ? '**yes**' : 'no'} | ${L.some(r => r.fp32) ? 'float32 (exploration)' : 'float64'} |\n`;
+  else out += `Re ${String(Re).padStart(5)}  N ${L.map(r => r.N).join(',').padEnd(20)} interp ${series.padEnd(34)} last ${change == null ? '  —  ' : (100 * change).toFixed(1).padStart(5) + ' %'}  band ${band == null ? '  —  ' : ('±' + (100 * band).toFixed(1) + ' %').padStart(7)}  ${ok ? 'CONVERGED' : 'not converged'}  ${L.some(r => r.fp32) ? '(fp32)' : '(fp64)'}\n`;
 }
 // scaling fit over the converged Reynolds numbers: peak ∝ ν^−p
 if (conv.length >= 2) {

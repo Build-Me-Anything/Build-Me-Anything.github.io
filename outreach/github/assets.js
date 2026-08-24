@@ -85,6 +85,47 @@ body { margin: 0; background: #05080c; }
   </div>
 </div></body></html>`;
 
+/* The social card GitHub, Slack, Reddit and HN render when the repo is linked. GitHub asks for 2:1 and
+   crops anything else, so this is a squarer composition than the masthead rather than the same image. */
+const social = `<!doctype html><html><head><meta charset="utf-8"><style>
+body { margin: 0; background: #05080c; }
+#social {
+  width: 1280px; height: 640px; box-sizing: border-box; position: relative; overflow: hidden;
+  background:
+    radial-gradient(ellipse 70% 90% at 50% 30%, #13212e 0%, transparent 62%),
+    linear-gradient(165deg, #070b10 0%, #0c131b 52%, #111b25 100%);
+  font-family: "Segoe UI", system-ui, Arial, sans-serif;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
+  padding: 0 78px;
+}
+#social .flow { position: absolute; inset: 0; opacity: .45;
+  background: repeating-linear-gradient(to bottom, rgba(76,201,240,.06) 0 1px, transparent 1px 14px); }
+#social .vig { position: absolute; inset: 0;
+  background: radial-gradient(ellipse 80% 90% at 50% 50%, transparent 42%, rgba(0,0,0,.6) 100%); }
+#social .render { position: relative; z-index: 2; width: 250px; height: 250px; display: block;
+  margin: 0 auto -18px; mix-blend-mode: screen; filter: saturate(1.15); }
+#social .inner { position: relative; z-index: 2; }
+#social .kicker { font-family: ui-monospace, Consolas, monospace; font-size: 14px; letter-spacing: .3em;
+  text-transform: uppercase; color: #4cc9f0; margin-bottom: 18px; }
+#social h1 { margin: 0; font-size: 62px; font-weight: 680; letter-spacing: -0.8px; color: #eef4f9; line-height: 1.05; }
+#social h1 em { font-style: normal; color: #4cc9f0; text-shadow: 0 0 40px rgba(76,201,240,.5); }
+#social p { margin: 20px auto 0; font-size: 23px; line-height: 1.45; color: #94a7bb; max-width: 900px; }
+#social .foot { position: absolute; bottom: 40px; left: 0; right: 0; z-index: 2;
+  font-family: ui-monospace, Consolas, monospace; font-size: 14px; color: #6d8299; letter-spacing: .05em; }
+#social .foot b { color: #cfe2ee; font-weight: 600; }
+</style></head><body>
+<div id="social">
+  <div class="flow"></div>
+  <div class="vig"></div>
+  <img class="render" src="${MARK3D}" alt="">
+  <div class="inner">
+    <div class="kicker">The Pocket Wind Tunnel &middot; NSLab</div>
+    <h1>Build Me <em>Anything</em></h1>
+    <p>An offline wind tunnel that grew a verified Navier&ndash;Stokes laboratory</p>
+  </div>
+  <div class="foot"><b>376 kB</b> single file &nbsp;&middot;&nbsp; <b>3</b> studies, graded &nbsp;&middot;&nbsp; numerical evidence, <b>never a proof</b></div>
+</div></body></html>`;
+
 const figure = dark => `<!doctype html><html${dark ? ' data-theme="dark"' : ' data-theme="light"'}><head><meta charset="utf-8"><style>
 ${THEME}
 body { margin: 0; background: ${dark ? '#0a0e14' : '#f4f7fa'}; font-family: "Segoe UI", system-ui, Arial, sans-serif; }
@@ -131,6 +172,7 @@ body { margin: 0; background: #05080c; }
 
   for (const [name, html, sel] of [
     ['hero', hero, '#hero'],
+    ['social', social, '#social'],
     ['peaks-light', figure(false), '#wrap'], ['peaks-dark', figure(true), '#wrap'],
     ['bridge', bridge, '#wrap'],
   ]) {

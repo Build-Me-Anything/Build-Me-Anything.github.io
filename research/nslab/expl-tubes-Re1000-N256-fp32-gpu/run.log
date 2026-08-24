@@ -1,0 +1,5 @@
+[2026-08-24 19:47:44] NSLab GPU 0.1.2 (app 0.5.1) — tubes N=256³ Re=1000 tEnd=16.0 cfl=0.4 dt=adaptive snap=0.5 ckpt=2.0  device NVIDIA GeForce RTX 3060 Laptop GPU  float32
+[2026-08-24 19:47:45] solver ready in 0.9 s, device memory 3.70 GB, kc 85, E0 0.07031046599149704, Z0 0.40027013421058655
+[2026-08-24 19:47:48] t 0.000 step 0 dt 0.00e+00  E 0.070310 Z 0.4003 ε 0.000801 max|ω| 8.034 (interp 8.037) ⟨ωSω⟩ -0.0000 (phys 0.0000) kmaxη 4.92 S 0.000 align 0.45/0.53/0.45 zgap 5.08  health FAIL (end FAIL)  ebal 0.0e+00 zbal 0.0e+00  0.00 h, ETA 1066.54 h
+[2026-08-24 19:48:35] t 0.502 step 100 dt 5.32e-03  E 0.069911 Z 0.3954 ε 0.000791 max|ω| 7.919 (interp 7.920) ⟨ωSω⟩ 0.0029 (phys 0.0029) kmaxη 4.94 S -0.014 align 0.52/0.52/0.37 zgap 4.91  health FAIL (end FAIL)  ebal 2.6e-07 zbal 2.3e-07  0.01 h, ETA 0.44 h
+[2026-08-24 19:49:16] t 1.002 step 189 dt 5.86e-03  E 0.069516 Z 0.3951 ε 0.000790 max|ω| 7.916 (interp 7.922) ⟨ωSω⟩ 0.0216 (phys 0.0216) kmaxη 4.94 S -0.102 align 0.56/0.51/0.33 zgap 4.54  health FAIL (end FAIL)  ebal 2.6e-07 zbal 3.4e-07  0.03 h, ETA 0.38 h
