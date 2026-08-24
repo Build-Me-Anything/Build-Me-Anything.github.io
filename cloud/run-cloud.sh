@@ -56,10 +56,17 @@ python3 -c "import sys; sys.exit(0 if $FREE_GB > $DISK_GB else 1)" || {
 case "$OUT" in /workspace/*) ;; *) echo "WARNING: $OUT is not under /workspace — on RunPod only /workspace survives a reclaim.";; esac
 
 # --- 1. dependencies -------------------------------------------------------------------------------------
-# CuPy wheels carry their own CUDA libraries; no CUDA Toolkit install is needed.
+# CuPy wheels carry their own CUDA libraries; no CUDA Toolkit install is needed, and the base image does not have
+# to be a CUDA image at all. It does need Python, which the lean Ubuntu bases may not carry - so check, do not
+# assume, and install it if it is missing.
+if ! command -v python3 >/dev/null 2>&1; then
+  echo "=== no python3 in this image - installing it"
+  (apt-get update -qq && apt-get install -y -qq python3 python3-pip python3-venv curl git) || {
+    echo "STOP: could not install python3. Use a RunPod PyTorch template instead of a bare base image."; exit 1; }
+fi
 echo "=== installing CuPy"
-python3 -m pip install -q --upgrade pip
-python3 -m pip install -q cupy-cuda12x numpy
+python3 -m pip install -q --upgrade pip 2>/dev/null || python3 -m pip install -q --upgrade pip --break-system-packages
+python3 -m pip install -q cupy-cuda12x numpy 2>/dev/null || python3 -m pip install -q cupy-cuda12x numpy --break-system-packages
 python3 -c "import cupy; print('cupy', cupy.__version__, '| runtime CUDA', cupy.cuda.runtime.runtimeGetVersion())"
 
 # --- 2. the code -----------------------------------------------------------------------------------------
