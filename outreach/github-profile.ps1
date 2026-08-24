@@ -89,7 +89,7 @@ function Publish-File {
 $gh = Join-Path $root 'outreach\github'
 Write-Host "uploading the profile"
 Publish-File (Join-Path $gh 'profile-README.md') 'profile/README.md'
-foreach ($img in 'hero-light.png', 'hero-dark.png', 'peaks-light.png', 'peaks-dark.png') {
+foreach ($img in 'hero.png', 'peaks-light.png', 'peaks-dark.png', 'bridge.png') {
   Publish-File (Join-Path $gh "assets\$img") "profile/assets/$img"
 }
 

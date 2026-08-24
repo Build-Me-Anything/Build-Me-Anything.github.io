@@ -1,9 +1,6 @@
 <div align="center">
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/Build-Me-Anything/.github/main/profile/assets/hero-dark.png">
-  <img alt="Build Me Anything — an offline wind tunnel that grew a verified Navier–Stokes laboratory" src="https://raw.githubusercontent.com/Build-Me-Anything/.github/main/profile/assets/hero-light.png">
-</picture>
+<img alt="Build Me Anything — an offline wind tunnel that grew a verified Navier–Stokes laboratory" src="https://raw.githubusercontent.com/Build-Me-Anything/.github/main/profile/assets/hero.png" width="100%">
 
 <br>
 
@@ -52,6 +49,12 @@ actually need — the maximum vorticity — is not.
 | **NS-001** | Taylor–Green, Re 1600 | Dissipation peak converged to **0.7 %** of the published 512³ reference. Maximum vorticity did not: 37.0 → 55.1 → 74.3 |
 | **NS-002** | Antiparallel vortex tubes, Re_Γ ≈ 16 000 | Energetics converged to ~1 %; peak vorticity 60.7 → 108.5 → 138.8, **N^0.85**, no sign of saturating |
 | **NS-003** | The same tubes at Re_Γ ≈ 8 000 | 52.3 → 92.1 → 109.4 — the **first falling exponent**, N^0.82 → N^0.60. The 256³ level passes every health check at its *worst* instant and its peak is still 19 % high |
+
+<div align="center">
+
+<img alt="Vorticity magnitude on the plane x = pi at t = 8.5, at 96³, 192³ and 256³ — the reconnection bridge, a sheet one or two cells thick at every resolution" src="https://raw.githubusercontent.com/Build-Me-Anything/.github/main/profile/assets/bridge.png" width="100%">
+
+</div>
 
 Every run is graded by a health report before any number from it may be quoted — divergence, exact energy
 conservation of the nonlinear term, RK4-consistent energy and enstrophy budgets, kmax·η, spectral-tail decay,

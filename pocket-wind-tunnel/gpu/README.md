@@ -25,6 +25,15 @@ Options: `--ic tgv|tgv2d|abc|tubes|random`, `--icp key=val …` (e.g. `--icp amp
 `--cfl` (adaptive Δt, default 0.4), `--dt` (fixed), `--snap` (snapshot interval, default 0.5), `--ckpt` (checkpoint interval in
 time units; the run resumes automatically from `checkpoint.npz` if present), `--fp32`, `--cpu` (NumPy fallback).
 
+### Runner 0.1.2 (2026-08-24) — parity with the browser solver
+
+`src/nslab.js` (NSLab 0.1.1, app 0.5.1) now carries the same four diagnostics, and both instruments gained two more:
+the **cutoff pile-up** `max E(k)/E(0.8·kmax)` over `[0.8 kc, kc]` (a fit-free truncation-bottleneck signature — above 1
+the spectrum turns up again at the dealiasing edge, which the `E(kmax)/E(peak)` tail check can miss; graded 1.2 / 2.0,
+and carried in the worst-instant rows) and **‖u‖_L³**, the Escauriaza–Seregin–Šverák continuation quantity. Both appear
+in `snapshots[]` (`pileUp`, `uL3`) and in the health report. The two implementations agree to 1e-6 on the interpolated
+maximum, checked by `test/validate-ns.js`.
+
 ### Diagnostics added for NS-003 (runner 0.1.1, 2026-08-23)
 
 - **Spectrally interpolated maximum of |ω|** (`omMaxI`, `omMaxIpos` in every snapshot; `peakTrack` in the JSON, evaluated at

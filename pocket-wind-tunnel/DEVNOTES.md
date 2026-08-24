@@ -212,6 +212,20 @@ only into conversation memory, which does not survive a context clear.
 - **Multi-line edits:** write a Python script to the scratchpad and run it. Bash heredocs mangle Unicode and long JS.
   They also mangle backslashes (a `\|` written through a heredoc arrived as `\|`): write scripts with the Write tool,
   then run them. Markdown tables: escape `|` inside cells (`max\|w\|`) or md2docx and GitHub split the cell.
+- **Instrument parity, 2026-08-24 (app 0.5.1, NSLab 0.1.1, GPU runner 0.1.2):** the four NS-003 diagnostics now exist
+  in `src/nslab.js` as well as the GPU runner, plus two new ones in both — the **cutoff pile-up**
+  `max E(k)/E(0.8·kmax)` over the top of the spectrum (a fit-free truncation-bottleneck signature: > 1 means energy is
+  accumulating at the dealiasing edge even when the E(kmax)/E(peak) tail check passes; graded 1.2 / 2.0) and
+  **‖u‖_L³** (the Escauriaza–Seregin–Šverák continuation quantity). `interpMax()` in JS uses staged contractions
+  (kx → ky → kz) so each evaluation is O(N³); it is gated to N ≤ 128 inside `diagnose()` and prunes start nodes whose
+  grid value is below 0.85× the best found. Start nodes must be **the largest grid values ∪ the largest grid local
+  maxima** — local maxima alone miss the true peak (both implementations had this bug; the tubes 24³ test catches it).
+  CPU and GPU agree to 1e-6 on the interpolated maximum (`validate-ns.js`, 12 new checks). An analyticity-strip width
+  δ(t) was tried in `analyse.js` but is not reportable below kc ≈ 120 (n and δ trade off on a short window).
+- **`setTile` guarded (2026-08-24):** a mode updating a tile the current layout does not render threw
+  `Cannot set properties of null` — five per NSLab run, present since before this session. Now skipped silently.
+- **Mode keys are `sub|tunnel|cfd|hyper|ns`** — `setMode('nslab')` silently does nothing; the headless recipe should
+  click `#modeSwitch button[data-mode="ns"]`.
 - **GPU runner 0.1.1 (NS-003):** spectrally interpolated max|ω| (`Solver.interpMax`, exact trigonometric interpolant +
   safeguarded Newton from top values ∪ top local maxima; reported beside the grid max, never instead), periodic-image
   diagnostic (z-extent / image gap / circular centroid of the enstrophy band), worst-instant health verdict
