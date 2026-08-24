@@ -58,3 +58,58 @@ On this A100 the 288³ float64 run measured 187 ms/step and 8.40 GB, ~0.19 h. Sc
 **384³ ≈ 0.6 h (~$1)** and **512³ ≈ 1.9 h (~$3)**. The `cloud/README.md` table was built from a bandwidth ratio
 and is roughly 2× pessimistic; it should be corrected to these measured figures. The 384³ rung the paragraph above
 demands therefore costs about a pound.
+
+---
+
+# Outcome, recorded 2026-08-25 against the rules above
+
+**The plateau was a resolution shelf. The primary criterion fails at the last rung, and NS-003b's claimed
+convergence of a pointwise maximum is withdrawn outright.**
+
+The complete Re 2000 float64 ladder, interpolated peak max|ω|:
+
+| N | interp peak | at t | change | ε_max | health | worst-instant pile-up | worst kmax·η |
+|---|---|---|---|---|---|---|---|
+| 192³ | 94.230 | 8.733 | — | 0.000809 | WARN | n/a | 2.20 |
+| 256³ | 115.908 | 8.740 | +18.70 % | 0.000808 | PASS | n/a | 2.94 |
+| 288³ | 132.202 | 8.747 | +12.33 % | 0.000816 | WARN | 1.70 | 3.31 |
+| 320³ | 132.700 | 8.600 | **+0.37 %** | 0.000816 | WARN | 1.51 | 3.66 |
+| 384³ | 134.131 | 8.570 | **+1.07 %** | 0.000813 | PASS | 1.01 | 4.41 |
+| **512³** | **164.365** | 8.587 | **+18.39 %** | 0.000810 | PASS | 1.00 | 5.87 |
+
+## What this settles
+
+The pre-registration named the risk exactly: *"a pass leaves Re 2000 in exactly the configuration Re 1000 was in
+before it broke — a two-rung plateau."* It was worse than that. The plateau survived **three** rungs and passed
+both criteria **twice consecutively**, and then moved 18 % at 512³.
+
+Per the rules as written, the verdict is the harsh branch: the claim is **withdrawn outright rather than
+qualified**. The converged pointwise maximum of ≈ 130 does not exist. The true value is at least 164 and is not
+converged at 512³ either.
+
+## Three things this costs the methodology
+
+**1. Precision was never the issue, and saying so was right.** float32 and float64 agree to six significant
+figures at 288³ and 320³. The float32 exploration ladder reported those numbers honestly. What failed was
+*resolution*, and no amount of precision would have shown it.
+
+**2. Every health diagnostic was reassuring, and every one of them was wrong.** At 384³ the run reported health
+PASS, cutoff pile-up 1.01 (comfortably below the 1.2 warn grade), and worst-instant kmax·η = 4.41 — by every
+global measure in the instrument, resolved. It was 18 % low. This is NS-003's lesson again, now at a far higher
+level of apparent resolution: **global resolution criteria are necessary and not sufficient, and they do not
+become sufficient by getting better.**
+
+**3. The peak-time companion criterion did not discriminate.** |Δt_peak| passed at *every* rung in the table,
+including both 18 % jumps. Calibrated on the Re 1000 failure, it catches that failure mode and not this one. That
+is worth stating plainly rather than repairing: adding a third criterion tuned to this event would be exactly the
+result-seeking the programme rejected when it dropped the L1 gate.
+
+## What survives
+
+The energetics. ε_max sits in 0.000808–0.000816 across a 2.7× range of grid size — ±0.5 %, converged since 256³,
+while the pointwise maximum moved by 42 % over the same interval. The five-level trust hierarchy is not a
+philosophical ordering; this table measures it.
+
+## What is now the honest statement about Re 2000
+
+N_required for the pointwise maximum is **> 512³**. No upper bound is known. The peak is at least 164 and rising.
