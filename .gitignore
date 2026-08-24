@@ -45,3 +45,8 @@ research/tools/logo/*.blend1
 
 # ---- working documents that are not part of the public record -----------------------------------------------
 research/CFD papers checked 2026-08-22.md
+
+# ---- credentials -------------------------------------------------------------------------------------------
+# Reddit script-app id/secret and account password, used by outreach/reddit/reddit.js. Never commit these.
+outreach/reddit/.reddit-credentials.json
+*.credentials.json

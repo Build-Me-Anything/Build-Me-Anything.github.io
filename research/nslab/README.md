@@ -343,7 +343,41 @@ grade, kept outside the ladder prefix on purpose). After that: the analyticity-s
 spectra; sup‖u‖_{L³} and the Doering–Foias constant in the AnalysisCore; a 4π box in z; the 0.1.1 diagnostics in
 `nslab.js`.
 
-## NS-001 CPU 192³ run (complete, 2026-08-22 20:08 → 23:22)
+## NS-003b — the flattening test (float32 exploration ladder, 2026-08-23 → 24)
+
+**The decisive question from NS-003: at Re_Γ ≈ 8 000, does ‖ω‖∞ flatten beyond 256³?** 384³ does not fit the 6 GB
+card in any precision (it pages: 15 s/step); a single-precision 256³ → 288³ → 320³ ladder does
+(`run-ns003-fp32.ps1` → `expl-tubes-Re2000-N{256,288,320}-fp32-gpu/`, deliberately outside the evidence-ladder
+folder prefix). Control: the float32 256³ reproduces the float64 level to every printed digit in both peaks and to
+0.04 % in ∫₀¹⁰ (∫₀¹⁶ differs by 0.9 %, the float32 drift accumulating only in the late decay) — single precision is
+adequate for this question even though its budget residuals sit at the float32 floor (health FAIL by the float64
+thresholds, as the precision policy expects).
+
+| N (fp32) | steps | wall | ε_max (t) | Z_max | max\|ω\| grid peak (t) | interpolated peak (t) | ∫₀¹⁰ | ∫₀¹⁶ | peak ⟨ω·S·ω⟩ | cutoff pile-up (7 ≤ t ≤ 12) |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 256³ | 2922 | 25 min | 0.000808 (8.76) | 0.808 | 109.36 (8.767) | 115.91 (8.740) | 245.6 | 481.3 | 1.029 | 1.78 (t 8) |
+| 288³ | 3282 | 43 min | 0.000816 (8.76) | 0.816 | 129.78 (8.762) | 132.20 (8.747) | 261.0 | 510.8 | 1.193 | 1.70 (t 8) |
+| 320³ | 3657 | 1.29 h* | 0.000816 (8.72) | 0.816 | **129.16** (8.613) | **132.70** (8.600) | 267.9 | 521.4 | 1.243 | 1.51 (t 8) |
+
+*The 320³ run was interrupted at t = 11.5 by a machine shutdown and resumed from its t = 10 checkpoint the next day —
+the first production use of the repaired resume path; the peak lies in the pre-interruption portion. Wall time
+includes the lost first attempt.*
+
+**Result: the maximum flattens.** Grid peak 109.4 → 129.8 → 129.2 (exponent 1.45, then **−0.05**); interpolated
+115.9 → 132.2 → 132.7 (1.12, then **0.04**) — the last two rungs agree to 0.4 %. Z_max and ε_max are converged
+(0.816 / 0.000816 at both), the stretching peak moves 4 % at the last rung (16 % before), the BKM integral 2.6 %
+(6.3 % before), and the cutoff pile-up *decreases* with N for the first time (1.78 → 1.70 → 1.51): the bridge is
+becoming a resolved structure. Windowed 288³ → 320³: pre-bridge ≤ 0.7 % everywhere; post-bridge the intermittent
+decay still shows up to 16 % at single instants while the peak and the integral agree. Two further readings: the
+jump from 256³ (+19 %) says the float64 256³ evidence level under-reports the converged peak by roughly 15 % — at
+Re 2000 "resolved for the peak" begins near 288³; and the 96³→…→320³ sequence 52 → 92 → 109 → 130 → 129 is the
+programme's **first observed convergence of a pointwise vorticity maximum**, at ≈ 130 (interpolated ≈ 132.5).
+
+**Status of this result: exploration grade.** Float32, two rungs on the plateau, refinement ratios of only 1.125 and
+1.11, the peak instant moving 0.15 at the last rung within a spiky history, and the BKM integral still moving 2.6 %.
+Under the standing precision policy it is not archivable as evidence. Two routes would upgrade it: a float64 288³+
+ladder (needs a ≥ 12 GB card), or an explicit amendment admitting float32 ladders that carry a float64 anchor and
+stated verification floors — that policy change is the principal investigator's call, not the instrument's.
 
 `run-192.ps1` → `pocket-wind-tunnel/test/run-ns-long.js --N 192 --Re 1600 --tEnd 16 --cfl 0.4`, `tgv-Re1600-N192/`:
 1228 steps, 3.23 h on one CPU core (9.3 s/step, 1.94 GB), health WARN (spectral tail, as for its GPU twin).

@@ -1,0 +1,58 @@
+<!doctype html>
+<!--
+  Reddit profile artwork for u/Build-Me-Anything, rendered from the project's own logo.
+  Built by profile-art.js with headless Chrome at exact pixel sizes:
+     #avatar  256x256   profile picture
+     #banner  1920x384  profile banner
+  Studio language of the Pocket Wind Tunnel: gunmetal ground, cyan emissive mark.
+-->
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #222; font-family: "Segoe UI", system-ui, Arial, sans-serif; }
+
+  /* ---- avatar: the mark, centred, on the gunmetal ground ---- */
+  #avatar {
+    width: 256px; height: 256px; position: relative; overflow: hidden;
+    background: radial-gradient(circle at 50% 42%, #16202c 0%, #0a0e14 70%);
+    display: flex; align-items: center; justify-content: center;
+  }
+  #avatar .mark { width: 210px; height: 210px; display: block; }
+
+  /* ---- banner: mark left, name and line right ---- */
+  #banner {
+    width: 1920px; height: 384px; position: relative; overflow: hidden;
+    background: linear-gradient(105deg, #0a0e14 0%, #111821 46%, #16202c 100%);
+    display: flex; align-items: center; gap: 56px; padding: 0 96px;
+  }
+  #banner::after {
+    content: ""; position: absolute; inset: 0;
+    background: radial-gradient(ellipse 46% 90% at 14% 50%, rgba(76,201,240,.14), transparent 70%);
+  }
+  #banner .mark { width: 268px; height: 268px; flex: none; position: relative; z-index: 1; }
+  #banner .words { position: relative; z-index: 1; }
+  #banner h1 {
+    font-size: 68px; font-weight: 650; letter-spacing: -0.5px; color: #e6edf3; line-height: 1.05;
+  }
+  #banner h1 em { font-style: normal; color: #4cc9f0; }
+  #banner p { margin-top: 16px; font-size: 27px; color: #8a9bb0; line-height: 1.35; max-width: 1120px; }
+  #banner .rule { width: 92px; height: 4px; background: #4cc9f0; border-radius: 2px; margin-bottom: 26px; }
+</style>
+</head>
+<body>
+
+<div id="avatar"><!--MARK--></div>
+
+<div id="banner">
+  <!--MARK-->
+  <div class="words">
+    <div class="rule"></div>
+    <h1>Build Me <em>Anything</em></h1>
+    <p>An offline wind tunnel that grew a Navier-Stokes laboratory. Numerical evidence, graded before it is believed.</p>
+  </div>
+</div>
+
+</body>
+</html>

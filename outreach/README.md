@@ -11,12 +11,24 @@ outreach/
 │   │   └── nslab-logbook.html   the whole logbook as one offline file
 │   └── posts/              six posts, in narrative order
 └── reddit/
-    ├── posting-playbook.md the framing decision, order, pre-flight checks, the objection armoury  ← read first
+    ├── posting-playbook.md the framing decision, order, verified sub rules, the objection armoury  ← read first
+    ├── karma-plan.md       why the account cannot post yet, and what to do for four weeks
+    ├── profile.md          u/Build-Me-Anything: bio, settings, avatar and banner, exact text to paste
+    ├── reddit.js           zero-dependency client: rules, flairs, requirements, preview, post
+    ├── profile-art.js/.html + profile-avatar-256.png, profile-banner-1920.png
     ├── 01-r-CFD.md         primary target, post first
-    ├── 02-r-FluidMechanics.md
-    ├── 03-show-hn.md
+    ├── 02-r-FluidMechanics.md   self-contained: rule 1 there forbids promotion, so no link in the body
+    ├── 03-show-hn.md       post this one first, in practice — HN does not gate on account age
     └── 04-r-Physics-optional.md
 ```
+
+## The account
+
+**u/Build-Me-Anything**, created 23 August 2026. As of 24 August it is 31 hours old with 1 link karma and 0
+comment karma, which is why nothing is posted to Reddit until about **22 September** — a new account posting a
+self-link is the exact shape spam filters remove, regardless of the quality of the work. `karma-plan.md` has
+the reasoning and the four-week plan; `profile.md` has the setup. Hacker News does not gate the same way, so
+Show HN goes first, as soon as the site is live.
 
 ## The posts
 

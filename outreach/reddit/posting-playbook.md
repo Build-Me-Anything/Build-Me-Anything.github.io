@@ -42,11 +42,34 @@ site-wide spam heuristics.
 
 ## 3. Pre-flight, every time
 
-Reddit could not be reached from the machine these drafts were written on, so **the rules below were not
-verified against the live sidebars — check them yourself before posting:**
+### Rules, as read from Reddit on 24 August 2026
 
-- [ ] Open the subreddit's rules page and read it. Look specifically for: self-promotion / blog-link policy,
-      a required flair, a "no personal theory" rule, and any weekly megathread that this belongs in instead.
+| Sub | Rules on the record |
+|---|---|
+| **r/CFD** | **None.** `about/rules.json` returns an empty list — only Reddit's site-wide three (spam, personal information, harassment). No flair requirement written down, no self-promotion clause. Moderation is therefore discretion plus AutoModerator, and AutoMod's commonest setting is an account-age/karma gate. |
+| **r/FluidMechanics** | Five. In order: **1. No promotions, ads or profanity. 2. Do not spam. 3. Off-topic posts will be removed.** 4. Moderation criteria — "all school of thoughts are allowed… moderators will judge by quality of the submission and not by opinion." 5. Homework help is allowed if you show an attempt. |
+| r/Physics | Not checked. Verify before posting; it is the optional target anyway. |
+
+**Rule 1 of r/FluidMechanics governs draft 2.** A post whose payoff is a link to your own blog is promotion,
+whatever its quality. Draft 2 is therefore written to stand entirely on its own — every number in the post,
+no link in the body. If someone asks where the full write-up is, that is what a comment is for.
+
+### Checking a sub yourself
+
+Claude's sandbox cannot reach any Reddit host, including the API, so anything not in the table above is
+unverified. `reddit.js` in this folder checks from your machine:
+
+```
+node reddit.js check CFD
+```
+
+which prints the account's karma and age, the subreddit's rules verbatim, the available flairs with their ids,
+and the posting requirements (flair mandatory? title length? banned domains?). Setup is in the header of that
+file — a "script" app at reddit.com/prefs/apps, credentials in a gitignored file. Then:
+
+- [ ] Run `node reddit.js check <sub>` and read the rules it prints. Look specifically for: self-promotion /
+      blog-link policy, a required flair, a "no personal theory" rule, and any weekly megathread this belongs
+      in instead.
 - [ ] Check your account's history is not mostly links to your own site. If it is, comment on other people's
       posts for a while first. The 9:1 guideline is unofficial but the moderators do look.
 - [ ] Post the **text**, not the link. A self-post with the numbers in it, and the blog linked at the end, is
@@ -54,6 +77,13 @@ verified against the live sidebars — check them yourself before posting:**
 - [ ] Put the disclaimer in the post, not in a reply. One line, early: *this is not a claim about regularity.*
 - [ ] Disclose the AI involvement in the post (see §5). Do not let someone else discover it.
 - [ ] Have the blog reachable at a stable URL before you post, and check it on a phone.
+- [ ] **After posting, open the thread in a logged-out browser window.** A post caught by a karma gate or a
+      spam filter looks perfectly normal to the account that made it and is invisible to everyone else. If it
+      is missing, message the moderators politely — never repost.
+
+**Post the first one through the web UI, not the API.** `reddit.js post` works, but the web composer previews
+the rendered markdown, offers the flair picker, and catches a formatting mistake before 3 000 people see it.
+Use the API for the pre-flight checks and keep `post --confirm` for when the routine is boring.
 
 ## 4. The objections, and the answers
 

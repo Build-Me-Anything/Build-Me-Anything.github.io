@@ -77,7 +77,7 @@ const page2 = [
     'Taylor–Green, Re 1600, 256³: ε_max = 0.01291 at t = 8.88 — Brachet 0.0126, 512³ spectral ≈ 0.013; CPU and GPU implementations agree to 3×10⁻¹³.',
     'Maximum vorticity: 37.0 → 55.1 → 74.3 from 96³ to 256³ — the quantity the Beale–Kato–Majda criterion controls is the one that has not converged.',
     'Antiparallel tubes, Re 4000, 96³ → 256³ on the GPU: ε_max and Z_max converge to 1 % while max|ω| climbs 61 → 109 → 139 (∝ N^0.85) and the stretching term triples — a reconnection bridge thinner than the grid at kmax·η = 1.8. Evidence about the instrument\'s reach, not about the equations.',
-    'The same reconnection at Re 2000, bridge resolved by every instantaneous check (kmax·η ≥ 2.9): energetics converged by 192³, max|ω| 52 → 92 → 109 with falling exponents — the onset of convergence, not convergence. Global resolution criteria are necessary, not sufficient, for pointwise quantities.',
+    'The same reconnection at Re 2000: energetics converged by 192³; max|ω| 52 → 92 → 109 with falling exponents; a float32 extension to 288³/320³ (float64-anchored) then flattens the peak at ≈ 130 (0.4 % at the last rung) — the programme\'s first observed convergence of a pointwise maximum, at exploration grade.',
   ].map(t => new Paragraph({ children: [run(t, { size: 20 })], numbering: { reference: 'bullets', level: 0 }, spacing: { after: 80 } })),
   spacer(200),
   new Paragraph({ heading: HeadingLevel.HEADING_1, children: [run('Document set', { size: 28, bold: true, color: NAVY })], spacing: { before: 120, after: 120 } }),

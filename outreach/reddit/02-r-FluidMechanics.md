@@ -5,6 +5,11 @@
 question at the end matters more than the instrument description.
 **Flair:** check the sidebar; there is usually a *Discussion* or *Research* flair.
 
+> **No link in this one.** r/FluidMechanics rule 1 is "No promotions, ads or profanity" (read from the sub on
+> 24 Aug 2026). The body below is deliberately self-contained — every number is in the post. If someone asks
+> for the write-up, give it in a reply; a link supplied on request is an answer, a link in the body is an
+> advertisement.
+
 ---
 
 ## Title options
@@ -71,9 +76,10 @@ report convergence separately either side of the crossing.
 4. Practical: how do people keep an antiparallel pair from meeting its images before reconnection completes,
    short of a much bigger box?
 
-Write-up with the full ladders, the health reports and the figures: [BLOG URL]. I am aware of the Kerr (1993) /
-Hou & Li (2006) history and of Kerr (2018) on enstrophy and circulation scaling; this is not an attempt to
-revisit that argument, it is an attempt to find out what my own instrument can measure.
+I am aware of the Kerr (1993) / Hou & Li (2006) history and of Kerr (2018) on enstrophy and circulation
+scaling; this is not an attempt to revisit that argument, it is an attempt to find out what my own instrument
+can measure. Happy to share the run data — series, snapshots, spectra and the health report for every level —
+with anyone who wants to compare against an established code.
 
 *Disclosure: I am an airframe engineer by trade, and the solver and analysis were built in partnership with
 Claude (Anthropic). Verification details are in the write-up — exact solutions to 3·10⁻¹², two independent
