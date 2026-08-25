@@ -33,7 +33,7 @@ try:
 except Exception:  # no GPU / no CuPy
     cp = None
 
-VERSION = '0.1.2'
+VERSION = '0.1.3'
 TWO_PI = 2 * math.pi
 IC_INFO = {'tgv': 'Taylor–Green vortex (3D)', 'tgv2d': 'Taylor–Green 2D (exact decay)', 'abc': 'Arnold–Beltrami–Childress (exact decay)',
            'tubes': 'antiparallel vortex tubes', 'random': 'random solenoidal field'}
@@ -56,7 +56,13 @@ class Solver:
     def __init__(self, N, Re, ic='tgv', icParams=None, cfl=0.4, dt=0.0, xp=None, fp32=False):
         self.xp = xp; self.N = N; self.NH = N // 2 + 1; self.N3 = N ** 3; self.Re = Re; self.nu = 1.0 / Re
         self.cfl = cfl; self.dtFixed = dt; self.ic = ic; self.icParams = icParams or {}
+        self.fp32 = bool(fp32)
         self.rdt = xp.float32 if fp32 else xp.float64; self.cdt = xp.complex64 if fp32 else xp.complex128
+        # Machine epsilon of the working precision, and the spectral noise floor it implies. E(k) is quadratic in
+        # the field, so a relative field error of ~ε reaches the spectrum at ~ε²; the margin of 100 keeps the guard
+        # above the floor rather than on it. Both numbers are used by the health report, never by the solver.
+        self.eps = 1.1920929e-07 if fp32 else 2.220446049250313e-16
+        self.specFloor = 100.0 * self.eps ** 2                               # fp32 1.4e-12, fp64 4.9e-30
         self.kc = N // 3
         kw = xp.asarray(np.fft.fftfreq(N, 1.0 / N), dtype=self.rdt)          # 0,1,…,N/2-1,-N/2,…,-1
         kx = xp.asarray(np.arange(self.NH), dtype=self.rdt)
@@ -350,9 +356,19 @@ class Solver:
 
     def pileUp(self, spec):
         """max E(k)/E(0.8·kc) over the top of the spectrum: > 1 means energy is accumulating at the dealiasing cutoff
-        (the truncation bottleneck), which the E(kc)/E(peak) tail check can miss."""
+        (the truncation bottleneck), which the E(kc)/E(peak) tail check can miss.
+
+        Returns None — ungraded, not "healthy" — when E(0.8·kc) is at the arithmetic's own noise floor. The floor
+        must scale with precision: E is quadratic in the field, so a relative field error of ~ε shows up in the
+        spectrum at ~ε². The old guard was a fixed 1e-20, which sits far below fp64's floor (ε² ≈ 5e-32) and so
+        worked there, and far below fp32's (ε² ≈ 1.4e-14) where it did not. Measured on the Re 2000 640³ fp32 run:
+        E(0.8·kc)/peak was 8.8e-20 at t = 0.5 — clearing the old guard by a factor of 8.8 on a value that was pure
+        roundoff — and the metric duly reported 15.38, the ratio of two noise values. From t = 1.5 it read exactly
+        1.000 for eleven consecutive snapshots, which is not a resolved spectrum either: it is the same noise,
+        decaying monotonically with k, so the band maximum sits at k8 by construction. The reassuring reading was
+        as empty as the alarming one, which is why this returns None for both rather than grading either."""
         kc = self.kc; k8 = int(round(0.8 * kc)); peak = max(spec[1:]) if len(spec) > 1 else 0.0
-        if not (spec[k8] > 1e-20 * peak): return None
+        if not (spec[k8] > self.specFloor * peak): return None
         return max(spec[k] / spec[k8] for k in range(k8, kc + 1))
 
     def spectrum(self):
@@ -394,10 +410,22 @@ class Solver:
         cflNow = d['uMax'] * st['dt'] / (TWO_PI / self.N)
         def grade(v, good, warn, lower=True):
             return ('PASS' if v <= good else 'WARN' if v <= warn else 'FAIL') if lower else ('PASS' if v >= good else 'WARN' if v >= warn else 'FAIL')
+        # Two rows measure quantities that are EXACTLY ZERO in exact arithmetic — the divergence after projection,
+        # and the net energy transfer by the nonlinear term, which conserves energy. They therefore measure nothing
+        # but roundoff, and their thresholds (1e-10/1e-6 and 1e-9/1e-6) are fp64-calibrated. In float32 the floor is
+        # ~ε·kc·|u| ≈ 1e-7·213·0.3 ≈ 8e-6, so they cannot be met at any resolution: every fp32 run in the archive
+        # fails exactly these two while every fp64 run passes with nothing flagged.
+        # They are therefore reported UNGRADED in float32, not FAIL. This is a refusal to grade a quantity the
+        # arithmetic cannot deliver — the same move as INCONCLUSIVE at R0 — and NOT a loosened threshold: the fp64
+        # limits are untouched, and no run gains a PASS it did not previously have.
+        def gradeRound(v, good, warn):
+            return 'N/A' if self.fp32 else grade(v, good, warn)
+        rndNote = ' — float32: roundoff-limited, ungraded' if self.fp32 else ''
         sv = (abs(o['Pspec'] - o['Pphys']) / max(abs(o['Pspec']), 2 * nu * o['P'], 1e-300)) if o else None
         rows = [['grid', f'{self.N}³ (kmax {self.kc}, dealiased 2/3)', ''], ['Δt', f"{st['dt']:.3e}" + (' fixed' if self.dtFixed else ' adaptive'), ''],
-                ['CFL (u_max Δt/Δx)', f'{cflNow:.3f}', grade(cflNow, 0.8, 1.2)], ['divergence L∞', f"{st['divMax']:.2e}", grade(st['divMax'], 1e-10, 1e-6)],
-                ['nonlinear energy transfer |T|/ε', f"{st['maxTnl']:.2e}", grade(st['maxTnl'], 1e-9, 1e-6)],
+                ['CFL (u_max Δt/Δx)', f'{cflNow:.3f}', grade(cflNow, 0.8, 1.2)],
+                ['divergence L∞' + rndNote, f"{st['divMax']:.2e}", gradeRound(st['divMax'], 1e-10, 1e-6)],
+                ['nonlinear energy transfer |T|/ε' + rndNote, f"{st['maxTnl']:.2e}", gradeRound(st['maxTnl'], 1e-9, 1e-6)],
                 ['energy budget residual (RK4-consistent)', f"{st['maxEbal']:.2e}", grade(st['maxEbal'], 1e-5, 1e-3)],
                 ['enstrophy budget residual', f"{st['maxZbal']:.2e}", grade(st['maxZbal'], 1e-4, 1e-2)],
                 ['resolution kmax·η', f'{ke:.2f}', grade(ke, 1.0, 0.5, False)], ['spectral tail E(kmax)/E(peak)', f'{tail:.2e}', grade(tail, 1e-4, 1e-2)],
@@ -421,7 +449,15 @@ class Solver:
                 oP = max(ps, key=lambda q: q['pileUp']); inst.append(['worst instant: cutoff pile-up', f"{oP['pileUp']:.2f} at t {oP['t']:.2f}", grade(oP['pileUp'], 1.2, 2.0)])
         rows += inst
         worst = 'FAIL' if any(r[2] == 'FAIL' for r in rows) else 'WARN' if any(r[2] == 'WARN' for r in rows) else 'PASS'
-        return dict(rows=rows, worst=worst, worstEnd=worstEnd, note='A run that does not PASS resolution, budgets and refinement cannot support any claim about the equations. Numerical growth ≠ mathematical singularity. The verdict includes the worst archived snapshot; worstEnd is the end-of-run verdict alone.')
+        note = ('A run that does not PASS resolution, budgets and refinement cannot support any claim about the equations. '
+                'Numerical growth ≠ mathematical singularity. The verdict includes the worst archived snapshot; worstEnd is '
+                'the end-of-run verdict alone.')
+        if self.fp32:
+            note += (' float32 run: the divergence and nonlinear-transfer rows are roundoff-limited and reported N/A rather '
+                     'than graded, and the cutoff pile-up is ungraded whenever E(0.8·kc) sits on the fp32 noise floor. A PASS '
+                     'here is therefore weaker than a float64 PASS — it is silent about those quantities, not clear on them. '
+                     'float32 remains exploration grade (the expl- prefix); archived evidence is float64.')
+        return dict(rows=rows, worst=worst, worstEnd=worstEnd, precision=('float32' if self.fp32 else 'float64'), note=note)
 
 
 # ============================================================ CLI
@@ -489,7 +525,7 @@ def main():
             outs = meta['outs']; nextSnap = meta['nextSnap']; nextCkpt = meta['nextCkpt']; elapsedBefore = meta.get('elapsed', 0.0); s.st['outputs'] = list(outs)   # a copy: diagnose() appends to st['outputs'] and snapshot() to outs — aliasing duplicated every snapshot after a resume
             s.st['peakTrack'] = meta.get('peakTrack', []); s.st['peakGrid'] = meta.get('peakGrid', 0.0)
             s.rhs(s.S); log(f"resumed from checkpoint at t={meta['t']:.4f} step {meta['step']} ({len(outs)} snapshots)")
-    def health(): h = s.health(); return dict(worst=h['worst'], worstEnd=h['worstEnd'], rows=h['rows'], note=h['note'])
+    def health(): h = s.health(); return dict(worst=h['worst'], worstEnd=h['worstEnd'], rows=h['rows'], note=h['note'], precision=h['precision'])
     def writePartial(final):
         j = dict(instrument='Pocket Wind Tunnel NSLab ' + VERSION + ' (GPU/CuPy)', build=build, device=device, precision='float32' if a.fp32 else 'float64',
                  case=dict(ic=a.ic, N=a.N, Re=a.Re, nu=1 / a.Re, cfl=a.cfl, tEnd=a.tEnd, snapEvery=a.snap, icParams=prm), t=s.st['t'], steps=s.st['step'], elapsed_s=elapsedBefore + time.time() - t0,

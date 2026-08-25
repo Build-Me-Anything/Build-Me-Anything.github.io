@@ -25,6 +25,47 @@ Options: `--ic tgv|tgv2d|abc|tubes|random`, `--icp key=val …` (e.g. `--icp amp
 `--cfl` (adaptive Δt, default 0.4), `--dt` (fixed), `--snap` (snapshot interval, default 0.5), `--ckpt` (checkpoint interval in
 time units; the run resumes automatically from `checkpoint.npz` if present), `--fp32`, `--cpu` (NumPy fallback).
 
+### Runner 0.1.3 (2026-08-25) — the health report stops grading roundoff
+
+Found while auditing why the Re 2000 640³ float32 run reported `health FAIL` at every snapshot with `kmax·η 8.2` —
+an extremely well-resolved number. Nothing was wrong with the flow. Two things were wrong with the report.
+
+**1. Two rows were unpassable in float32, structurally.** `divergence L∞` (graded 1e-10 / 1e-6) and
+`nonlinear energy transfer |T|/ε` (1e-9 / 1e-6) measure quantities that are **exactly zero in exact arithmetic** —
+the divergence after projection, and the net energy transfer by a nonlinear term that conserves energy. They
+therefore measure nothing but roundoff, and those thresholds are float64-calibrated. In float32 the floor is
+`≈ ε·k_c·|u| ≈ 1.2e-7 · 213 · 0.3 ≈ 8e-6`, so no resolution can meet them. The archive shows it cleanly: every
+float32 run fails exactly these two rows, every float64 run passes with nothing flagged.
+
+They are now reported **`N/A` — roundoff-limited, ungraded** in float32. This is a refusal to grade a quantity the
+arithmetic cannot deliver, not a loosened threshold: **the float64 limits are untouched and no float64 run changes
+verdict.** A float32 PASS is consequently *weaker* than a float64 PASS — silent about those quantities rather than
+clear on them — and `health.note` and the new `health.precision` field say so in every `final.json`.
+
+**2. The cutoff pile-up guard was precision-blind.** `pileUp` already declined to grade when `E(0.8·k_c)` was
+negligible, but the test was a fixed `1e-20 · peak`. `E` is quadratic in the field, so the spectral noise floor is
+`~ε²`: 4.9e-32 in float64 (where 1e-20 was safely above it) but **1.4e-14 in float32**, six orders of magnitude
+*above* the old guard. So in float32 the metric graded pure roundoff. Measured on the 640³ run: at t = 0.5,
+`E(0.8·k_c)/peak` was 8.76e-20 — clearing the old guard by a factor of 8.8 on an absolute energy of 2.6e-21 — and
+the metric duly reported **15.38**, the ratio of two noise values, which the worst-instant rule then carried as a
+FAIL for the whole run.
+
+The subtler half: from t = 1.5 it read **exactly 1.000** for eleven consecutive snapshots. That is not a resolved
+spectrum either. It is the same noise, now decaying monotonically with k, so the band maximum sits at `k8` by
+construction. **The reassuring reading was as empty as the alarming one** — the NS-005 lesson arriving from the
+other direction — so the fix ungrades both rather than rescuing either.
+
+The guard is now `100·ε²` of the working precision (float32 1.4e-12, float64 4.9e-30). Applied to the 640³ run it
+suppresses t ≤ 5.0 and begins grading at t = 5.5, where `E(0.8·k_c)/peak` has risen to 1.9e-12 — real spectral
+content reaching the cutoff band as the field roughens. On the archived float64 runs it changes **one** snapshot
+verdict out of 66. The margin of 100 is a judgement call and the only tunable here; it is stated rather than fitted.
+
+`src/nslab.js` (NSLab 0.1.2) carries the same guard expressed the same way. That instrument is always float64, so
+its constant is fixed rather than derived — the form is kept identical so the two state one rule.
+
+**This does not retroactively change a completed run.** `final.json` stores the verdict computed at the time, by
+the runner version recorded beside it. Re-grading an archived run means recomputing from its snapshots.
+
 ### Runner 0.1.2 (2026-08-24) — parity with the browser solver
 
 `src/nslab.js` (NSLab 0.1.1, app 0.5.1) now carries the same four diagnostics, and both instruments gained two more:

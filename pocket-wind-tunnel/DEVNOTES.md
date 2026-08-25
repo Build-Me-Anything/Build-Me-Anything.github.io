@@ -115,6 +115,21 @@ a common shape: `init(shared)`, `TILES`, `tabsHtml()`, `draw(ctx)`, `drawCp()`, 
   Sutton–Graves for the nose.
 
 ### NSLab (3D periodic-box Navier–Stokes, pseudo-spectral)
+- **A health threshold has a precision it was calibrated at, and it is never written down** (2026-08-25, runner
+  0.1.3). Two rows — `divergence L∞` and `nonlinear energy transfer |T|/ε` — grade quantities that are *exactly
+  zero in exact arithmetic*, so they measure only roundoff, and their limits (1e-10/1e-6, 1e-9/1e-6) were float64
+  numbers. In float32 the floor is `ε·k_c·|u| ≈ 8e-6`: unpassable at any resolution. Every fp32 run in the archive
+  failed exactly those two; every fp64 run passed. The same blindness sat in the `pileUp` guard as a literal
+  `1e-20`, which is above float64's noise floor (ε² ≈ 5e-32) and six orders *below* float32's (1.4e-14), so in
+  fp32 the metric graded roundoff — reporting 15.38 at t = 0.5 on an absolute energy of 2.6e-21. **The test to
+  apply to any tolerance: what precision was it calibrated at, and what is the noise floor of the arithmetic
+  actually running?** Fixed by ungrading rather than by loosening: `N/A` in fp32, guard = `100·ε²` of the working
+  precision. Float64 verdicts are unchanged.
+- **A reassuring diagnostic can be as empty as an alarming one, and is harder to notice.** The same pile-up metric
+  read *exactly* 1.000 for eleven consecutive snapshots — the healthiest possible value — because the noise it was
+  grading happened to decay monotonically with k, putting the band maximum at the reference point by construction.
+  Had the run been read on that row it would have looked perfectly resolved. NS-005 taught this about health
+  verdicts that were reassuring and wrong; the general form is that a metric which cannot fail is not measuring.
 - **Pseudo-spectral, not finite volume.** For the periodic box the Fourier method is exact in incompressibility,
   gives E(k) for free and beats a second-order scheme with 4× the points per direction. Deriving the 3D solver from
   the compressible FV core would have been the wrong tool for the Taylor–Green / regularity questions.

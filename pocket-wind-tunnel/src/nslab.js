@@ -19,7 +19,7 @@
  */
 const NS = (() => {
 'use strict';
-const VERSION = '0.1.1';
+const VERSION = '0.1.2';
 const TWO_PI = 2 * Math.PI;
 
 // ============================================================
@@ -549,9 +549,16 @@ function createSolver(opts) {
     return { zCentroid: zc, zExtent: ext, imageGap: Math.max(TWO_PI - ext, 0), zBands: rr.length };
   }
   /** max E(k)/E(0.8·kc) over the top of the spectrum: > 1 means energy is piling up at the dealiasing cutoff. */
+  /* Returns null — ungraded, not "healthy" — when E(0.8·kc) is at the arithmetic's own noise floor. E is quadratic
+     in the field, so a relative field error of ~ε reaches the spectrum at ~ε²; SPEC_FLOOR is that floor with a
+     margin of 100. This instrument is always float64, so the number is fixed here; the GPU runner derives the same
+     quantity from its working precision because it also runs float32, where the old fixed 1e-20 guard sat six
+     orders of magnitude BELOW the noise floor and graded roundoff as though it were spectrum. Kept identical in
+     form so the two instruments state one rule. */
+  const SPEC_FLOOR = 100 * Number.EPSILON * Number.EPSILON;                  // float64: 4.9e-30
   function cutoffPileUp(spec) {
     const k8 = Math.round(0.8 * kc); let peak = 0; for (let k = 1; k < spec.length; k++) peak = Math.max(peak, spec[k]);
-    if (!(spec[k8] > 1e-20 * peak)) return null;
+    if (!(spec[k8] > SPEC_FLOOR * peak)) return null;
     let m = 0; for (let k = k8; k <= kc; k++) m = Math.max(m, spec[k] / spec[k8]);
     return m;
   }
