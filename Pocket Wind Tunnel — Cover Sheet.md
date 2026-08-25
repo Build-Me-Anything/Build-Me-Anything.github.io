@@ -13,6 +13,7 @@
 | **First study** | NS-001 — Taylor–Green vortex resolution study, Re = 1600 |
 | **Second study** | NS-002 — antiparallel vortex-tube reconnection, Re = 4000 (Re_Γ ≈ 16 000), 96³ → 256³ on the GPU |
 | **Third study** | NS-003 — the same reconnection at Re = 2000 (Re_Γ ≈ 8 000), with interpolated maxima, image diagnostic and worst-instant verdicts |
+| **Fourth study** | NS-004 — Reynolds ladder, Re = 707 … 4000: what a converged pointwise maximum costs, and how a false convergence shelf was found and corrected |
 | **Principal investigator** | Michael — aeronautical engineer |
 | **Instrument development, verification and analysis** | Claude (Anthropic) |
 | **Deliverable** | `pocket-wind-tunnel/Pocket Wind Tunnel.html` — one 376 kB file, runs from disk, no network, no dependencies |
@@ -59,7 +60,8 @@ The instrument can supply the first two arrows. It produces evidence and conject
 - Taylor–Green, Re 1600, 256³: ε_max = 0.01291 at t = 8.88 — Brachet 0.0126, 512³ spectral ≈ 0.013; CPU and GPU implementations agree to 3×10⁻¹³.
 - Maximum vorticity: 37.0 → 55.1 → 74.3 from 96³ to 256³ — the quantity the Beale–Kato–Majda criterion controls is the one that has not converged.
 - Antiparallel tubes, Re 4000, 96³ → 256³ on the GPU: ε_max and Z_max converge to 1 % while max\|ω\| climbs 61 → 109 → 139 (∝ N^0.85) and the stretching term triples — a reconnection bridge thinner than the grid at kmax·η = 1.8. Evidence about the instrument's reach, not about the equations.
-- The same reconnection at Re 2000: energetics converged by 192³; max\|ω\| 52 → 92 → 109 with falling exponents; a float32 extension to 288³/320³ (float64-anchored) then flattens the peak at ≈ 130 (0.4 % at the last rung) — the programme's first observed convergence of a pointwise maximum, at exploration grade. Global resolution criteria are necessary, not sufficient, for pointwise quantities.
+- The same reconnection at Re 2000: energetics converged by 192³; max\|ω\| 52 → 92 → 109, then a plateau at 132.2 → 132.7 → 134.1 across 288³/320³/384³ that satisfied a pre-registered convergence criterion on two consecutive refinements, in double precision, with the health report grading PASS. A 512³ rung moved it to **164.4, +18.4 %**: the plateau was a three-rung resolution shelf and the convergence claim was withdrawn in full. Global resolution criteria are necessary, not sufficient, for pointwise quantities — and they do not become sufficient by getting better.
+- A plateau can be a shelf: at Re 1000 two successive rungs (192³, 224³) sat within 4.4 % of each other and both lay ≈ 20 % above the next rung, while a half-time-step repeat reproduced that finer rung to 0.02 % — temporal convergence demonstrated, spatial convergence not. Two convergence verdicts were withdrawn as a result, and a viscosity scaling with them.
 
 ## Document set
 
