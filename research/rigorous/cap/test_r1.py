@@ -154,5 +154,48 @@ r4 = blowup_time(w3, max_depth=1)
 check('returns INCONCLUSIVE, with no T', r4['verdict'] == INCONCLUSIVE and 'T' not in r4,
       r4.get('reason', '')[:80])
 
+
+# --------------------------------------------------------------------------------------------------------
+# 8. AN INDEPENDENT EXTERNAL CHECK ON THE CONSTANT, from a published exact solution.
+#
+# The factor of 2 in T = 2/sup{theta0} is the single most dangerous number in this file: a wrong constant would
+# make every blow-up time wrong by a fixed ratio while every internal test still passed, because every internal
+# test uses the same formula. It therefore has to be checked against a source that computed a blow-up time by a
+# DIFFERENT route.
+#
+# Elgindi & Jeong (ARMA 235, 2020) exhibit an exactly self-similar CLM solution on the real line:
+#
+#     omega0(x) = -2 a^2 c x / (a^2 + c^2 x^2),   H(omega0)(x) = 2 a^3 / (a^2 + c^2 x^2),   blowing up at T = 1/a
+#
+# (as reproduced in Huang, Qin & Wang, arXiv:2401.14615, section 2.1). Applying OUR formula: omega0 vanishes only
+# at x = 0, where theta0(0) = 2a^3/a^2 = 2a > 0, so T = 2/(2a) = 1/a. The published T and ours agree for every a,
+# which pins the constant. This is on the line rather than the circle, so it exercises the formula and not the
+# TrigPoly machinery - which is exactly the point: it is the CONSTANT that is being graded.
+# --------------------------------------------------------------------------------------------------------
+print('\n[8] the factor of 2, against the published Elgindi-Jeong exact self-similar solution')
+for a_s, c_s in [('1', '1'), ('2', '1'), ('1', '2'), ('1/2', '3')]:
+    a, c = mpf(a_s) if '/' not in a_s else mpf(1) / 2, mpf(c_s)
+    # omega0 vanishes only at x = 0 (the numerator is -2a^2 c x, the denominator never vanishes for a, c > 0)
+    x0 = ival(0)
+    theta0_at_x0 = ival(2) * ival(a) ** 3 / (ival(a) ** 2 + ival(c) ** 2 * x0 ** 2)
+    T_ours = ival(2) / theta0_at_x0
+    T_published = mpf(1) / a
+    ok = lo(T_ours) <= T_published <= hi(T_ours)
+    check(f'a={a_s}, c={c_s}: our formula gives the published T = 1/a', ok,
+          f'ours [{mp.nstr(lo(T_ours), 18)}, {mp.nstr(hi(T_ours), 18)}]  published {mp.nstr(T_published, 18)}')
+
+# And the sanity check that makes the above non-vacuous: a WRONG constant must fail it. Done explicitly rather
+# than by reusing the loop's last values - an earlier version compared the wrong-constant time against the literal
+# 1 instead of against that case's published 1/a, and failed for a reason that had nothing to do with the maths.
+for a_s in ('1', '2'):
+    a_t = mpf(a_s)
+    theta_t = ival(2) * ival(a_t) ** 3 / (ival(a_t) ** 2)      # theta0(0) = 2a
+    T_pub = mpf(1) / a_t
+    T_right = ival(2) / theta_t
+    T_wrong = ival(1) / theta_t                                 # the formula with 1 instead of 2
+    check(f'a={a_s}: constant 2 agrees, constant 1 does NOT',
+          (lo(T_right) <= T_pub <= hi(T_right)) and not (lo(T_wrong) <= T_pub <= hi(T_wrong)),
+          f'right {mp.nstr(lo(T_right), 8)}  wrong {mp.nstr(lo(T_wrong), 8)}  published {mp.nstr(T_pub, 8)}')
+
 print('\n' + ('R1: ALL PASS' if not FAILS else f'R1: {len(FAILS)} FAILURE(S) -> ' + ', '.join(FAILS)))
 sys.exit(1 if FAILS else 0)

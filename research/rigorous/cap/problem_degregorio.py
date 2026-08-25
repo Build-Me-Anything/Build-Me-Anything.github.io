@@ -6,9 +6,21 @@ The equation on the circle:
 
 so in Fourier, with a = ω̂:  û_m = −a_m/|m| (m ≠ 0), (u_x)^ = −i·sgn(m)·a_m = (Ha)_m, (ω_x)^ = i·m·a_m.
 
-A steady state, exactly
------------------------
-ω = A·sin x is a steady state for every A. Check: H(sin x) = −cos x, so u_x = −A cos x and u = −A sin x; then
+A steady state, exactly — and a well-known one
+-----------------------------------------------
+ω = A·sin x is a steady state for every A. It is not a lucky find: it is the m = 1 member of a documented
+two-dimensional manifold of equilibria A·sin m(θ − θ₀), and Jia, Stewart & Šverák (ARMA 231, 2019) prove the
+m = 1 manifold is nonlinearly, exponentially stable. Confirming a zero residual there is a **sanity check against
+a textbook fact**, which is exactly its job — the same category as the Catalan problem at R1b.
+
+Useful property: the cancellation is **independent of the Hilbert-transform sign convention**. With Hω = εA(−cos x)
+and ε = ±1, the mean-zero condition forces u = −εA sin x and the two terms cancel either way — so this check does
+not silently depend on our convention matching any particular paper's.
+
+**Domain matters, and an earlier draft omitted it.** De Gregorio's blow-up status is domain-dependent: blow-up is
+*proved* on ℝ from smooth compactly supported data (Chen–Hou–Huang, computer-assisted); on the circle with smooth
+data it is **open and conjectured globally regular**; blow-up on the circle is proved only from C^α data. Any
+claim about "De Gregorio blow-up" that omits the domain reads as an error. Check: H(sin x) = −cos x, so u_x = −A cos x and u = −A sin x; then
 ω·u_x = −A² sin x cos x and u·ω_x = −A² sin x cos x, which cancel. That gives R2 the thing every rung in this
 programme needs — **an externally known answer** — and it exercises code that R1 never touched: the derivative,
 the antiderivative, the reality/oddness structure, and a genuinely nonlinear residual.
@@ -38,11 +50,24 @@ and ‖Da‖_ν = Σ|m||a_m|ν^{|m|} is **not** bounded by ‖a‖_ν — multip
 derivative. The radii-polynomial argument as used at R1 assumes an operator on a single Banach space and does not
 apply.
 
-The fix is known and is not hard to state — a two-space Newton–Kantorovich, F : X → Y with an approximate inverse
-A : Y → X that *gains* the derivative the transport term loses, plus a tail estimate showing the leading symbol of
-DF really does grow like |m| with a sign that can be inverted. That is Layer 4 of the architecture document: the
-part no computer supplies. Writing it down is a research step, and inventing it here — unchecked, against no known
-answer — would produce a certificate that looks exactly like the sound ones and means nothing.
+**How the literature actually fixes it — and it is not what an earlier draft of this file claimed.** That draft
+said the cure is a two-space Newton–Kantorovich with an approximate inverse that *gains* the derivative. A
+literature check (`research/rigorous/LITERATURE-CHECK.md`) found **no published proof in this family does that.**
+Two established routes exist:
+
+  (a) **Dynamic rescaling with weighted energy estimates.** The transport term is never inverted; it is moved onto
+      a known smooth weight by integration by parts, ∫ u ω_x ω φ = −½ ∫ ω² (uφ)_x. The computer then verifies
+      finitely many *scalar inequalities* in interval arithmetic and the infinite-dimensional analysis is done by
+      hand. This is the Chen–Hou–Huang architecture (CPAM 74, 2021; arXiv:1905.06387).
+
+  (b) **Reformulate so the loss disappears.** Huang, Tong & Wei recast De Gregorio self-similar profiles as
+      eigenfunctions of a **compact self-adjoint operator** (CMP 2023, arXiv:2209.08232) — exactly the kind of
+      object a radii-polynomial argument handles in a single space.
+
+And the sharpest correction: Chen–Hou–Huang proved finite-time blow-up for De Gregorio **on the real line**, from
+smooth compactly supported data, by a computer-assisted interval-arithmetic argument, in 2019 — derivative loss
+and all. So this is a solved design problem, not a wall. What stops *this file* is that it picked the wrong
+formulation, which is a different and much less impressive statement.
 
 So R2 delivers what it can honestly deliver:
 

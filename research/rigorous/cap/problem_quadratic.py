@@ -75,6 +75,11 @@ def _apply_A(v, Ainv_rows, N):
     A is block-diagonal by construction: the numerically inverted (N x N) block on modes 1..N, and the **identity**
     on modes > N. The identity is the right tail choice here because DF(ā) = I − 2μ(ā * ·) is the identity plus a
     strictly mode-raising term, so it is already near-identity out in the tail.
+
+    **A is injective**, which the radii-polynomial theorem requires and cannot check for itself. On the tail A is
+    the identity. On the finite block it is the exact inverse of a matrix that is lower triangular with unit
+    diagonal (see `build_A`), hence invertible. A block-diagonal operator with an invertible block and an identity
+    block is injective.
     """
     out = Seq(v.M)
     for m in range(1, v.M + 1):

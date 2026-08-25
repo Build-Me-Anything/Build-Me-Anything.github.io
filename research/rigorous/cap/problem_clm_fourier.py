@@ -114,6 +114,7 @@ def bounds(abar, b, q, nu, N):
 
     # A is the identity here: DF(ā) = I − q(b * ·) is already near-identity when qν < 1, and using the identity
     # keeps every bound explicit. A better A would sharpen Y0 slightly and change nothing structural.
+    # A = I is trivially INJECTIVE, which the radii-polynomial theorem requires as a standing hypothesis.
     Fa = F(abar, b, q)
     Y0 = Fa.norm(nu)
 

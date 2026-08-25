@@ -4,8 +4,14 @@ Given an approximate solution ā of F(a) = 0 and an approximate inverse A of DF(
 
     T(a) = a − A·F(a)
 
-whose fixed points are the zeros of F (provided A is injective). Suppose, on the closed ball B_r(ā) in some Banach
-space, that we have three **upper** bounds:
+**Hypothesis (not optional): A must be injective, and A·F must map the space into itself.** Without injectivity a
+fixed point of T need not be a zero of F at all — T(a) = a only gives A·F(a) = 0, which is F(a) = 0 only if A kills
+nothing. An earlier version of this module relegated that to a parenthesis; a literature check found it stated as
+a standing hypothesis in every careful source (Jaquette, Lessard & Takayasu, arXiv:2012.09734, Thm 3.5; Castelli,
+Gameiro & Lessard, ARMA 228 (2018), Lemma 3.5), so it is promoted here. `verify()` cannot check it — it sees only
+three numbers — so **the caller is responsible**, and each problem module now records why its A is injective.
+
+Suppose then, on the closed ball B_r(ā) in some Banach space, that we have three **upper** bounds:
 
     ‖A·F(ā)‖               ≤ Y₀                     (how badly ā fails to solve the equation)
     ‖I − A·DF(ā)‖          ≤ Z₁                     (how far A is from a true inverse)
@@ -26,6 +32,27 @@ the architecture permits flowing back to the search:
     Y₀ too large  →  ā is not converged. Compute it better, or use more modes.
     Z₁ ≥ 1        →  A is a poor inverse, or the norm/weight ν is badly chosen. The test cannot close at any r.
     Z₂ too large  →  the nonlinearity is strong on this ball; only a smaller r can work, which needs a smaller Y₀.
+
+Two conventions in the literature, and which one this is
+--------------------------------------------------------
+The r² coefficient differs by a factor of two between two common conventions, so the form has to be stated:
+
+* **uniform-sup convention (this module).** Z₂ bounds ‖A(DF(b) − DF(ā))‖ ≤ Z₂·r uniformly over the ball, and the
+  polynomial is Z₂r² − (1 − Z₁)r + Y₀ with the strict condition p(r) < 0. The contraction condition
+  Z₁ + Z₂r < 1 then follows automatically and needs no separate hypothesis.
+* **Lipschitz convention.** If Z₂ is a Lipschitz constant for the derivative and the Taylor remainder is
+  integrated, the coefficient is ½Z₂ and a separate contraction condition must be imposed. RadiiPolynomial.jl
+  uses this form and requires p(r) ≤ 0 *and* p′(r) < 0.
+
+Every Z₂ computed in this project is a uniform-sup bound — for the quadratic problem, DF(b)h − DF(ā)h =
+−2μ(b−ā)*h gives ‖A(DF(b)−DF(ā))‖ ≤ 2μ‖A‖·r directly — so this module's form is the right one for it. Mixing the
+two would be conservative by a factor of two rather than wrong, but it would not be sharp and it would not be
+comparable with published bounds.
+
+A note on the Z₀/Z₁ split. The literature usually separates ‖I − A·A†‖ ≤ Z₀ from ‖A(A† − DF(ā))‖ ≤ Z₁, where A† is
+an *approximation* of DF(ā): Z₀ is then a finite matrix norm and Z₁ carries the infinite tail. Taking A† = DF(ā)
+exactly, as here, collapses both into one Z₁. That is legitimate and simpler, and it forfeits the computational
+reason the split exists.
 
 Rounding direction
 ------------------

@@ -143,8 +143,11 @@ def tail_column_bound(n, ubar_norm, mu, N):
 
 
 def bounds(ubar, mu, nu, N):
-    """Y₀, Z₁, Z₂ for the preconditioned Burgers fixed point. A is taken as the identity, which keeps every bound
-    explicit; a numerically inverted finite block would sharpen Y₀ and change nothing structural."""
+    """Y₀, Z₁, Z₂ for the preconditioned Burgers fixed point.
+
+    A is taken as the identity, which keeps every bound explicit; a numerically inverted finite block would sharpen
+    Y₀ and change nothing structural. A = I is trivially **injective**, which the radii-polynomial theorem requires
+    as a standing hypothesis and cannot verify from the three bounds alone."""
     nu = mpf(nu)
     mu = mpf(mu)
     w = lambda n: nu ** abs(n)

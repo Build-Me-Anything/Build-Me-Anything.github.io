@@ -110,10 +110,20 @@ class TrigPoly:
 # never provably empty either. Bisection cannot escape it at any depth: the search span whatever the budget and
 # then, correctly, reported that it could not prove completeness.
 #
-# The golden-ratio conjugate is irrational, so no zero can stay on a boundary through repeated splits. This is a
-# standard remedy in interval root-finding, and the failure it fixes is worth recording: the test case that broke
-# was the CLEANEST one (omega0 = cos x, exact answer T = 2), while the untidy case with non-dyadic roots passed.
-# Grading against a known answer is what surfaced it; a suite of only 'realistic' cases would have shipped it.
+# The golden-ratio conjugate is irrational, so no zero can stay on a boundary through repeated splits. The failure
+# it fixes is worth recording: the test case that broke was the CLEANEST one (omega0 = cos x, exact answer T = 2),
+# while the untidy case with non-dyadic roots passed. Grading against a known answer is what surfaced it; a suite
+# of only 'realistic' cases would have shipped it.
+#
+# PRECEDENT (found by the literature check, 2026-08-25). This failure mode is documented in production CAP
+# software: IntervalRootFinding.jl exposes a `where_bisect` parameter whose default is 127/256 = 0.49609375,
+# documented as being "used to avoid bisecting exactly on zero when starting with symmetrical regions, often
+# leading to having a solution directly on the boundary of a region, which prevent the contractor to prove it's
+# unicity". That is precisely this bug. Their choice is arguably better than ours: 127/256 is exactly
+# representable in binary, so the split point carries no rounding of its own, while still never re-landing on the
+# original symmetric midpoints. The golden ratio was NOT found as a documented remedy anywhere - it works, but
+# 127/256 is the citable precedent. Kept as golden here because the suite is green on it and changing a working
+# split to chase a citation is the wrong trade; recorded so the choice is informed rather than accidental.
 GOLDEN = '0.6180339887498948482045868343656381177203091798057628621354486'
 
 
