@@ -21,6 +21,10 @@ file. It opens from disk. No network, no framework, no dependencies, no build st
 the 3D incompressible Navier–Stokes equations on the periodic box, and a research programme that uses it to ask
 what a laptop can and cannot measure about the [Clay Millennium problem](https://www.claymath.org/millennium/navier-stokes-equation/).
 
+**[NS-R](research/rigorous/)** — a second line, different in kind. NSLab produces *evidence*; this produces
+*certificates*: computer-assisted proofs in interval and exact rational arithmetic, with an independent auditor
+that shares no code with the prover.
+
 **[The logbook](outreach/blog/)** — the programme, written up in public as it happens.
 **→ https://build-me-anything.github.io**
 
@@ -80,6 +84,19 @@ ladders: the same case at three resolutions, with every peak's level-to-level ch
 | **NS-001** | Taylor–Green vortex, Re 1600, 24³ → 256³ | Dissipation peak converged — ε_max = 0.01291 at t = 8.88, within 0.7 % of the 512³ spectral reference. max\|ω\| **not** converged: 37.0 → 55.1 → 74.3 |
 | **NS-002** | Antiparallel vortex tubes, Re 4000 (Re_Γ ≈ 16 000), 96³ → 256³ | Energetics converged to ~1 %; peak max\|ω\| 60.7 → 108.5 → 138.8, scaling as N^0.85 with no sign of saturating |
 | **NS-003** | The same tubes at Re 2000 | 52.3 → 92.1 → 109.4: the first falling exponent, N^0.82 → N^0.60. Energetics converged to 0.2 %; the 256³ level passes every check at its worst snapshot and its peak is still 19 % high |
+| **NS-004** | Reynolds ladder, Re 707 … 4000 | A methodological result that overturned two of its own verdicts: **agreement between adjacent resolutions is evidence of local plateauing, not of convergence.** A viscosity scaling was computed, then suspended |
+| **NS-005** | Re 2000 in float64 to 512³, on a rented A100 | The plateau was a **resolution shelf**. It survived three rungs and satisfied a criterion frozen in advance on two consecutive refinements — then moved **+18.4 %** at 512³. The convergence claim was withdrawn outright |
+
+**NS-005 is the result to read first**, because of how it failed. At 384³ the run reported health PASS, a cutoff
+pile-up of 1.01 falling monotonically exactly as a resolving structure should, and a worst-instant kmax·η of 4.41.
+By every global measure the instrument possesses, that level was resolved. It was 18 % low. Global resolution
+criteria are necessary and not sufficient for pointwise quantities, **and they do not become sufficient by getting
+better.** What survived was the energetics: ε_max held within ±0.5 % across a 2.7× range of grid size while the
+pointwise maximum moved 42 %.
+
+The rules were written down *before* the numbers existed
+([the pre-registration](research/nslab/NS-005-preregistration.md), with a git timestamp to prove it), and applied
+unchanged afterwards. The four rented rungs cost **$5.34**.
 
 The programme runs as a gate ladder, G0 to G9, from "existing solvers regression-tested" to "proof closes the
 Clay formulation". It is at the boundary of G5 and G6, and G6 — a phenomenon that survives refinement — has not
@@ -87,6 +104,59 @@ been reached. The full status table, every run's numbers and the reading of each
 [`research/nslab/README.md`](research/nslab/README.md); the academic write-up is
 [`research/nslab/NSLab Research Report.md`](research/nslab/NSLab%20Research%20Report.md); a graded survey of the
 field is in [`research/literature/`](research/literature/).
+
+## The rigorous line
+
+A direct simulation can never prove anything: it integrates one initial condition on a finite grid for a finite
+time, and a singularity is defined by quantities becoming unbounded exactly where a fixed grid is least
+trustworthy. [`research/rigorous/`](research/rigorous/) is the other kind of computation — the kind that ends in a
+theorem rather than a measurement.
+
+```bash
+cd research/rigorous/cap && python run-all.py     # 8 suites, 194 checks, mpmath only
+```
+
+The architecture is three machines with a frozen contract between them: a **Conjecture Engine** (fast, unrigorous,
+makes no claims), a **Verifier** (certified arithmetic, binary verdict), and an **Auditor** (independent re-check).
+The Verifier's acceptance condition is fixed mathematics and the search may vary only the inputs — which inverts
+the discipline the simulation line needs, because a closed contraction is a proof rather than a statistic, so
+searching harder costs only electricity.
+
+| rung | what is certified |
+|---|---|
+| **R0** | Krawczyk root enclosure — existence *and uniqueness*, or a refusal |
+| **R1** | Constantin–Lax–Majda blow-up time. **T = 2**, by two independent routes, matching the closed form |
+| **R2** | A De Gregorio steady state — for the Galerkin truncation only, and it says so |
+| **R3** | The textbook cure for derivative loss, and a measurement of exactly where it stops |
+| **R4** | Eigenpairs of a compact operator — the route the literature actually uses for profile equations |
+
+Every rung is graded against an answer somebody else computed: CLM's T = 2, the Catalan numbers, a published
+exact self-similar solution, a steady state that is the known ground state of a documented manifold, and
+Huang–Tong–Wei's six published eigenvalues — which a discretisation written here reproduces to their printed
+precision.
+
+**The auditor is the piece worth copying.** `auditor*.py` import `fractions`, `json` and `math` — nothing else, and
+a structural test asserts it — then re-derive every bound in exact rational arithmetic by *different arguments*
+from the prover's. It accepts the real certificates, rejects **31 tampered variants**, and agrees with the
+prover's interval arithmetic to 6×10⁻²³. Two implementations sharing no code is worth more than any number of
+further tests written by the author of the first.
+
+### It has already caught us
+
+Three literature-checking agents ([`research/rigorous/agents/`](research/rigorous/agents/)) were pointed at the
+mathematics this line rests on. They confirmed most of it and **refuted four standing claims** — a missing
+hypothesis in a theorem statement, a wrong prognosis for a known obstruction, two citations that did not contain
+what they were cited for, and a domain-dependence omitted from every document. None of it could have been caught
+by the 138 internal checks passing at the time, because an internal test cannot catch a claim that is wrong about
+the *literature* rather than about the arithmetic. Every correction is recorded, with citations, in
+[`LITERATURE-CHECK.md`](research/rigorous/LITERATURE-CHECK.md).
+
+The agents are built to one rule: **emit an artefact that can fail — code, a counterexample, a citation — never a
+verdict.** No panel, no vote. Agents sharing a model share blind spots, so their agreement is weak evidence, and a
+chorus of confident reviewers manufactures exactly the false confidence this project keeps catching itself in.
+
+> A certificate here is a certificate about the model equation named in it. None of this bears on Navier–Stokes,
+> and the documents say so in the places a reader cannot skip.
 
 ### Reproducing a run
 
