@@ -26,26 +26,29 @@ None of the three gets network write access, credentials, or the ability to run 
 
 ## Risk register
 
-**R1 — fabricated citations (oracle-hunter).** The highest-consequence failure in the fleet: a plausible
+Numbered **F1–F5**, not R1–R5: `R0…R5` are the CAP ladder's *rungs* in `cap/`, and two schemes sharing a prefix in
+one directory is a collision waiting to be misread. F is for fleet.
+
+**F1 — fabricated citations (oracle-hunter).** The highest-consequence failure in the fleet: a plausible
 non-existent reference becomes a grading target, and everything graded against it inherits the error invisibly.
 *Mitigation:* every citation is fetched and checked to contain the claim; `NOT FOUND` is graded as success; GT-04
 plants a request with no true answer and a fabrication there is an automatic no-ship.
 
-**R2 — the second implementation is a port (second-implementer).** If the "independent" check reuses the original
+**F2 — the second implementation is a port (second-implementer).** If the "independent" check reuses the original
 argument, the agreement is worthless but looks like corroboration — strictly worse than no check, because it
 raises confidence without raising evidence. *Mitigation:* the design is written before the original is read; a
 structural import check is run; GT-04 supplies the original deliberately and grades a paraphrase as a failure.
 
-**R3 — the refuter always finds something.** An agent rewarded for findings will produce them. Then a report of
+**F3 — the refuter always finds something.** An agent rewarded for findings will produce them. Then a report of
 "nothing found" carries no information, which is precisely when you most need it to. *Mitigation:* GT-05 hands it
 correct code, and inventing a defect there is a no-ship regardless of the rest.
 
-**R4 — the fleet becomes a panel.** The failure mode this fleet was built to avoid: three agents agreeing, and the
+**F4 — the fleet becomes a panel.** The failure mode this fleet was built to avoid: three agents agreeing, and the
 agreement being read as verification. *Mitigation:* no agent emits a verdict; there is no aggregation step; the
 `README.md` rule is enforced in each agent's constraints. If a future change adds a consensus mechanism, that is a
 redesign, not a feature.
 
-**R5 — correlated blind spots.** All three run on the same model family, so they share priors. This is **not
+**F5 — correlated blind spots.** All three run on the same model family, so they share priors. This is **not
 fully mitigated and cannot be**. It is the reason the fleet is pointed at importing external truth and building
 different-method implementations rather than at review. Cross-model grading (per the `build-educated-expert`
 pipeline: one model authors the exam, another sits it, a third grades) reduces but does not remove it.

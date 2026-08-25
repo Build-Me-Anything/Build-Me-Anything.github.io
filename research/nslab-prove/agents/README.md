@@ -50,8 +50,15 @@ An agent that passes its adversarial and out-of-scope tasks but fails the regres
 
 They do not accumulate expertise between sessions. The `build-educated-expert` pipeline gives curated retrieval
 with tested recall over peer-reviewed sources, which is real and useful — but it is a library card, not a
-doctorate. It will not invent the two-space Newton–Kantorovich estimate that R3 proper needs. It can find out
-whether somebody already has, which is a different and still valuable thing.
+doctorate. It will not invent a missing estimate. It can find out whether somebody already has, which is a
+different and still valuable thing.
+
+**This paragraph used to name that missing estimate as "the two-space Newton–Kantorovich estimate that R3 proper
+needs" — and the fleet's own first run refuted exactly that.** No published proof in this family uses a
+derivative-gaining inverse; the real routes are weighted energy estimates, or the compact-operator reformulation
+that is now rung R4. The line is left here rather than quietly deleted because it is the sharpest illustration of
+what these agents are for: the claim was confidently written, internally consistent, survived every test in
+`cap/`, and was wrong about the literature. See [`../LITERATURE-CHECK.md`](../LITERATURE-CHECK.md).
 
 Nothing produced by this fleet is evidence on its own. A citation is evidence; an independent implementation that
 agrees is evidence; an agent's opinion is not.

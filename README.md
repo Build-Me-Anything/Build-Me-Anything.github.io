@@ -129,6 +129,7 @@ searching harder costs only electricity.
 | **R2** | A De Gregorio steady state — for the Galerkin truncation only, and it says so |
 | **R3** | The textbook cure for derivative loss, and a measurement of exactly where it stops |
 | **R4** | Eigenpairs of a compact operator — the route the literature actually uses for profile equations |
+| **R4b** | The De Gregorio self-similar profile operator — transcribed and reproduced, and **deliberately not certified**: the rigorous quadrature it would need is named rather than faked |
 
 Every rung is graded against an answer somebody else computed: CLM's T = 2, the Catalan numbers, a published
 exact self-similar solution, a steady state that is the known ground state of a documented manifold, and
@@ -140,6 +141,10 @@ a structural test asserts it — then re-derive every bound in exact rational ar
 from the prover's. It accepts the real certificates, rejects **31 tampered variants**, and agrees with the
 prover's interval arithmetic to 6×10⁻²³. Two implementations sharing no code is worth more than any number of
 further tests written by the author of the first.
+
+It reaches R0, R1a, R1b, R2 and R3 — **not yet R4 or R4b**, which are yet to be re-derived independently and are
+so far checked only by suites sharing an author with the code they test. That is the exact condition the auditor
+exists to break, so it is recorded here rather than left to be inferred from the file list.
 
 ### It has already caught us
 
