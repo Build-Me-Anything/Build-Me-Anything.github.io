@@ -113,7 +113,7 @@ trustworthy. [`research/nslab-prove/`](research/nslab-prove/) is the other kind 
 theorem rather than a measurement.
 
 ```bash
-cd research/nslab-prove/cap && python run-all.py     # 8 suites, 273 checks, mpmath only
+cd research/nslab-prove/cap && python run-all.py     # 8 suites, 282 checks, mpmath only
 ```
 
 The architecture is three machines with a frozen contract between them: a **Conjecture Engine** (fast, unrigorous,

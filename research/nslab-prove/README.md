@@ -5,7 +5,7 @@ a DNS run is a measurement with error bars that shrink if you spend more, and a 
 list of inequalities that is either true or refused. No quantity of the first becomes the second.
 
 ```bash
-cd research/nslab-prove/cap && python run-all.py     # 8 suites, 273 checks, ~4.5 min, mpmath only
+cd research/nslab-prove/cap && python run-all.py     # 8 suites, 282 checks, ~4.5 min, mpmath only
 ```
 
 It prints `CAP SUITES: ALL PASS (8 suites)` or it fails loudly. There is no third answer and no tolerance to tune.
@@ -83,10 +83,23 @@ no truncation estimate at all: by Courant–Fischer on `V`, *any* j-dimensional 
 below, so certified entries plus Gershgorin give it directly — which is why Rayleigh–Ritz converges from below.
 The **upper** half is Corollary 3.7 of the source, used as a **citation**. Nothing here derives an upper bound.
 
-So the Galerkin truncation error is *bounded* by the bracket width, but not by an argument of ours. A
-self-derived upper bound is the **Lehmann–Maehly–Goerisch** construction, which takes an a priori spectral
-separation — Corollary 3.7 supplies exactly that — and returns sharp upper bounds. It is **not implemented**, and
-calling what exists a truncation bound without that distinction would be an overclaim.
+So the Galerkin truncation error is *bounded* by the bracket width, but not by an argument of ours.
+
+**`lehmann.py` is the machinery that would replace the citation** — Lehmann–Maehly, which bounds the eigenvalues
+of `T = −M` below a shift from below, i.e. `λ_j` from **above**. It is certified without an eigensolver: since
+`R ≻ 0`, Sylvester's law of inertia turns "how many eigenvalues below `t`" into a count of negative pivots in an
+interval LDLᵀ, and a pivot whose enclosure straddles zero returns `None` rather than a guess. Graded on the
+source's comparison operator, where `M̃ s_n = λ̃_n s_n` makes every Lehmann matrix exact: bounds valid at every
+trial space tried, and the worst relative gap falls **0.153 → 0.0056 → 6.0e-5** as the trial space improves —
+the quadratic convergence Lehmann predicts.
+
+**It is not yet instantiated for M, and two things are why.** First, `A₂ = ⟨M w_i, M w_j⟩_{Ḣ¹}` needs M *applied*
+to a trial function, not merely tested against one; by the source's identity `∂ₓM(f) = −χ(H(f) + c(f))` it equals
+`∫₋₁¹ (H w_i + c(w_i))(H w_j + c(w_j)) dx`, which wants a closed form for the Hilbert transform of a truncated
+sine and then an integral of a product of two — a derivation not done here. Goerisch's extension exists precisely
+to replace an unavailable `A₂`, and naming it is not the same as having it. Second, **Lehmann does not remove the
+dependence on Corollary 3.7**: it converts it from *the answer* into an *a priori input* for choosing the shift,
+which is a real improvement and not an elimination.
 
 One thing to resolve first: `problem_dg_profile.bracket`'s prose and its own formula **disagree** about
 Corollary 3.7 — 0.2026/n as written, 0.06450/n as coded. Both upper bounds agree and every computed eigenvalue

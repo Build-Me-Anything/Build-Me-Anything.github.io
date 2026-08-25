@@ -17,8 +17,10 @@ Run:  python test_r4b.py     (about a minute; the quadrature is the slow part)
 """
 import sys
 from mpmath import mp, mpf, pi as MPPI
+from mpmath import iv
 import problem_dg_profile as P
 import sici
+import lehmann
 
 mp.dps = 20
 FAILS = []
@@ -212,13 +214,87 @@ for j, (lo_, hi_) in enumerate(BR, start=1):
           f'{mp.nstr(lo_, 8)} > {mp.nstr(published_lower, 8)}  (x{mp.nstr(lo_ / published_lower, 3)})')
 
 
+print('\n[15] LEHMANN-MAEHLY: the machinery, graded on the comparison operator')
+# The complement to Rayleigh-Ritz - upper bounds where Courant-Fischer gives only lower ones. Graded on the
+# source's comparison operator M~, where M~ s_n = lambda~_n s_n makes all three Lehmann matrices exact and the
+# spectrum is known in closed form. Trial vectors are perturbed eigenvectors, so the method has to work.
+#
+# NOTE this test cannot show Lehmann beating Corollary 3.7, because on M~ the corollary is an EQUALITY by
+# construction - lambda~_n IS that operator's spectrum. What it shows is that the bounds are VALID and that they
+# converge as the trial space improves, which is what grades an implementation.
+LK, LJ = 12, 4
+LLAM = [mpf(1) / (k * MPPI) for k in range(1, LK + 1)]
+LB = [(k * MPPI) ** 2 for k in range(1, LK + 1)]
+
+
+def _lehmann_run(eps):
+    C = []
+    for j in range(LJ):
+        v = [mpf(0)] * LK
+        v[j] = mpf(1)
+        for i in range(LK):
+            if i != j:
+                v[i] = mpf(eps) / (1 + abs(i - j))
+        C.append(v)
+    A0 = [[iv.mpf(0)] * LJ for _ in range(LJ)]
+    A1 = [[iv.mpf(0)] * LJ for _ in range(LJ)]
+    A2 = [[iv.mpf(0)] * LJ for _ in range(LJ)]
+    for a in range(LJ):
+        for b in range(LJ):
+            s0 = s1 = s2 = iv.mpf(0)
+            for n in range(LK):
+                w = iv.mpf(C[a][n]) * iv.mpf(C[b][n]) * iv.mpf(LB[n])
+                s0 = s0 + w
+                s1 = s1 - iv.mpf(LLAM[n]) * w
+                s2 = s2 + iv.mpf(LLAM[n]) ** 2 * w
+            A0[a][b], A1[a][b], A2[a][b] = s0, s1, s2
+    rho = -(LLAM[3] + LLAM[4]) / 2
+    return lehmann.upper_bounds(A0, A1, A2, rho, LJ, LJ), rho
+
+
+# the shift's hypothesis: exactly LJ eigenvalues of T = -M~ below rho, i.e. lambda_5 < -rho < lambda_4
+_, rho_used = _lehmann_run('0.05')
+check('the shift rho satisfies its hypothesis (lambda_5 < -rho < lambda_4)',
+      LLAM[4] < -rho_used < LLAM[3], f'-rho = {mp.nstr(-rho_used, 8)}')
+
+gaps = []
+for eps, label in (('0.3', 'crude'), ('0.05', 'better'), ('0.005', 'good')):
+    ub, _ = _lehmann_run(eps)
+    ok = all(u is not None and u >= LLAM[j] for j, u in enumerate(ub))
+    check(f'{label} trial space: every Lehmann bound is a genuine UPPER bound', ok,
+          '' if ok else str([mp.nstr(u, 8) if u else None for u in ub]))
+    gaps.append(max((u - LLAM[j]) / LLAM[j] for j, u in enumerate(ub) if u is not None))
+
+check('the bounds sharpen as the trial space improves', gaps[0] > gaps[1] > gaps[2],
+      f'worst relative gap {mp.nstr(gaps[0], 3)} -> {mp.nstr(gaps[1], 3)} -> {mp.nstr(gaps[2], 3)}')
+check('sharpening is quadratic in the trial-space error, as Lehmann predicts',
+      gaps[2] < gaps[1] / 20 and gaps[1] < gaps[0] / 20)
+
+print('\n[16] the inertia count must REFUSE rather than guess')
+# The bracket is established by Sylvester inertia counting through an interval LDL^T. A pivot whose enclosure
+# straddles zero makes the sign - and so the count - undecidable, and inertia_below returns None there. A bisection
+# that treated None as a number would silently return a bracket resting on a coin flip.
+A0d = [[iv.mpf(1) if i == j else iv.mpf(0) for j in range(2)] for i in range(2)]
+A1d = [[iv.mpf(0) for _ in range(2)] for _ in range(2)]
+A2d = [[iv.mpf(1) if i == j else iv.mpf(0) for j in range(2)] for i in range(2)]
+singular_t = lehmann.inertia_below(A0d, A0d, 1, 2)      # L - tR = 0 exactly: every pivot straddles nothing but 0
+check('inertia_below returns None when a pivot cannot be signed', singular_t is None,
+      f'got {singular_t}')
+check('inertia_below counts correctly when the pivots are decided',
+      lehmann.inertia_below(A1d, A2d, mpf('0.5'), 2) == 2)
+check('bracket_tau refuses when the requested index is not bracketed',
+      lehmann.bracket_tau(A1d, A2d, 2, 1, mpf('-10'), mpf('-5')) is None)
+
+
 print('\n' + ('R4b: ALL PASS' if not FAILS else f'R4b: {len(FAILS)} FAILURE(S) -> ' + ', '.join(FAILS)))
 print('\nSCOPE: the Galerkin numbers are ORDINARY numerics, not a certificate. What IS established here is that')
 print('       the operator is transcribed correctly and our discretisation reproduces the paper.')
 print('       The A_{nm} are CLOSED FORMS in Si and Ci, enclosed rigorously by sici.py, and certified_bracket')
 print('       turns them into a genuine two-sided bracket on lambda_1..lambda_6. But the LOWER half is ours')
 print('       (Courant-Fischer, no truncation estimate needed) and the UPPER half is Corollary 3.7 of the')
-print('       source, used as a citation. No upper bound is derived here, so the Galerkin truncation error is')
-print('       bounded by the bracket width without an argument of ours. Lehmann-Maehly-Goerisch is the route')
-print('       to a self-derived upper bound; it is NOT implemented.')
+print('       source, used as a citation. lehmann.py now implements the Lehmann-Maehly machinery that would')
+print('       replace it - graded valid and quadratically convergent on the comparison operator - but it is')
+print('       NOT yet instantiated for M, because that needs A2 = <M w_i, M w_j>_H1, i.e. M applied to a trial')
+print('       function rather than tested against one. Lehmann also does not remove the dependence on')
+print('       Corollary 3.7: it converts it from the answer into an a priori input for choosing the shift.')
 sys.exit(1 if FAILS else 0)
