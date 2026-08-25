@@ -6,7 +6,7 @@ Working code for the rigorous-numerics line described in
 tune and no third answer.
 
 ```bash
-cd research/rigorous/cap
+cd research/nslab-prove/cap
 python run-all.py          # all six suites, 116 checks, ~7 minutes
 ```
 

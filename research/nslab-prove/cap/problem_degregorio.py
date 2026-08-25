@@ -52,7 +52,7 @@ apply.
 
 **How the literature actually fixes it — and it is not what an earlier draft of this file claimed.** That draft
 said the cure is a two-space Newton–Kantorovich with an approximate inverse that *gains* the derivative. A
-literature check (`research/rigorous/LITERATURE-CHECK.md`) found **no published proof in this family does that.**
+literature check (`research/nslab-prove/LITERATURE-CHECK.md`) found **no published proof in this family does that.**
 Two established routes exist:
 
   (a) **Dynamic rescaling with weighted energy estimates.** The transport term is never inverted; it is moved onto

@@ -1,6 +1,6 @@
 # A system that builds and tests theorems
 
-**Scoping document, NSLab rigorous-numerics line (NS-R).** Written 2026-08-24.
+**Scoping document, NSLab rigorous-numerics line (NSLab-Prove).** Written 2026-08-24.
 
 Numerical evidence and proof are different categories, and no quantity of the first becomes the second. This
 document scopes the only architecture on which a computer contributes to a *proof* about the Navier–Stokes or

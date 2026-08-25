@@ -6,7 +6,7 @@ R3 implemented the textbook cure for derivative loss: precondition by a dissipat
 inverse gains more derivatives than the nonlinearity loses. It works, it is graded against an exact answer, and it
 stops dead at μ = 0 — which is where Euler and De Gregorio live.
 
-A literature check (`research/rigorous/LITERATURE-CHECK.md`) then established that **this was the wrong door**.
+A literature check (`research/nslab-prove/LITERATURE-CHECK.md`) then established that **this was the wrong door**.
 No published proof in this family uses a derivative-gaining inverse. For *profile* equations the standard move is
 to reformulate so the loss disappears: Huang, Tong & Wei obtain De Gregorio self-similar profiles as
 **eigenfunctions of a compact self-adjoint operator** (CMP 2023, arXiv:2209.08232). A compact operator eigenproblem

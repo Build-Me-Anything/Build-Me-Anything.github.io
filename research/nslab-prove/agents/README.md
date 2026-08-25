@@ -1,7 +1,7 @@
 # The verification fleet — three agents, and one rule that governs all of them
 
 Built to the standard in `OneDrive/Agent Machine/agent-builder/CLAUDE.md`: specification, then **evals before
-instructions**, then scaffold. These three serve the NS-R rigorous-numerics line and the NSLab DNS line, and they
+instructions**, then scaffold. These three serve the NSLab-Prove rigorous-numerics line and the NSLab DNS line, and they
 exist because of a specific weakness in both: **almost every check in this programme was written by the author of
 the code it tests.**
 

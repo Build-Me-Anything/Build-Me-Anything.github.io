@@ -21,7 +21,7 @@ file. It opens from disk. No network, no framework, no dependencies, no build st
 the 3D incompressible Navier–Stokes equations on the periodic box, and a research programme that uses it to ask
 what a laptop can and cannot measure about the [Clay Millennium problem](https://www.claymath.org/millennium/navier-stokes-equation/).
 
-**[NS-R](research/rigorous/)** — a second line, different in kind. NSLab produces *evidence*; this produces
+**[NSLab-Prove](research/nslab-prove/)** — a second line, different in kind. NSLab produces *evidence*; this produces
 *certificates*: computer-assisted proofs in interval and exact rational arithmetic, with an independent auditor
 that shares no code with the prover.
 
@@ -109,11 +109,11 @@ field is in [`research/literature/`](research/literature/).
 
 A direct simulation can never prove anything: it integrates one initial condition on a finite grid for a finite
 time, and a singularity is defined by quantities becoming unbounded exactly where a fixed grid is least
-trustworthy. [`research/rigorous/`](research/rigorous/) is the other kind of computation — the kind that ends in a
+trustworthy. [`research/nslab-prove/`](research/nslab-prove/) is the other kind of computation — the kind that ends in a
 theorem rather than a measurement.
 
 ```bash
-cd research/rigorous/cap && python run-all.py     # 8 suites, 194 checks, mpmath only
+cd research/nslab-prove/cap && python run-all.py     # 8 suites, 194 checks, mpmath only
 ```
 
 The architecture is three machines with a frozen contract between them: a **Conjecture Engine** (fast, unrigorous,
@@ -143,13 +143,13 @@ further tests written by the author of the first.
 
 ### It has already caught us
 
-Three literature-checking agents ([`research/rigorous/agents/`](research/rigorous/agents/)) were pointed at the
+Three literature-checking agents ([`research/nslab-prove/agents/`](research/nslab-prove/agents/)) were pointed at the
 mathematics this line rests on. They confirmed most of it and **refuted four standing claims** — a missing
 hypothesis in a theorem statement, a wrong prognosis for a known obstruction, two citations that did not contain
 what they were cited for, and a domain-dependence omitted from every document. None of it could have been caught
 by the 138 internal checks passing at the time, because an internal test cannot catch a claim that is wrong about
 the *literature* rather than about the arithmetic. Every correction is recorded, with citations, in
-[`LITERATURE-CHECK.md`](research/rigorous/LITERATURE-CHECK.md).
+[`LITERATURE-CHECK.md`](research/nslab-prove/LITERATURE-CHECK.md).
 
 The agents are built to one rule: **emit an artefact that can fail — code, a counterexample, a citation — never a
 verdict.** No panel, no vote. Agents sharing a model share blind spots, so their agreement is weak evidence, and a

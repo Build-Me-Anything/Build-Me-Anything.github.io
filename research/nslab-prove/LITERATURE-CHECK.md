@@ -1,6 +1,6 @@
-# Literature check of the NS-R line — what survived, and what did not
+# Literature check of the NSLab-Prove line — what survived, and what did not
 
-**2026-08-25.** The first real run of the `oracle-hunter` agent (`research/rigorous/agents/oracle-hunter/`) was
+**2026-08-25.** The first real run of the `oracle-hunter` agent (`research/nslab-prove/agents/oracle-hunter/`) was
 pointed at the claims underpinning R1–R3. It confirmed most of them and **refuted one**, which is the reason the
 fleet exists: every check in `cap/` up to that point had been written by the author of the code it tested, and
 none of it could have caught a claim that was wrong about the *literature* rather than about the arithmetic.
