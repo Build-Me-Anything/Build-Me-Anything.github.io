@@ -1,6 +1,11 @@
 # A system that builds and tests theorems
 
-**Scoping document, NSLab rigorous-numerics line (NSLab-Prove).** Written 2026-08-24.
+**Scoping document, NSLab rigorous-numerics line (NSLab-Prove).** Written 2026-08-24, ladder updated 2026-08-25.
+
+**Build status.** The ladder of §4 is built through **R4b**: `cd research/nslab-prove/cap && python run-all.py` runs
+eight suites and reports ALL PASS. R0, R1a, R1b, R3 and R4 carry certificates; R2 carries one for the Galerkin
+truncation only; R4b is transcription and ordinary numerics, deliberately not a certificate. Machine C audits
+R0–R3 and does not yet reach R4.
 
 Numerical evidence and proof are different categories, and no quantity of the first becomes the second. This
 document scopes the only architecture on which a computer contributes to a *proof* about the Navier–Stokes or
@@ -43,7 +48,7 @@ exist, and is it stable?". That converts a statement about a *limit* — which n
 into a statement about the *existence of an object*, which a contraction-mapping argument can settle. Every
 computer-assisted blow-up proof in the literature turns on this reformulation.
 
-## 3. The four layers
+## 3. The five layers
 
 ### Layer 1 — Search (fast, unrigorous, disposable)
 
@@ -83,6 +88,14 @@ The computation carries finitely many spectral modes. The infinitely many discar
 **analytically** — typically by an analyticity argument giving exponential decay of coefficients, with an
 explicitly certified constant. This is mathematician work. It is also where a CAP most often fails, and it cannot
 be automated away.
+
+**R4 changed what this layer costs.** For a *profile* equation posed as a compact-operator eigenproblem, the tail
+bound is supplied by compactness itself: writing `τ(n) := ‖T e_n‖_ν / ν^{|n|}`, the tail contribution to `Z₁` is
+`(‖A_fin‖ + 1/|λ̄|)·sup_{|n|>N} τ(n)`, and `τ(n) → 0` *is* compactness. The discriminating test is in the R4
+suite: a merely **bounded** operator, identical in every other respect, gives a `τ` that does not decay, the
+supremum does not shrink with `N`, and nothing closes. So the layer is not eliminated — it is discharged by a
+property of the operator rather than by a bespoke estimate, which is exactly why the reformulation is worth
+making.
 
 ### Layer 5 — Audit
 
@@ -194,12 +207,24 @@ instrument before trusting it.
 
 | rung | target | why this one | status |
 |---|---|---|---|
-| **R0** | certified enclosure of a polynomial root and a simple ODE flow | learn the arithmetic; confirm the toolchain is rigorous end to end | not started |
-| **R1** | **finite-time blow-up for Constantin–Lax–Majda** (`ω_t = ω·H(ω)`) | **has a closed-form blow-up solution** — the Taylor–Green Re 1600 of this world. If the machinery cannot recover the exact blow-up time inside its own certified bracket, it is wrong, and we learn that in weeks | not started |
-| **R2** | De Gregorio on the circle | genuinely hard, results exist in the literature to check against | not started |
-| **R3** | 2D Boussinesq / axisymmetric Euler with boundary | the actual research frontier; Chen and Hou's territory | out of scope alone |
+| **R0** | certified enclosure of a polynomial root | learn the arithmetic; confirm the toolchain is rigorous end to end | **built** — √2 to half-width 3.4e-41; refuses two-root and degenerate boxes |
+| **R1a** | **finite-time blow-up for Constantin–Lax–Majda** (`ω_t = ω·H(ω)`) via the closed form | **has a closed-form blow-up solution** — the Taylor–Green Re 1600 of this world. If the machinery cannot recover the exact blow-up time inside its own certified bracket, it is wrong | **built** — `T = 2` to width 4.6e-41 |
+| **R1b** | the same result by radii polynomials in `ℓ¹_ν` | R1a uses the answer as the method and none of it transfers; this is the route that does | **built** — certified `T ≥ 2`, sharp; radius within 0.0001 % of truth on the Catalan problem |
+| **R2** | De Gregorio steady state | genuinely hard, results exist in the literature to check against | **Galerkin certificate only** — the PDE statement is not claimed; domain-dependence stated |
+| **R3** | preconditioning as the cure for derivative loss | the textbook route out of R2's obstruction | **built and graded — and it is the wrong door**, see below |
+| **R4** | certified eigenpairs of a compact operator | the route the literature actually uses for profile equations; single-space, no derivative-gaining inverse | **built** — certified against exactly known eigenpairs, and a merely *bounded* operator fails the same test |
+| **R4b** | the De Gregorio self-similar profile operator (Huang–Tong–Wei) | the first real instantiation of R4 | **transcribed, not certified** — reproduces the six published eigenvalues by ordinary quadrature |
+| **R5** | 2D Boussinesq / axisymmetric Euler with boundary | the actual research frontier; Chen and Hou's territory | out of scope alone, and §R3 of `cap/README.md` now says *why* with a number |
 
-**R1 is the build.** It is scoped, it has a known answer, and it exercises all four layers.
+**R3 was the build, and it failed upward.** It closes on the problem it was aimed at, and the literature check
+(`LITERATURE-CHECK.md`) then established that no published proof in this family takes that route at all. R4 is the
+correction: reformulate the profile equation so the derivative loss disappears, rather than invert it away. That
+is why the ladder gained a rung after the rung that worked.
+
+**R4b is the live edge.** Certifying `λf = M(f)` needs exactly two things — rigorous enclosures of the matrix
+entries `A_{nm} = ⟨s_n, s_m⟩_{Ḣ^{1/2}(ℝ)}`, which are improper integrals, and a proven bound on their tail. The
+machinery that consumes both is built and graded at R4. Naming the missing piece is worth more than pretending it
+is done.
 
 ## 5. What a finished certificate would and would not mean
 
@@ -215,12 +240,18 @@ certificate about CLM is a certificate about CLM.
 ## 6. Honest assessment
 
 Chen and Hou's computer-assisted proof of finite-time blow-up for 3D Euler with boundary rests on years of
-analysis by specialists, and on 1D model results proved first. R3 is not reachable solo, and saying otherwise
+analysis by specialists, and on 1D model results proved first. R5 is not reachable solo, and saying otherwise
 would be the same error this programme spent NS-004 learning to avoid.
 
-R0 and R1 are reachable, are worth building, and would give this programme something it does not currently have:
-an output that is true rather than well-measured. The Clay problem still needs a mathematician. This is the
-machine that would check their work — and the only route on which a computer participates in a proof at all.
+R0 and R1 were reachable and are now built, and they gave this programme something it did not previously have: an
+output that is true rather than well-measured. What the ladder has since learned is less comfortable and worth
+more. The rung that *worked* (R3) turned out to answer a question nobody in the literature asks, and only an
+external check caught it — the machinery was sound and pointed at the wrong door. Certificates are not
+self-validating about their own relevance: soundness is checkable by machine, and choosing the right theorem is
+not.
+
+The Clay problem still needs a mathematician. This is the machine that would check their work — and the only
+route on which a computer participates in a proof at all.
 
 ---
 

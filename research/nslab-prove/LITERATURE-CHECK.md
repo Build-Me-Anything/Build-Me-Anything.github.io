@@ -107,11 +107,23 @@ that conjecture is superseded on the line. The circle conjecture stands.
    Huang–Tong–Wei's **compact operator eigenproblem** — genuinely `ℓ¹`-friendly, and reachable by the machinery
    already built — or reproducing a piece of the CHH finite-dimensional interval-arithmetic verification.
 
+**All four are done** (2026-08-25). Items 1–3 are in `cap/problem_degregorio.py` and `cap/README.md`. Item 4 became
+**R4** (`cap/problem_eigen.py` — the compact-operator machinery, certified against exactly known eigenpairs, with a
+merely bounded operator refused as the discriminating test) and **R4b** (`cap/problem_dg_profile.py` — the
+Huang–Tong–Wei profile operator transcribed, its six published eigenvalues reproduced, and explicitly *not*
+certified). The remaining step is named rather than done: rigorous enclosures of
+`A_{nm} = ⟨s_n, s_m⟩_{Ḣ^{1/2}(ℝ)}` and a proven tail bound on them.
+
 ## One hazard worth carrying forward
 
 The essential spectrum of the self-similar generator is **realization-dependent** — an `L²` realization fills
 strips where an `H²` realization collapses to lines. Any discretised CAP that fixes a space implicitly through its
 truncation inherits whichever picture that space gives. Flagged for the compact-operator route.
+
+**Still open, and not yet recorded in the code** (checked 2026-08-25). R4b fixes its space explicitly — `V` with
+the plain `Ḣ¹` inner product, per the source — so the hazard does not bite there today. It will bite the first
+time an operator is discretised whose space is chosen by the truncation rather than stated in advance, and no
+check in `cap/` would notice.
 — Xu, *The spectral picture of self-similar collapse in the Constantin–Lax–Majda equation*, arXiv:2607.19762
 (2026) — *less verified, recent preprint*.
 
