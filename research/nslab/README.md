@@ -59,7 +59,7 @@ and this folder documents the first two arrows only.
 | G2 | Taylor–Green reproduced | **done for the energetics** — 256³ (kmax·η ≥ 1.73): ε_max 0.01291 at t 8.88, 0.7 % below the 512³ spectral value and 2.5 % above Brachet's; 192³ → 256³ changes ε_max by 1.7 %. **Not done for max\|ω\|**: 37.0 → 55.1 → 74.3 (96³ → 192³ → 256³) |
 | G3 | Grid/time convergence automated | done — ladders with verdicts and observed order, in the app and in `bench-ns.js` |
 | G4 | Vorticity/stretching diagnostics validated | done — spectral vs physical ⟨ω·S·ω⟩ agree to 1e-14 while resolved; TGV symmetry (direct skewness 0) and zero initial production reproduced; e₂ alignment reproduced |
-| G5 | Reproducible long-time experiments | done for NS-001 (24³ … 256³, CPU and GPU), NS-002 (antiparallel tubes Re 4000, 96³ → 192³ → 256³, GPU float64), NS-003 (the same tubes at Re 2000, same ladder, runner 0.1.1 diagnostics) and NS-004 (a Reynolds ladder of converged peaks, Re 707 … 4000, float32 exploration), in this folder |
+| G5 | Reproducible long-time experiments | done for NS-001 (24³ … 256³, CPU and GPU), NS-002 (antiparallel tubes Re 4000, 96³ → 192³ → 256³, GPU float64), NS-003 (the same tubes at Re 2000, same ladder, runner 0.1.1 diagnostics) and NS-004/NS-005 (a Reynolds ladder, Re 707 … 4000, that found no converged pointwise peak at any of them), in this folder |
 | G6 | Resolution-independent phenomenon identified | not started |
 | G7 | Candidate inequality discovered | not started |
 | G8 | Inequality proven | — |
@@ -389,9 +389,10 @@ stated verification floors — that policy change is the principal investigator'
 confirmation of the 3·10⁻¹³-over-770-steps statement above; the growth from 10⁻¹³ to 10⁻¹² is round-off amplified
 through the turbulent phase, not a discrepancy between the instruments.
 
-## NS-004 — Reynolds ladder of converged peaks (2026-08-24, float32 exploration, GPU runner 0.1.2)
+## NS-004 — Reynolds ladder: what a converged peak costs, and why none was found (2026-08-24 → 25, GPU runner 0.1.2)
 
-**Question.** NS-003b produced the programme's first converged pointwise maximum (Re 2000, ≈ 130). Does the converged
+**Question, as it stood when the study was posed** — the premise in this paragraph was later withdrawn; see the
+NS-005 entry below. NS-003b produced the programme's first converged pointwise maximum (Re 2000, ≈ 130). Does the converged
 peak scale with viscosity — and how much resolution does a converged peak cost at each Reynolds number? The second
 half is an instrument-characterisation result; the first is the first quantity this programme has that a published
 study could be compared against (Kerr 2018 reports √ν-type scaling for reconnection enstrophy).
@@ -428,10 +429,10 @@ is not equivalent to convergence.
 
 | Re | Re_Γ | rungs N | interpolated peak by rung | last change | band of last 3 | history Δ (t 8–11) | Δt(peak) | verdict |
 |---|---|---|---|---|---|---|---|---|
-| 707 | ≈ 2 800 | 128, 160, 192, 224, **256** | 38.2 → 39.1 → 38.9 → 39.9 → **40.3** | 1.0 % | ±2.0 % | 2.3 % (worst 6 %) | 0.09 | **CONVERGED — survived its verification rung** |
-| 1000 | ≈ 4 000 | 160, 192, 224, 256, **288** | 56.0 → 65.6 → 62.8 → **53.2** → 55.4 | 4.0 % | ±9.9 % | 6.0 % (worst 17 %) | 0.19 | not converged — **the first shelf**, still moving at 288³ |
-| 1414 | ≈ 5 700 | 192, 224, 256, **288** | 87.4 → 94.9 → 93.1 → **87.0** | 7.1 % | ±5.1 % | 9.7 % (worst 34 %) | 0.20 | not converged — **the second shelf** |
-| 2000 | ≈ 8 000 | 96 … 288, 320, **384** (float64) | 52.8 → … → 132.2 → 132.7 → **134.1** | 1.1 % | ±0.8 % | 9.1 % (worst 28 %) | 0.02 | **CONVERGED — float64, health PASS, verified one rung beyond its plateau** |
+| 707 | ≈ 2 800 | 128, 160, 192, 224, **256** | 38.2 → 39.1 → 38.9 → 39.9 → **40.3** | 1.0 % | ±2.0 % | 2.3 % (worst 6 %) | 0.09 | passes the criterion — but **read as "has not moved yet"**: Re 2000 passed on three rungs and still broke |
+| 1000 | ≈ 4 000 | 160 … 288, **384** (fp64) | 56.0 → 65.6 → 62.8 → **53.2** → 55.4 → **61.8** | **10.5 %** | ±8.9 % | 6.4 % (worst 13 %) | 0.05 | not converged — **the first shelf**, and still climbing at 384³ |
+| 1414 | ≈ 5 700 | 192 … 288, **384** (fp64) | 87.4 → 94.9 → 93.1 → **87.0** → **103.1** | **15.6 %** | ±9.2 % | 12.3 % (worst 25 %) | 0.05 | not converged — **the second shelf**, new high at 384³ |
+| 2000 | ≈ 8 000 | 96 … 288, 320, 384, **512** (float64) | 52.8 → … → 132.2 → 132.7 → 134.1 → **164.4** | **18.4 %** | ±14.4 % | 10.8 % (worst 29 %) | 0.01 | **NOT converged — a THREE-rung shelf; see below** |
 | 4000 | ≈ 16 000 | 96, 192, 256 | (grid) 60.7 → 108.5 → 138.8 | 21.8 % | ±40.9 % | 21.1 % (worst 47 %) | 0.02 | not converged (256³ is this card's float64 ceiling) |
 
 **Re 1414 is the sharper demonstration of the shelf.** At Re 1000 two rungs agreed to 4.4 % before the drop; at
@@ -443,16 +444,28 @@ not**, which is precisely why both had to be tested rather than trusted.
 A100-80GB appeared in the archive on 2026-08-24 at 21:28 and reproduce the float32 ladder exactly — grid 129.77 vs
 129.78 and 129.16 vs 129.16, interpolated 132.20 and 132.70 in both, E(16) to 6 digits. So NS-003b's flattening is
 **no longer exploration grade**, and the float32 ladder is vindicated as a proxy for float64 in this configuration.
-That plateau has since been **tested beyond itself and held**: a float64 **384³** run (same A100, 4367 steps, 0.59 h,
-**health PASS**, `tubes-Re2000-N384-gpu/`) gives an interpolated peak of **134.1** against 132.7 at 320³ — a 1.1 % step,
-a ±0.8 % band across the last three rungs and a peak-instant shift of 0.02. Re 2000 is therefore the programme's
-**first pointwise vorticity maximum that is converged by the frozen criterion, verified by a rung beyond the plateau,
-in double precision, with the health report passing**: max\|ω\| ≈ 133–134 at Re_Γ ≈ 8 000, reached at N ≈ 320–384.
+That plateau was then tested twice more, and **it broke.** A float64 384³ run (A100, health PASS,
+`tubes-Re2000-N384-gpu/`) gave 134.1 against 132.7 at 320³ — a 1.1 % step, a ±0.8 % band across 288/320/384 — which
+was written up here as the programme's first converged pointwise maximum. A float64 **512³** run
+(`tubes-Re2000-N512-gpu/`, A100, 1.73 h, **health PASS**) then gave **164.4: +22.6 % on 384³, +18.4 % on the
+criterion's reference.** **That claim is withdrawn in full.**
 
-**An honest oddity to keep in view:** Re 1000 and Re 1414 remain unconverged while *both* their neighbours, Re 707 and
-Re 2000, are converged. Nothing in the data explains that yet — it may be that their ladders simply need deeper rungs
-(Re 1000 is still moving 4 % at 288³ after its drop, 56.0 → 65.6 → 62.8 → 53.2 → 55.4), or that something about the
-event at intermediate Reynolds number is harder to resolve. It is recorded, not explained away.
+This is the most important negative result the programme has: **a three-rung plateau, spanning 288³ → 320³ → 384³
+with a ±0.8 % band, in double precision, with the health report grading PASS at every instant, was still 20 % away
+from the value the next rung produced.** The shelf phenomenon is therefore not a two-rung artefact that a third rung
+cures — the number of consecutive agreeing rungs is not itself evidence. Everything in this study that rests on
+"the sequence stopped moving" must be read as "the sequence has not moved *yet, at the resolutions reached*".
+
+**What the ladder looks like once that is applied: nothing in it is converged.** An earlier draft of this section
+called it "an honest oddity" that Re 1000 and Re 1414 were unconverged while their neighbours Re 707 and Re 2000 were
+not — that observation is void. Re 2000 is the shelf described above, and a float64 384³ rung at Re 1414 (health
+PASS, on the same rented A100) moved that sequence **+15.6 %** to a new high, 87.4 → 94.9 → 93.1 → 87.0 → **103.1**.
+The only Reynolds number still passing the criterion is Re 707, and it is the one ladder never taken beyond its
+plateau — the weakest position to be in once two plateaus have broken at 288³ and one at 512³. The pattern across
+every Reynolds number is the same and there is no puzzle left in it: **the low-Reynolds ladders are shorter, not more
+converged.** Both intermediate ladders have since been carried to 384³ in double precision on the rented A100, and both moved
+again: Re 1000 by **+10.5 %** (55.4 → 61.8) and Re 1414 by **+15.6 %** to a new high (87.0 → 103.1), each with health
+PASS. Every Reynolds number in this study that has been taken past its apparent plateau has broken it.
 
 **Resolution cost of a converged peak — as lower bounds only.** The defensible statement is that the cost of
 resolving the pointwise maximum rises substantially with Reynolds number, and that the following are **lower bounds**,
@@ -460,10 +473,10 @@ not thresholds:
 
 | Reynolds number | what is established |
 |---|---|
-| Re 707 | **N_required ≈ 224–256³** — converged and verified one rung beyond the plateau |
+| Re 707 | passes at 256³, but untested beyond — after the Re 2000 result, treat as **N_required ≥ 256³**, not a bracket |
 | Re 1000 | N_required > 256³ (the 256³ rung fell 15 % below its predecessors; 288³ in flight) |
 | Re 1414 | **N_required > 288³** (224³/256³ agreed to 1.8 %, then 288³ fell 7.1 %) |
-| Re 2000 | N_required > 256³ — firmly established (256³ → 288³ moved the peak 19 %); the 288³/320³ plateau is untested beyond itself |
+| Re 2000 | **N_required > 512³** — the 288³/320³/384³ plateau broke at 512³ (+22.6 %); no upper figure is supportable |
 | Re 4000 | N_required ≫ 256³ (still climbing 22 % at the last float64 rung) |
 
 The earlier phrasing — "the 256³ double-precision ceiling reaches Re ≈ 1400" — is withdrawn: it converted brackets

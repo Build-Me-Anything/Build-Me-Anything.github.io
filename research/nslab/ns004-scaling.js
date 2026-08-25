@@ -9,6 +9,10 @@ const fs = require('fs'), path = require('path');
 const here = __dirname, args = process.argv.slice(2);
 const opt = (k, d) => { const i = args.indexOf('--' + k); return i >= 0 ? args[i + 1] : d; };
 const TOL = parseFloat(opt('tol', '2')) / 100, MD = args.includes('--md');
+// history-agreement test over the reconnection window: the worst relative difference of max|ω|(t) between the last two
+// levels must be under HTOL and the instant of the peak must agree to within TPEAK
+const EVT = (opt('window', '8,11')).split(',').map(Number), HTOL = parseFloat(opt('htol', '999')) / 100, TPEAK = parseFloat(opt('tpeak', '0.3'));
+const nearest = (s, t) => { let i = 0; for (let k = 0; k < s.t.length; k++) if (Math.abs(s.t[k] - t) < Math.abs(s.t[i] - t)) i = k; return i; };
 const BS = String.fromCharCode(92), OM = 'max' + BS + '|ω' + BS + '|';
 
 const runs = [];
@@ -25,7 +29,7 @@ for (const d of fs.readdirSync(here)) {
   const pI = track.length ? track.reduce((a, b) => b.omMaxI > a.omMaxI ? b : a) : null;
   let I10 = 0; for (let k = 1; k < s.t.length && s.t[k] <= 10 + 1e-9; k++) I10 += 0.5 * (s.omMax[k] + s.omMax[k - 1]) * (s.t[k] - s.t[k - 1]);
   const kes = (r.snapshots || []).map(o => o.kmaxEta).filter(v => v != null);
-  runs.push({ dir: d, Re: +m[2], N: +m[3], fp32: !!m[4], nu: r.case.nu, omPeak: po.v, tOm: po.t, omI: pI ? pI.omMaxI : null,
+  runs.push({ dir: d, Re: +m[2], N: +m[3], fp32: !!m[4], nu: r.case.nu, series: { t: s.t, omMax: s.omMax }, omPeak: po.v, tOm: po.t, omI: pI ? pI.omMaxI : null,
     epsPeak: pe.v, Zpeak: pz.v, Ppeak: pp.v, I10, minKe: kes.length ? Math.min(...kes) : null, health: r.health.worst });
 }
 // one entry per (Re, N): prefer float64
@@ -41,7 +45,7 @@ let out = '';
 // Convergence is judged on the SPECTRALLY INTERPOLATED peak, not the grid peak: the grid maximum carries node-sampling
 // jitter (at Re 707 it reads 37.2 → 36.4 → 37.9 while the interpolant reads 38.2 → 39.1 → 38.9), which is exactly the
 // artefact the interpolant removes. The grid peak is reported alongside, never used for the verdict.
-out += MD ? `| Re | Re_Γ | rungs N | interpolated peak by rung | last change | band of last 3 | grid peak (last) | converged? | precision |\n|---|---|---|---|---|---|---|---|---|\n` : '';
+out += MD ? `| Re | Re_Γ | rungs N | interpolated peak by rung | last change | band of last 3 | history Δ (t ∈ ${EVT[0]}–${EVT[1]}) | Δt(peak) | converged? | precision |\n|---|---|---|---|---|---|---|---|---|---|\n` : '';
 for (const Re of [...byRe.keys()].sort((a, b) => a - b)) {
   const L = byRe.get(Re), last = L[L.length - 1], prev = L.length > 1 ? L[L.length - 2] : null;
   const useI = last.omI != null && prev && prev.omI != null;
@@ -53,12 +57,40 @@ for (const Re of [...byRe.keys()].sort((a, b) => a - b)) {
   const vals = L.map(r => (r.omI != null ? r.omI : r.omPeak));
   const tail3 = vals.slice(-3), mean3 = tail3.reduce((a, b) => a + b, 0) / tail3.length;
   const band = tail3.length >= 3 ? Math.max(...tail3.map(v => Math.abs(v - mean3))) / mean3 : null;
-  const ok = (change != null && change < TOL) || (band != null && band < 1.5 * TOL);
+  const scalarOK = (change != null && change < TOL) || (band != null && band < 1.5 * TOL);
+  // A scalar can agree by accident while the underlying history differs — at Re 1000 the 256³ run peaked at t ≈ 9.0
+  // and decayed where its predecessors climbed to t ≈ 9.4. Pointwise convergence therefore requires BOTH the scalar
+  // maximum AND the shape of max|ω|(t) over the event window to agree between the last two levels.
+  // Two measures, because max|ω|(t) is spiky: the worst single instant is dominated by jitter (the maximum hops
+  // between sites), while the integral difference over the window responds to a genuinely different evolution.
+  // The acceptance test uses the integral; the worst instant is reported for information.
+  const hist = (a, b) => {
+    if (!a || !b) return null;
+    let worst = 0, num = 0, den = 0, n = 0;
+    for (let t = EVT[0]; t <= EVT[1] + 1e-9; t += 0.05) {
+      const va = a.series.omMax[nearest(a.series, t)], vb = b.series.omMax[nearest(b.series, t)];
+      if (!(vb > 0)) continue;
+      worst = Math.max(worst, Math.abs(va - vb) / vb); num += Math.abs(va - vb); den += vb; n++;
+    }
+    return n ? { worst, l1: num / den } : null;
+  };
+  const h = hist(prev, last), dHist = h ? h.worst : null, dL1 = h ? h.l1 : null;
+  const dTpeak = prev ? Math.abs(last.tOm - prev.tOm) : null;
+  // Structure test. An L1 threshold on the history was tried first and REJECTED as a gate: its magnitude tracks how
+  // intermittent the flow is at that Reynolds number rather than whether the rungs agree — it reads 5.4 % (Re 707),
+  // 7.9 % (Re 1000), 10.3 % (Re 1414), 11.1 % (Re 2000), i.e. it ranks the non-converged Re 1000 as *better* than the
+  // converged Re 2000, so any absolute threshold on it is a knob. What discriminates cleanly is the instant of the
+  // peak: at Re 1000 it moved 0.44 between the last two rungs, against ≤ 0.15 everywhere else. L1 and the worst
+  // instant are reported as diagnostics; the gate is the peak instant (and HTOL only if explicitly tightened).
+  const histOK = dTpeak != null && dTpeak <= TPEAK && (HTOL >= 1 || (dL1 != null && dL1 < HTOL));
+  const ok = scalarOK && histOK;
   if (ok) conv.push({ Re, nu: last.nu, om: last.omPeak, omI: last.omI, N: last.N, Z: last.Zpeak, P: last.Ppeak, I10: last.I10, fp32: L.some(r => r.fp32) });
   const reG = Math.round(4.0 * Re / 100) * 100;   // Γ ≈ 4.0 for the standard tube preset
   const series = L.map(r => r.omI != null ? r.omI.toFixed(1) : '(' + r.omPeak.toFixed(1) + ')').join(' → ');
-  if (MD) out += `| ${Re} | ≈ ${reG.toLocaleString()} | ${L.map(r => r.N).join(', ')} | ${series} | ${change == null ? '—' : (100 * change).toFixed(1) + ' %'}${useI ? '' : ' (grid)'} | ${band == null ? '—' : '±' + (100 * band).toFixed(1) + ' %'} | ${last.omPeak.toFixed(1)} | ${ok ? '**yes**' : 'no'} | ${L.some(r => r.fp32) ? 'float32 (exploration)' : 'float64'} |\n`;
-  else out += `Re ${String(Re).padStart(5)}  N ${L.map(r => r.N).join(',').padEnd(20)} interp ${series.padEnd(34)} last ${change == null ? '  —  ' : (100 * change).toFixed(1).padStart(5) + ' %'}  band ${band == null ? '  —  ' : ('±' + (100 * band).toFixed(1) + ' %').padStart(7)}  ${ok ? 'CONVERGED' : 'not converged'}  ${L.some(r => r.fp32) ? '(fp32)' : '(fp64)'}\n`;
+  const hs = dL1 == null ? '—' : (100 * dL1).toFixed(1) + ' %' + (dHist != null ? ' (worst ' + (100 * dHist).toFixed(0) + ' %)' : ''), ts = dTpeak == null ? '—' : dTpeak.toFixed(2);
+  const why = ok ? 'yes' : (scalarOK && !histOK) ? 'no (history)' : (!scalarOK && histOK) ? 'no (scalar)' : 'no';
+  if (MD) out += `| ${Re} | ≈ ${reG.toLocaleString()} | ${L.map(r => r.N).join(', ')} | ${series} | ${change == null ? '—' : (100 * change).toFixed(1) + ' %'}${useI ? '' : ' (grid)'} | ${band == null ? '—' : '±' + (100 * band).toFixed(1) + ' %'} | ${hs} | ${ts} | ${ok ? '**yes**' : why} | ${L.some(r => r.fp32) ? 'float32 (exploration)' : 'float64'} |\n`;
+  else out += `Re ${String(Re).padStart(5)}  N ${L.map(r => r.N).join(',').padEnd(20)} interp ${series.padEnd(34)} last ${change == null ? '  —  ' : (100 * change).toFixed(1).padStart(5) + ' %'}  band ${band == null ? '  —  ' : ('±' + (100 * band).toFixed(1) + ' %').padStart(7)}  hist ${hs.padStart(5)}  Δt ${ts.padStart(5)}  ${ok ? 'CONVERGED' : why.toUpperCase()}  ${L.some(r => r.fp32) ? '(fp32)' : '(fp64)'}\n`;
 }
 // scaling fit over the converged Reynolds numbers: peak ∝ ν^−p
 if (conv.length >= 2) {
