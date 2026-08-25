@@ -7,7 +7,7 @@ tune and no third answer.
 
 ```bash
 cd research/nslab-prove/cap
-python run-all.py          # all eight suites, 212 checks, ~4.5 minutes (R1b is most of it)
+python run-all.py          # all eight suites, 223 checks, ~4.5 minutes (R1b is most of it)
 ```
 
 Requires `mpmath` only (already present with sympy). Pure Python, arbitrary precision, outward-rounding interval
@@ -35,7 +35,7 @@ arithmetic — slow, and deliberately so: at this scale a reader auditing every 
 | `auditor_r4.py` | **Machine C** | R4 eigenpairs: rebuilds the operator from the parameters and recomputes Y₀ exactly — forms no matrix and inverts nothing |
 | `emit_certs.py` | contract | runs the provers and writes their certificates into `certs/` |
 | `run-all.py` | | one command, eight suites, and it fails loudly — the `build.js --verify` of this line |
-| `test_r0/r1/r1b/r2/r3/r4/r4b/audit.py` | | 11 / 25 / 22 / 18 / 17 / 18 / 32 / 69 checks — **212** in total |
+| `test_r0/r1/r1b/r2/r3/r4/r4b/audit.py` | | 11 / 25 / 22 / 18 / 17 / 18 / 43 / 69 checks — **223** in total |
 
 ## Status
 
@@ -47,14 +47,20 @@ arithmetic — slow, and deliberately so: at this scale a reader auditing every 
 | **R2** | De Gregorio steady state | **ALL PASS** for the Galerkin truncation; the PDE statement is not claimed, see below |
 | **R3** | the derivative-loss cure | **ALL PASS** — preconditioned Burgers certified against the exact u = sin x, and the failure boundary measured. **Sound, and aimed at the wrong door** |
 | **R4** | compact-operator eigenpairs | **ALL PASS** — certified against `λ = 1 + ρ` and `λ = (13 ± √73)/8`; a merely *bounded* operator is refused |
-| **R4b** | the De Gregorio profile operator | **ALL PASS**, and **not a certificate** — six published eigenvalues reproduced to 9.3e-5 by ordinary quadrature |
+| **R4b** | the De Gregorio profile operator | **ALL PASS**, and **not a certificate** — but the matrix entries are now **closed forms in Si and Ci**, and all six eigenvalues land inside the published values' rounding intervals |
 | **Machine C** | independent audit | **ALL PASS** — audits **nine** certificates across R0/R1a/R1b/R2/R3/**R4**, rejects all **44** tampered ones, agrees with the prover to **6.4e-23** (quadratic) and 3.4e-21 (CLM) |
 | R5 | 2D Boussinesq / axisymmetric Euler | out of reach alone, and §R3 now says *why* with a number |
 
 **The gap that remains:** Machine C reaches R4 but **not R4b**. That is not an oversight — R4b is deliberately not
-a certificate, so there is nothing to audit until its improper integrals are enclosed rigorously. R4b is therefore
-still checked only by a suite sharing an author and an implementation with the code it tests, and that is the
-correct description of its status rather than a defect to hide.
+a certificate, so there is nothing to audit yet. R4b is therefore still checked only by a suite sharing an author
+and an implementation with the code it tests, and that is the correct description of its status rather than a
+defect to hide.
+
+**What that gap now costs has fallen sharply.** The R4b matrix entries were an improper oscillatory integral
+evaluated by quadrature, and "rigorous quadrature" was the named next task. That integral has a **closed form**
+(below), so what remains is rigorous enclosures of `Si(2nπ)` and `Ci(2nπ)` — convergent series with classical
+remainder bounds, the same shape of problem `auditor_r01.py` already solves for π, sin and cos — plus a proven
+bound on the Galerkin truncation error, which is the genuinely open piece.
 
 ## What R1b establishes, and why it is the one that matters
 
@@ -216,7 +222,23 @@ Four things in the source are exactly known, and are therefore what this module 
 **What the source does not contain, and is therefore not claimed here:** no closed form for any `λ_n`, no
 numerical value of `c_ω`, no profile point values, **no Fourier or Chebyshev matrix representation**, and **no
 interval arithmetic or CAP content whatsoever** — their proof is analytic. The sine-basis Galerkin discretisation
-here is *ours*, and at K = 8 it reproduces all six:
+here is *ours*.
+
+**The matrix entries have a closed form, and finding it corrected the quadrature it replaced.** From
+`ŝ_n(ξ) = 2i(−1)ⁿ nπ sin ξ/(n²π²−ξ²)`, the entry is `4π(−1)^{n+m} nm · I(n,m)` with `I` an improper oscillatory
+integral. Partial fractions plus the fact that `a = nπ` makes `cos(2(u ∓ a)) = cos 2u` collapses the two divergent
+pieces onto the *same* integral, so they cancel and leave something finite:
+
+    A_{nn} = 2n·Si(2nπ)
+    A_{nm} = −( 2nm(−1)^{n+m} / (π(m²−n²)) )·[ ln(m/n) − Ci(2mπ) + Ci(2nπ) ]      (n ≠ m)
+
+The quadrature these replace truncated the tail at `(4·max(n,m)+5)π`, and that tail is `~1/(4Ξ²)`, so every entry
+carried a **relative error of order 1e-4** — the same order as the 2e-4 tolerance the published-eigenvalue check
+was using. The grading test is that extending the truncation walks the quadrature *onto* the closed form:
+1.1e-4 → 1.5e-5 → 1.5e-6 at n=1, m=2 as the breaks go 13 → 120 → 600. Both routes are kept, because two
+implementations sharing no derivation is what established which one was wrong.
+
+With exact entries, at K = 8:
 
 | n | ours (K = 8) | published | difference |
 |---|---|---|---|
@@ -228,8 +250,13 @@ here is *ours*, and at K = 8 it reproduces all six:
 | 6 | 0.051917606 | 0.0520 | 8.2e-5 |
 
 Every value also passes the Corollary 3.7 bracket, and K = 4 lies below K = 8 which lies below the upper bracket —
-monotone from below, as a projected supremum must be. All of which is a check on the **transcription**, not a
-certificate. The suite additionally requires the bracket to *reject* `λ̃_n` itself, because its upper bound is
+monotone from below, as a projected supremum must be.
+
+And the check that only became available once the entries were exact: at **K = 24 every one of the six lies inside
+the rounding interval of the published four-figure value** — 0.2896 means [0.28955, 0.28965], and ours is
+0.2895723. That is a far stronger statement than agreeing to 2e-4, and it is the one that would catch a
+transcription error the loose tolerance would not. (K = 16 clears the tightest interval by only 7e-9; K = 24 by
+6.9e-6, which is why the suite uses 24.) All of which remains a check on the **transcription**, not a certificate. The suite additionally requires the bracket to *reject* `λ̃_n` itself, because its upper bound is
 strict — a theorem, not a convenience, and a gate that accepted the endpoint would be a weaker gate for no reason.
 
 **The honest state of the certified step.** Certifying `λf = M(f)` needs exactly two things: rigorous enclosures

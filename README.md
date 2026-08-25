@@ -113,7 +113,7 @@ trustworthy. [`research/nslab-prove/`](research/nslab-prove/) is the other kind 
 theorem rather than a measurement.
 
 ```bash
-cd research/nslab-prove/cap && python run-all.py     # 8 suites, 194 checks, mpmath only
+cd research/nslab-prove/cap && python run-all.py     # 8 suites, 223 checks, mpmath only
 ```
 
 The architecture is three machines with a frozen contract between them: a **Conjecture Engine** (fast, unrigorous,
@@ -129,7 +129,7 @@ searching harder costs only electricity.
 | **R2** | A De Gregorio steady state — for the Galerkin truncation only, and it says so |
 | **R3** | The textbook cure for derivative loss, and a measurement of exactly where it stops |
 | **R4** | Eigenpairs of a compact operator — the route the literature actually uses for profile equations |
-| **R4b** | The De Gregorio self-similar profile operator — transcribed and reproduced, and **deliberately not certified**: the rigorous quadrature it would need is named rather than faked |
+| **R4b** | The De Gregorio self-similar profile operator — transcribed and reproduced, and **deliberately not certified**. Its matrix entries turned out to have a closed form in Si and Ci, which removed the improper integral the certification was waiting on — and corrected the quadrature it replaced |
 
 Every rung is graded against an answer somebody else computed: CLM's T = 2, the Catalan numbers, a published
 exact self-similar solution, a steady state that is the known ground state of a documented manifold, and

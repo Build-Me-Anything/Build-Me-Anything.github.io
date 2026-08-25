@@ -5,7 +5,7 @@ a DNS run is a measurement with error bars that shrink if you spend more, and a 
 list of inequalities that is either true or refused. No quantity of the first becomes the second.
 
 ```bash
-cd research/nslab-prove/cap && python run-all.py     # 8 suites, 194 checks, ~4.5 min, mpmath only
+cd research/nslab-prove/cap && python run-all.py     # 8 suites, 223 checks, ~4.5 min, mpmath only
 ```
 
 It prints `CAP SUITES: ALL PASS (8 suites)` or it fails loudly. There is no third answer and no tolerance to tune.
@@ -29,7 +29,7 @@ It prints `CAP SUITES: ALL PASS (8 suites)` or it fails loudly. There is no thir
 | **R2** De Gregorio steady state | certificate **for the Galerkin truncation only**; the PDE statement is not claimed |
 | **R3** preconditioning cure for derivative loss | certificate — and **the wrong door**, see the literature check |
 | **R4** compact-operator eigenpairs | certificate — the route the literature actually uses |
-| **R4b** the De Gregorio profile operator | **not a certificate** — transcription plus ordinary quadrature, deliberately |
+| **R4b** the De Gregorio profile operator | **not a certificate** — transcription, deliberately; entries now closed forms in Si and Ci |
 | **R5** 2D Boussinesq / axisymmetric Euler | out of reach alone, and `cap/README.md` §R3 says *why* with a number |
 | **Machine C** the auditor | audits R0/R1a/R1b/R2/R3/**R4** in exact rationals — 44 tampered certificates rejected; **not R4b**, which is not a certificate to audit |
 
@@ -56,17 +56,27 @@ blow-up" without the domain.
 - **Certificates cannot vouch for their own relevance.** Soundness is machine-checkable. Whether the theorem is
   the one the problem needs is not — that is what R3 cost, and what the fleet exists to catch.
 
-## The next task, and it is well-posed
+## The next task, and it just got smaller
 
-Certifying `λf = M(f)` at R4b needs exactly two things: rigorous enclosures of
-`A_{nm} = ⟨s_n, s_m⟩_{Ḣ^{1/2}(ℝ)}`, which are improper integrals currently done by ordinary quadrature, and a
-proven decay bound on them. The machinery that consumes both is built and graded at R4.
+Certifying `λf = M(f)` at R4b needed rigorous enclosures of `A_{nm} = ⟨s_n, s_m⟩_{Ḣ^{1/2}(ℝ)}` — improper
+oscillatory integrals — plus a proven bound on the truncation. **Those integrals turn out to have a closed form:**
 
-That is now the *only* substantial gap. The auditor gap is closed: `emit_certs.py` emits an R4 certificate on a
-dyadic instance and `auditor_r4.py` re-derives it in exact rationals, forming no matrix and inverting nothing. It
-rejected a genuine certificate on its first run — the perturbation constant had been written as a decimal string
-that was 2⁻²⁶ truncated at 17 digits, so prover and certificate denoted different numbers — which is the clearest
-demonstration this project has that an independent implementation earns its keep.
+    A_{nn} = 2n·Si(2nπ)
+    A_{nm} = −( 2nm(−1)^{n+m} / (π(m²−n²)) )·[ ln(m/n) − Ci(2mπ) + Ci(2nπ) ]      (n ≠ m)
+
+So the improper integral is gone, and two pieces remain: **rigorous enclosures of `Si(2nπ)` and `Ci(2nπ)`** —
+convergent series with classical remainder bounds, the same shape of problem `auditor_r01.py` already solves for
+π, sin and cos — and **a proven bound on the Galerkin truncation error**, which is the genuinely open one.
+
+Finding the closed form also corrected the quadrature it replaced, which carried a relative error of order 1e-4
+from truncating its tail — the same order as the tolerance the published-eigenvalue check was using. With exact
+entries all six eigenvalues land inside the *rounding intervals* of the published four-figure values.
+
+The auditor gap is closed: `emit_certs.py` emits an R4 certificate on a dyadic instance and `auditor_r4.py`
+re-derives it in exact rationals, forming no matrix and inverting nothing. It rejected a genuine certificate on
+its first run — the perturbation constant had been written as a decimal string that was 2⁻²⁶ truncated at 17
+digits, so prover and certificate denoted different numbers — which is the clearest demonstration this project
+has that an independent implementation earns its keep.
 
 ---
 

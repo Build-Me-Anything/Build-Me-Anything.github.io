@@ -77,13 +77,29 @@ is a check on the transcription, not a certificate.
 
 The honest state of the certified step
 --------------------------------------
-Certifying `λf = M(f)` needs rigorous enclosures of the matrix entries `A_{nm} = ⟨s_n, s_m⟩_{Ḣ^{1/2}(ℝ)}`, which
-are improper integrals, plus a proven bound on their tail. Neither exists here yet. So this module delivers: the
-exact operator identity (checkable), the comparison operator's certified eigenpairs (R4 machinery, closed-form
-answers), the published bracket as an acceptance gate, and a Galerkin reproduction clearly labelled unrigorous.
-The rigorous quadrature is the next piece of work, and naming it is more useful than pretending it is done.
+This module delivers: the exact operator identity (checkable), the comparison operator's certified eigenpairs
+(R4 machinery, closed-form answers), the published bracket as an acceptance gate, and a Galerkin reproduction
+clearly labelled unrigorous. It is **not** a certificate and does not pretend to be one.
+
+What changed on 2026-08-25: the matrix entries were an **improper oscillatory integral** evaluated by ordinary
+quadrature, and "rigorous quadrature" was named as the next piece of work. That integral turns out to have a
+**closed form** — see `A_entry` — so the work required is now different and considerably smaller:
+
+    A_{nn} = 2n·Si(2nπ)
+    A_{nm} = −( 2nm(−1)^{n+m} / (π(m²−n²)) )·[ ln(m/n) − Ci(2mπ) + Ci(2nπ) ]      (n ≠ m)
+
+Certifying `λf = M(f)` therefore needs **two** things, neither of them an improper integral:
+
+1. rigorous enclosures of `Si(2nπ)` and `Ci(2nπ)` — convergent series with classical remainder bounds, the same
+   shape of problem `auditor_r01.py` already solves for π, sin and cos; and
+2. a proven bound on the **Galerkin truncation** error, which is the genuinely open piece.
+
+The closed form also **corrected the quadrature it replaced**, whose tail truncation left a relative error of
+order 1e-4 in every entry — the same order as the tolerance the published-eigenvalue check was using. With exact
+entries all six eigenvalues land inside the *rounding intervals* of the published four-figure values, which is a
+much stronger grading statement than the one this module could make before.
 """
-from mpmath import mp, mpf, pi as MPPI, sin as msin, sqrt as msqrt, quad, inf
+from mpmath import mp, mpf, pi as MPPI, sin as msin, sqrt as msqrt, quad, inf, si as msi, ci as mci
 from ivutil import ival, lo, hi
 
 # Published eigenvalues, Huang-Tong-Wei Appendix A, Figure 1.
@@ -152,19 +168,62 @@ def c_functional_castro():
 # 3. the sine-basis Galerkin discretisation - OURS, and unrigorous
 # ------------------------------------------------------------------------------------------------------------
 
-def _A_entry(n, m):
-    """A_{nm} = ⟨s_n, s_m⟩_{Ḣ^{1/2}(ℝ)} for s_n = χ_{[−1,1]} sin(nπx).
+def A_entry(n, m):
+    """A_{nm} = ⟨s_n, s_m⟩_{Ḣ^{1/2}(ℝ)} for s_n = χ_{[−1,1]} sin(nπx), **in closed form**.
 
-    From ŝ_n(ξ) = 2i(−1)^n nπ sin ξ/(n²π²−ξ²),
+        A_{nn} = 2n·Si(2nπ)
+        A_{nm} = −( 2nm(−1)^{n+m} / (π(m²−n²)) ) · [ ln(m/n) − Ci(2mπ) + Ci(2nπ) ]      (n ≠ m)
 
-        A_{nm} = 4π(−1)^{n+m} nm ∫₀^∞ ξ sin²ξ / ((n²π²−ξ²)(m²π²−ξ²)) dξ
+    Neither the representation nor these formulae are in the paper; both were derived here, and are graded below.
 
-    All singularities are removable — sin²ξ has a double zero at every ξ = kπ. **This representation is not in the
-    paper**; it was derived here and is validated only by reproducing their six published eigenvalues. The
-    quadrature below is ordinary, not rigorous, so nothing computed from it is a certificate.
+    Derivation. From ŝ_n(ξ) = 2i(−1)^n nπ sin ξ/(n²π²−ξ²),
+
+        A_{nm} = 4π(−1)^{n+m} nm · I(n,m),     I(n,m) = ∫₀^∞ ξ sin²ξ / ((a²−ξ²)(b²−ξ²)) dξ,  a = nπ, b = mπ.
+
+    *Off-diagonal.* Partial fractions in ξ² give I = [J(a) − J(b)]/(b²−a²) with J(a) = ∫₀^∞ ξ sin²ξ/(a²−ξ²) dξ.
+    Writing ξ/(ξ²−a²) = ½[1/(ξ−a) + 1/(ξ+a)] and sin²ξ = (1−cos 2ξ)/2, the substitutions t = ξ−a and s = ξ+a
+    **both** yield ∫_a^∞ (1−cos 2u)/u du, because a = nπ makes cos(2(u ∓ a)) = cos 2u; the first uses that
+    (1−cos 2t)/t is odd, so its integral over [−a, a] vanishes. Each J diverges logarithmically, but the divergences
+    are identical and cancel in J(a) − J(b), leaving the **finite** integral
+
+        I(n,m) = −(1/(2(b²−a²))) ∫_a^b (1−cos 2u)/u du = −(1/(2(b²−a²)))·[ ln(b/a) − Ci(2b) + Ci(2a) ].
+
+    *Diagonal.* ξ/(ξ²−a²)² = −½ d/dξ[1/(ξ²−a²)], so integrating by parts (both boundary terms vanish: sin²0 = 0
+    at the left, decay at the right) gives I(n,n) = ½ ∫₀^∞ sin 2ξ/(ξ²−a²) dξ. The same two substitutions give
+    (π/2 + Si(2a)) and (π/2 − Si(2a)) — here sin 2t/t is *even* — so I(n,n) = Si(2a)/(2a).
+
+    **Why this matters for certification.** It removes the improper oscillatory integral entirely. Enclosing A_{nm}
+    rigorously now reduces to enclosing Si and Ci at integer multiples of 2π, which have convergent series with
+    classical remainder bounds — the same shape of problem `auditor_r01.py` already solves for π, sin and cos.
+
+    **And it exposed a defect in the quadrature this replaces.** `A_entry_quadrature` truncates the tail at
+    (4·max(n,m)+5)π, and the tail behaves like ∫ sin²ξ/ξ³ ~ 1/(4Ξ²), so its entries carry a **relative error of
+    order 1e-4** — the same order as the 2e-4 tolerance the published-eigenvalue check was using. Extending the
+    truncation walks the quadrature onto these formulae monotonically (1.1e-4 → 3.9e-7 from 13 to 1200 breaks at
+    n=1, m=2), which is what grades them.
+    """
+    n, m = int(n), int(m)
+    if n == m:
+        return 2 * n * msi(2 * n * MPPI)
+    a, b = n * MPPI, m * MPPI
+    inner = mp.log(mpf(m) / n) - mci(2 * b) + mci(2 * a)
+    return -(2 * n * m * (mpf(-1) ** (n + m)) / (MPPI * (m * m - n * n))) * inner
+
+
+def A_entry_quadrature(n, m, breaks_per_side=None):
+    """The same entry by direct quadrature — kept as an INDEPENDENT route, not as the primary one.
+
+    Two implementations of the same quantity sharing no derivation is the discipline this project applies
+    everywhere else; here it is what established that the closed form above is right and this one is not, at the
+    1e-4 level. `breaks_per_side` extends the truncation: the default reproduces the original behaviour, and
+    raising it converges onto `A_entry`.
+
+    All singularities are removable — sin²ξ has a double zero at every ξ = kπ.
     """
     n, m = int(n), int(m)
     sgn = mpf(-1) ** (n + m)
+    if breaks_per_side is None:
+        breaks_per_side = 4 * max(n, m) + 5
 
     def integrand(xi):
         d1 = (n * MPPI) ** 2 - xi ** 2
@@ -177,7 +236,7 @@ def _A_entry(n, m):
             d2 = (m * MPPI) ** 2 - xi ** 2
         return xi * msin(xi) ** 2 / (d1 * d2)
 
-    breaks = [0] + [k * MPPI for k in range(1, 4 * max(n, m) + 6)] + [inf]
+    breaks = [0] + [k * MPPI for k in range(1, breaks_per_side + 1)] + [inf]
     val = quad(integrand, breaks)
     return 4 * MPPI * sgn * n * m * val
 
@@ -193,7 +252,7 @@ def galerkin_eigenvalues(K=8):
     A = mp.matrix(K, K)
     for i in range(K):
         for j in range(i, K):
-            v = _A_entry(i + 1, j + 1)
+            v = A_entry(i + 1, j + 1)
             A[i, j] = v
             A[j, i] = v
     B = mp.matrix(K, K)
