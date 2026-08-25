@@ -21,7 +21,10 @@ import problem_quadratic as PQ
 import problem_clm_fourier as CF
 import problem_degregorio as DG
 import problem_burgers as BG
-from krawczyk import UNIQUE
+import clm as CLM
+from clm import TrigPoly
+from krawczyk import UNIQUE, refine
+from mpmath import iv as _iv_ctx
 from mpmath import mp, mpf
 
 MU = '0.125'      # 1/8
@@ -34,6 +37,17 @@ DGR = Fraction(1, 1000)   # half-width of the verified box
 BMU = '2.0'       # Burgers viscosity; Z1 = ||ubar||/mu so this must exceed ||ubar|| ~ 1
 BPERT = '0.03125' # 1/32 - exact in binary AND rational, so prover and auditor denote the same number
 BN = 12
+
+
+def exact(x):
+    """An mpf is a dyadic rational - sign * man * 2^exp - so it converts to a Fraction with no loss at all.
+
+    Certificates must carry exact values or the auditor cannot tell a real disagreement from a rounding artefact,
+    and rendering to decimal and reparsing would introduce exactly that ambiguity.
+    """
+    sign, man, expo, _bc = mpf(x)._mpf_
+    v = Fraction(man) * (Fraction(2) ** expo)
+    return -v if sign else v
 
 
 def _up(x):
@@ -130,9 +144,76 @@ def emit_burgers(outdir):
     return path, cert
 
 
+def emit_r0(outdir):
+    """R0: three root enclosures. Endpoints are carried exactly, since an mpf is a dyadic rational."""
+    import json as _json
+    from ivutil import ival
+
+    cases = {}
+
+    f = lambda X: [X[0] * X[0] - ival(2)]
+    Df = lambda X: [[ival(2) * X[0]]]
+    v = refine(f, Df, [ival(1, 2)])
+    cases['sqrt2'] = v
+
+    Fs = lambda X: [X[0] * X[0] + X[1] * X[1] - ival(4), X[0] - X[1]]
+    DFs = lambda X: [[ival(2) * X[0], ival(2) * X[1]], [ival(1), ival(-1)]]
+    cases['system2d'] = refine(Fs, DFs, [ival(1, 2), ival(1, 2)])
+
+    h = lambda X: [_iv_ctx.cos(X[0]) - X[0]]
+    Dh = lambda X: [[-_iv_ctx.sin(X[0]) - ival(1)]]
+    cases['dottie'] = refine(h, Dh, [ival(0, 1)])
+
+    paths = []
+    for case, v in cases.items():
+        if not v.proved:
+            raise SystemExit('R0 case %s did not close: %s' % (case, v.status))
+        path = os.path.join(outdir, 'certificate-r0-%s.json' % case)
+        doc = {
+            'contract': C.CONTRACT_VERSION,
+            'problem': 'r0_enclosure',
+            'case': case,
+            'box': [[str(exact(b.a)), str(exact(b.b))] for b in v.box],
+            'claim': 'The stated function has exactly one zero in this box (Krawczyk), enclosed as given.',
+        }
+        with open(path, 'w', encoding='utf-8') as fh:
+            _json.dump(doc, fh, indent=2)
+        paths.append(path)
+    return paths[0], cases['sqrt2']
+
+
+def emit_r1a(outdir):
+    """R1a: the CLM blow-up time from the closed form, with its complete zero set.
+
+    The certificate carries the zero enclosures and the resulting T. The auditor must confirm the zeros are real,
+    that NONE WAS MISSED, and that T follows - and it does all three by arguments the prover does not use.
+    """
+    import json as _json
+    w = TrigPoly([(1, 1, 0)])                     # omega0 = cos x
+    r = CLM.blowup_time(w)
+    if r['verdict'] != 'BLOWUP':
+        raise SystemExit('R1a prover did not produce a blow-up time: %s' % r.get('reason'))
+    path = os.path.join(outdir, 'certificate-r1a-clm.json')
+    doc = {
+        'contract': C.CONTRACT_VERSION,
+        'problem': 'clm_blowup_time',
+        'omega0': [[1, '1', '0']],                # a_1 = 1, b_1 = 0  ->  cos x
+        'zeros': [[str(exact(z.a)), str(exact(z.b))] for z in r['zeros']],
+        'T': [str(exact(r['T'].a)), str(exact(r['T'].b))],
+        'claim': ('The Constantin-Lax-Majda solution with omega0 = cos x blows up at a time inside this '
+                  'enclosure. The exact answer is T = 2. A statement about the CLM equation only.'),
+    }
+    with open(path, 'w', encoding='utf-8') as fh:
+        _json.dump(doc, fh, indent=2)
+
+    class _S:
+        status = 'BLOWUP'
+    return path, _S()
+
+
 def main(outdir='.'):
     os.makedirs(outdir, exist_ok=True)
-    for fn in (emit_quadratic, emit_clm, emit_degregorio, emit_burgers):
+    for fn in (emit_quadratic, emit_clm, emit_degregorio, emit_burgers, emit_r0, emit_r1a):
         path, cert = fn(outdir)
         print('wrote %s   (%s)' % (os.path.basename(path), cert.status))
     return 0

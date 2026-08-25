@@ -26,6 +26,7 @@ from fractions import Fraction
 
 import auditor
 import auditor_r23
+import auditor_r01
 from auditor import ACCEPT, REJECT
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -48,7 +49,7 @@ def load(which):
 print('\n[1] the auditor is independent: it imports nothing from the prover')
 PROVER_MODULES = {'ell1', 'ivutil', 'radiipoly', 'krawczyk', 'clm', 'problem_quadratic',
                   'problem_clm_fourier', 'problem_degregorio', 'problem_burgers', 'mpmath', 'certificate'}
-for mod in ('auditor.py', 'auditor_r23.py'):
+for mod in ('auditor.py', 'auditor_r23.py', 'auditor_r01.py'):
     src = open(os.path.join(HERE, mod), encoding='utf-8').read()
     imported = set()
     for node in ast.walk(ast.parse(src)):
@@ -188,6 +189,74 @@ check('certificate carries no preconditioner', 'Y' not in d and 'preconditioner'
 v, notes = auditor_r23.audit(d)
 check('and still closes the containment', v == ACCEPT,
       next((n for n in notes if 'K(X)' in n), '')[:90])
+
+
+# --------------------------------------------------------------------------------------------------------
+print('\n[10] R0 enclosures are accepted, and verified WITHOUT constructing any irrational')
+for case in ('sqrt2', 'system2d', 'dottie'):
+    d = load('r0-' + case)
+    v, notes = auditor_r01.audit(d)
+    check(f'r0-{case}: ACCEPT', v == ACCEPT, next((n for n in notes if not n.startswith('REJECT')), '')[:88])
+
+
+def tampered01(which, mutate, label):
+    d = load(which)
+    mutate(d)
+    v, notes = auditor_r01.audit(d)
+    reason = next((n for n in notes if n.startswith('REJECT')), '')
+    check(label, v == REJECT, reason[8:105] if reason else 'ACCEPTED - the auditor missed it')
+
+
+print('\n[11] R0 tampering must be rejected')
+tampered01('r0-sqrt2', lambda d: d.__setitem__('box', [['1', '13/10']]),
+           'r0: box that does not bracket sqrt(2)')
+tampered01('r0-sqrt2', lambda d: d.__setitem__('box', [['3/2', '2']]),
+           'r0: box entirely above sqrt(2)')
+tampered01('r0-dottie', lambda d: d.__setitem__('box', [['0', '1/10']]),
+           'r0: dottie box with no sign change')
+tampered01('r0-system2d', lambda d: d['box'].__setitem__(1, ['0', '1/10']),
+           'r0: one component of the 2D system moved off the root')
+tampered01('r0-sqrt2', lambda d: d.__setitem__('case', 'not_a_case'), 'r0: unknown case refused')
+
+print('\n[12] R1a: the completeness check, which is the one that matters')
+d = load('r1a-clm')
+v, notes = auditor_r01.audit(d)
+check('r1a: ACCEPT with the full zero set', v == ACCEPT,
+      next((n for n in notes if 'completeness' in n), '')[:95])
+
+# THE test. The dyadic-boundary bug threatened exactly this: a zero list that is missing an entry. A short list
+# makes the supremum too small and therefore the blow-up time too LARGE - the dangerous direction, and invisible
+# once the number is written down. The auditor must catch it by its own completeness argument.
+tampered01('r1a-clm', lambda d: d.__setitem__('zeros', d['zeros'][:1]),
+           'r1a: one zero DROPPED from the list')
+tampered01('r1a-clm', lambda d: d.__setitem__('zeros', []), 'r1a: all zeros dropped')
+tampered01('r1a-clm', lambda d: d['zeros'].__setitem__(0, ['1/2', '6/10']),
+           'r1a: a zero enclosure moved off the root')
+tampered01('r1a-clm', lambda d: d.__setitem__('T', ['3', '4']), 'r1a: T falsified')
+tampered01('r1a-clm', lambda d: d.__setitem__('omega0', [[1, '0', '1']]),
+           'r1a: omega0 changed to sin x, so the quoted zeros are no longer its zeros')
+
+print('\n[13] the transcendental machinery is self-contained and correct')
+from fractions import Fraction as _Fr
+PI = auditor_r01.pi_interval()
+# 333/106 < pi < 355/113 are classical bounds; an independent check on the Machin computation.
+check('pi bracket agrees with the classical 333/106 < pi < 355/113',
+      PI.lo > _Fr(333, 106) and PI.hi < _Fr(355, 113),
+      f'width {float(PI.width()):.2e}')
+c1 = auditor_r01.cos_bracket(_Fr(1))
+# cos(1) = 0.54030230586813971740... The bracket here is narrower than 1e-80, so a 16-digit ROUNDED literal
+# lies outside it - correctly. An earlier version of this test asserted the rounded value was inside and failed;
+# the defect was the test's, not the series'. The right assertion is a genuine two-sided bracket.
+check('cos(1) is bracketed strictly between consecutive 16-digit decimals',
+      _Fr(5403023058681397, 10 ** 16) < c1.lo and c1.hi < _Fr(5403023058681398, 10 ** 16),
+      f'width {float(c1.width()):.2e}')
+s0 = auditor_r01.sin_bracket(_Fr(0))
+check('sin(0) = 0 exactly', s0.lo <= 0 <= s0.hi)
+# cos^2 + sin^2 = 1 at a rational point, as an independent consistency check on both series
+q = _Fr(7, 5)
+cc, ss = auditor_r01.cos_bracket(q), auditor_r01.sin_bracket(q)
+tot = cc * cc + ss * ss
+check('cos^2 + sin^2 = 1 at q = 7/5', tot.lo <= 1 <= tot.hi, f'{tot}')
 
 print('\n' + ('AUDIT: ALL PASS' if not FAILS else f'AUDIT: {len(FAILS)} FAILURE(S) -> ' + ', '.join(FAILS)))
 sys.exit(1 if FAILS else 0)
