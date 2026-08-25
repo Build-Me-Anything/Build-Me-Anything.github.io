@@ -1,4 +1,4 @@
-# The CAP machinery — R0, R1, R2
+# The CAP machinery — R0 to R3
 
 Working code for the rigorous-numerics line described in
 [`../Certified Blow-Up — System Architecture.md`](../Certified%20Blow-Up%20—%20System%20Architecture.md). This is
@@ -7,7 +7,7 @@ tune and no third answer.
 
 ```bash
 cd research/rigorous/cap
-python run-all.py          # all four suites, 67 checks, ~4 minutes
+python run-all.py          # all five suites, 84 checks, ~5 minutes
 ```
 
 Requires `mpmath` only (already present with sympy). Pure Python, arbitrary precision, outward-rounding interval
@@ -25,7 +25,8 @@ arithmetic — slow, and deliberately so: at this scale a reader auditing every 
 | `problem_quadratic.py` | **R1b** | quadratic convolution equation with the exact Catalan solution — the only problem with Z₂ > 0 |
 | `problem_clm_fourier.py` | **R1b** | CLM as a fixed point in ℓ¹_ν; certified lower bound on T |
 | `problem_degregorio.py` | **R2** | De Gregorio steady state, Galerkin certificate, and where the machinery stops |
-| `test_r0/r1/r1b/r2.py` | | 10 / 16 / 21 / 20 checks |
+| `problem_burgers.py` | **R3** | the derivative-loss cure by analytic preconditioning, and the measured point where it fails |
+| `test_r0/r1/r1b/r2/r3.py` | | 10 / 16 / 21 / 20 / 17 checks |
 
 ## Status
 
@@ -35,7 +36,8 @@ arithmetic — slow, and deliberately so: at this scale a reader auditing every 
 | **R1a** | CLM blow-up time, closed form | **ALL PASS** — T = 2 enclosed to width 4.6e-41 |
 | **R1b** | radii polynomials in ℓ¹_ν | **ALL PASS** — certified **T ≥ 2**, sharp; enclosure radius within 0.0001 % of the true distance |
 | **R2** | De Gregorio steady state | **ALL PASS** for the Galerkin truncation; the PDE statement is blocked, see below |
-| R3 | 2D Boussinesq / axisymmetric Euler | out of scope alone |
+| **R3** | the derivative-loss cure | **ALL PASS** — preconditioned Burgers certified against the exact u = sin x, and the failure boundary measured |
+| R3 proper | 2D Boussinesq / axisymmetric Euler | out of reach alone, and §R3 now says *why* with a number |
 
 ## What R1b establishes, and why it is the one that matters
 
@@ -67,6 +69,43 @@ document — the part no computer supplies — and inventing it here, against no
 certificate indistinguishable from the sound ones and worth nothing.
 
 R2 therefore reports what it can prove, and locates the wall precisely instead of asserting one exists.
+
+## R3 — the cure for derivative loss, and the measured reason it does not reach Euler
+
+R2's obstruction is that the transport term loses a derivative while multiplication by m is unbounded on
+ℓ¹_ν. The standard cure is **analytic preconditioning**: find a leading operator L whose inverse gains more
+derivatives than the nonlinearity loses, and solve the fixed point of L⁻¹ applied to the rest.
+
+R3 implements that cure on the smallest problem that genuinely needs it — steady viscous Burgers,
+`u·u_x = μ·u_xx + f`, whose nonlinearity loses exactly one derivative — with the forcing chosen so that
+**u = sin x is the exact solution**. With `L = μ∂_xx`, the operator
+
+    K = L⁻¹ ∘ ∂_x,   symbol −i/(μ·m),   |symbol| ≤ 1/μ
+
+is **bounded**, the derivative is absorbed, and every bound from R1b applies unchanged. The certificate closes and
+its ball contains sin x.
+
+**Then the interesting part.** The tail bound is `‖ū‖/(μ·(|n|−N))`, so:
+
+| n | Burgers bound | De Gregorio bound |
+|---|---|---|
+| 9 | 0.500 | 9 |
+| 16 | 0.0625 | 16 |
+| 32 | 0.0208 | 32 |
+| 64 | 0.00893 | 64 |
+
+Z₁ is a **supremum over columns**. A decaying sequence has one; a growing sequence does not. And sweeping μ
+downward toward the inviscid limit, the verifier refuses exactly when it should:
+
+    mu=4.0 closes (Z1=0.255)   mu=2.0 closes (0.51)   mu=1.5 closes (0.68)
+    mu=1.0 REFUSED (1.02)      mu=0.5 REFUSED (2.04)  mu=0.25 REFUSED (4.08)
+
+Z₁ = ‖ū‖/μ crosses 1 at μ = 1 and nothing closes below it. **Euler and De Gregorio sit at μ = 0.** The obstruction
+is therefore not a tuning problem, a precision problem or a coding problem: there is no dissipative operator to
+invert, and the method has no purchase at all. That is why Chen and Hou needed a bespoke framework and years of
+analysis for Euler with boundary, and it is why R3 proper is not reachable by extending this file.
+
+Stating it with a number beats asserting it in prose, which is what the earlier drafts did.
 
 ## The three failures worth keeping
 
