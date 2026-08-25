@@ -10,6 +10,8 @@ SUITES = [('R0   Krawczyk root enclosure', 'test_r0.py'),
           ('R1b  radii polynomials in ell^1_nu (the route that transfers)', 'test_r1b.py'),
           ('R2   De Gregorio steady state, Galerkin', 'test_r2.py'),
           ('R3   preconditioned Burgers: the derivative-loss cure, and its limit', 'test_r3.py'),
+          ('R4   compact-operator eigenpairs: the route the literature uses', 'test_r4.py'),
+          ('R4b  the De Gregorio profile operator, against Huang-Tong-Wei', 'test_r4b.py'),
           ('C    Machine C: independent audit in exact rational arithmetic', 'test_audit.py')]
 
 # Machine C audits certificates, so they have to exist. Emitting them here rather than inside the audit
