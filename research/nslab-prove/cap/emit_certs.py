@@ -21,6 +21,7 @@ import problem_quadratic as PQ
 import problem_clm_fourier as CF
 import problem_degregorio as DG
 import problem_burgers as BG
+import problem_eigen as PE
 import clm as CLM
 from clm import TrigPoly
 from krawczyk import UNIQUE, refine
@@ -37,6 +38,12 @@ DGR = Fraction(1, 1000)   # half-width of the verified box
 BMU = '2.0'       # Burgers viscosity; Z1 = ||ubar||/mu so this must exceed ||ubar|| ~ 1
 BPERT = '0.03125' # 1/32 - exact in binary AND rational, so prover and auditor denote the same number
 BN = 12
+EIGN = 14         # R4 block size
+EIGVB = 2         # eigenvector decay base: v_m = 2^-m
+EIGDB = 4         # diagonal decay base:   d_m = 4^-m, so tau(n) = 4^-n -> 0, which IS the compactness
+EIGLAM = '1.375'  # 11/8 - dyadic
+EIGK = 20         # perturbed mode; MUST exceed EIGN so Y0 is auditable without the preconditioner
+EIGCEXP = 26      # perturbation is 2^-EIGCEXP, as an exponent so no decimal string can misrepresent it
 
 
 def exact(x):
@@ -211,9 +218,51 @@ def emit_r1a(outdir):
     return path, _S()
 
 
+def emit_eigen(outdir):
+    """R4: the compact-operator eigenpair, on the dyadic instance so the auditor can recompute exactly.
+
+    Two choices here are what make this certificate auditable at all, and both are deliberate:
+
+    * **The dyadic instance, not the geometric one.** `problem_eigen.dyadic_instance` picks the eigenvector and
+      derives the operator, so every number is a dyadic rational and prover and auditor denote the same values.
+      The 1/m² instance the R4 suite headlines cannot do that — see that function's docstring.
+    * **The perturbation sits above N.** A is the exact inverse of the finite block on modes ≤ N and −1/λ̄ times
+      the identity above it. A residual confined above N is therefore mapped by the closed-form half of A, and Y₀
+      becomes reproducible without the preconditioner — exactly the trick `_quadratic_bounds` uses at R1b, where
+      F(ā) is supported on modes N+1..2N. Perturb below N and only the prover could ever check its own Y₀.
+    """
+    cert, T, vbar, lam = PE.prove_dyadic(lam=EIGLAM, nu=NU, N=EIGN, vbase=EIGVB, dbase=EIGDB,
+                                         kpert=EIGK, cexp=EIGCEXP)
+    if not cert.proved:
+        raise SystemExit('eigen prover did not close: ' + cert.reason)
+    M = 3 * EIGN
+    abar = []
+    for m in range(1, M + 1):
+        v = Fraction(1, EIGVB ** m)
+        if m == EIGK:
+            v += Fraction(1, 2 ** EIGCEXP)
+        abar.append((v, Fraction(0)))
+    path = os.path.join(outdir, 'certificate-r4-eigen.json')
+    C.write(path,
+            problem='eigen_dyadic',
+            params={'N': EIGN, 'M': M, 'nu': Fraction(3, 2), 'lam': Fraction(11, 8),
+                    'vbase': EIGVB, 'dbase': EIGDB, 'kpert': EIGK},
+            abar=abar,
+            bounds={'Y0': _up(cert.Y0), 'Z1': _up(cert.Z1), 'Z2': _up(cert.Z2)},
+            r=_up(cert.r),
+            claim=('A unique eigenpair (v, lambda) of the compact operator T = D + u<.,w> exists within r of '
+                   '(vbar, lambdabar) in ell^1_nu x R, subject to the phase condition <v,w> = 1. A statement '
+                   'about this operator only - not about De Gregorio, and not about any PDE.'),
+            notes={'operator': 'd_m = dbase^-m, v_m = vbase^-m, u_m = v_m*(lam - d_m), w = {1: vbase}',
+                   'exact_eigenpair': 'exact by construction: (Tv)_m = d_m v_m + u_m<v,w> = lam v_m for every m',
+                   'why_dyadic': 'so the prover mpf values and the auditor Fractions denote the same numbers',
+                   'why_kpert_above_N': 'A = -(1/lam)*I above N, so Y0 is reachable without the preconditioner'})
+    return path, cert
+
+
 def main(outdir='.'):
     os.makedirs(outdir, exist_ok=True)
-    for fn in (emit_quadratic, emit_clm, emit_degregorio, emit_burgers, emit_r0, emit_r1a):
+    for fn in (emit_quadratic, emit_clm, emit_degregorio, emit_burgers, emit_r0, emit_r1a, emit_eigen):
         path, cert = fn(outdir)
         print('wrote %s   (%s)' % (os.path.basename(path), cert.status))
     return 0

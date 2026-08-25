@@ -7,7 +7,7 @@ tune and no third answer.
 
 ```bash
 cd research/nslab-prove/cap
-python run-all.py          # all eight suites, 194 checks, ~4.5 minutes (R1b is most of it)
+python run-all.py          # all eight suites, 212 checks, ~4.5 minutes (R1b is most of it)
 ```
 
 Requires `mpmath` only (already present with sympy). Pure Python, arbitrary precision, outward-rounding interval
@@ -32,9 +32,10 @@ arithmetic — slow, and deliberately so: at this scale a reader auditing every 
 | `auditor.py` | **Machine C** | independent re-check of the radii-polynomial certificates (R1b), exact rationals |
 | `auditor_r23.py` | **Machine C** | R2 and R3: exact rational **interval** arithmetic for the Krawczyk verdict, and the preconditioned Burgers bounds |
 | `auditor_r01.py` | **Machine C** | R0 enclosures and R1a's completeness check, with its own π, sin and cos from series with proved remainders |
+| `auditor_r4.py` | **Machine C** | R4 eigenpairs: rebuilds the operator from the parameters and recomputes Y₀ exactly — forms no matrix and inverts nothing |
 | `emit_certs.py` | contract | runs the provers and writes their certificates into `certs/` |
 | `run-all.py` | | one command, eight suites, and it fails loudly — the `build.js --verify` of this line |
-| `test_r0/r1/r1b/r2/r3/r4/r4b/audit.py` | | 11 / 25 / 22 / 18 / 17 / 18 / 32 / 51 checks — **194** in total |
+| `test_r0/r1/r1b/r2/r3/r4/r4b/audit.py` | | 11 / 25 / 22 / 18 / 17 / 18 / 32 / 69 checks — **212** in total |
 
 ## Status
 
@@ -47,13 +48,13 @@ arithmetic — slow, and deliberately so: at this scale a reader auditing every 
 | **R3** | the derivative-loss cure | **ALL PASS** — preconditioned Burgers certified against the exact u = sin x, and the failure boundary measured. **Sound, and aimed at the wrong door** |
 | **R4** | compact-operator eigenpairs | **ALL PASS** — certified against `λ = 1 + ρ` and `λ = (13 ± √73)/8`; a merely *bounded* operator is refused |
 | **R4b** | the De Gregorio profile operator | **ALL PASS**, and **not a certificate** — six published eigenvalues reproduced to 9.3e-5 by ordinary quadrature |
-| **Machine C** | independent audit | **ALL PASS** — audits **eight** certificates across R0/R1a/R1b/R2/R3, rejects all **31** tampered ones, agrees with the prover to **6.4e-23** (quadratic) and 3.4e-21 (CLM) |
+| **Machine C** | independent audit | **ALL PASS** — audits **nine** certificates across R0/R1a/R1b/R2/R3/**R4**, rejects all **44** tampered ones, agrees with the prover to **6.4e-23** (quadratic) and 3.4e-21 (CLM) |
 | R5 | 2D Boussinesq / axisymmetric Euler | out of reach alone, and §R3 now says *why* with a number |
 
-**The one gap worth naming in this table:** Machine C does **not** yet reach R4 or R4b. Those two rungs are
-checked only by suites sharing an author and an implementation with the code they test — which is precisely the
-condition the auditor exists to break. Until `emit_certs.py` emits an R4 certificate and an auditor consumes it,
-R4 is graded but not independently audited.
+**The gap that remains:** Machine C reaches R4 but **not R4b**. That is not an oversight — R4b is deliberately not
+a certificate, so there is nothing to audit until its improper integrals are enclosed rigorously. R4b is therefore
+still checked only by a suite sharing an author and an implementation with the code it tests, and that is the
+correct description of its status rather than a defect to hide.
 
 ## What R1b establishes, and why it is the one that matters
 
@@ -282,6 +283,47 @@ R3's tamper set adds one the others cannot have: **μ reduced toward the invisci
 the tail bound `‖ū‖/μ`, finds the certificate's Z₁ now below it, and rejects — the failure boundary of §R3
 showing up as an audit failure rather than as a claim.
 
+### R4 is audited without forming a matrix — and the audit caught a real defect on its first run
+
+The prover reaches Y₀ by building `DF(v̄, λ̄)` as an (N+1)² matrix, inverting it numerically, and pushing the
+residual through interval arithmetic. `auditor_r4.py` reproduces none of that: it **forms no matrix and inverts
+nothing.** It rebuilds the operator from the certificate's parameters, computes the residual of the certificate's
+own ā in exact rationals, and uses the one part of A that is known in closed form — `−1/λ̄` times the identity
+above mode N — to reach Y₀ directly.
+
+Two choices in `emit_certs.emit_eigen` are what make that possible, and both are load-bearing:
+
+* **A dyadic instance, not the geometric one.** The R4 suite's headline problem has `v_m = ρ^m/(λ̄ − 1/m²)`, whose
+  denominator carries `11m² − 8` and is therefore not a power of two — mpf rounds every entry, the residual is
+  ~1e-45 instead of 0, and an exact-rational auditor could never tell a real disagreement from a rounding
+  artefact. So `problem_eigen.dyadic_instance` builds the problem the other way round: fix `v_m = 2^−m` and
+  `d_m = 4^−m`, then *define* `u_m := v_m(λ̄ − d_m)`. The eigen relation then holds identically for any λ̄, and
+  every number in sight is dyadic. Same move as μ = 1/8 keeping the Catalan coefficients dyadic at R1b.
+* **The perturbation sits above N.** A is the exact inverse of the finite block below N and `−1/λ̄·I` above it, so
+  a residual confined above N is mapped by the closed-form half. Perturb below N and only the prover could ever
+  check its own Y₀.
+
+**What it caught.** On its first run against a genuine certificate the auditor returned REJECT: Y₀ understated by
+a relative **1.7e-17**. That is 28 orders of magnitude above the prover's own roundoff at 45 digits, so it was not
+noise. The cause was in the emitter: the perturbation constant was written as the decimal string
+`'1.4901161193847656e-08'`, meaning 2⁻²⁶ — and that string is 2⁻²⁶ **truncated at 17 digits**. The prover
+perturbed by one number while the certificate recorded another, so every bound described a slightly different ā
+than an auditor would read. `prove_dyadic` now takes the *exponent* rather than a decimal string, which removes
+the possibility instead of documenting it.
+
+This is exactly the failure `emit_certs.py`'s own docstring warns about for μ = 1/10, committed anyway, in a file
+that warns about it — and caught within seconds by the first instrument with no shared implementation. It is the
+best argument for Machine C the project has produced, because unlike the tamper cases nobody planted it.
+
+Its tamper set is thirteen: Y₀ halved; Z₂ zeroed; Z₂ a hair below `1/λ̄`; Z₁ pushed above 1; Z₁ below the tail
+contribution compactness alone forces; r shrunk until p(r) ≥ 0; ā altered **above** N so the residual and Y₀ move;
+ā altered **below** N so the residual escapes the tail and Y₀ stops being auditable at all; the phase condition
+broken; ν raised past the eigenvector's radius of convergence; the problem renamed; ā truncated so it disagrees
+with M; and Y₀ doubled. That last one is instructive: doubling is *blunt*, which the auditor does not mind, but it
+also pushes p(r) above zero, so the certificate stops closing at the radius it quotes. Bluntness is free only
+while the polynomial survives it, and the suite asserts both directions so the asymmetry cannot be read as
+leniency.
+
 ### R0 and R1a are audited by a third instrument, which had to build its own transcendentals
 
 `auditor_r01.py` re-checks the root enclosures and — the one that matters — R1a's **completeness** claim, that the
@@ -305,8 +347,8 @@ rather than a failed assertion — "could not prove ω is non-zero on 1 region(s
 Most of its suite is tampering, because an auditor that accepts everything is worse than none — it converts an
 unchecked claim into an apparently checked one. Y₀ halved, Z₁ halved, Z₁ pushed above 1, Z₂ zeroed, r shrunk until
 the polynomial is positive, the problem renamed, and — the one that proves it recomputes rather than re-reads — a
-single coefficient of ā altered. **All eleven are rejected** — and across the three auditors, **all 31** tampered
-certificates are (11 at R1b, 4 at R2, 6 at R3, 5 at R0, 5 at R1a).
+single coefficient of ā altered. **All eleven are rejected** — and across the four auditors, **all 44** tampered
+certificates are (11 at R1b, 4 at R2, 6 at R3, 5 at R0, 5 at R1a, 13 at R4).
 
 And the number worth keeping: on Y₀ the two implementations, one in interval floating point and one in exact
 rationals, sharing no code, agree to **6.4e-23** (quadratic) and **3.4e-21** (CLM) relative.

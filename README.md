@@ -142,9 +142,14 @@ from the prover's. It accepts the real certificates, rejects **31 tampered varia
 prover's interval arithmetic to 6×10⁻²³. Two implementations sharing no code is worth more than any number of
 further tests written by the author of the first.
 
-It reaches R0, R1a, R1b, R2 and R3 — **not yet R4 or R4b**, which are yet to be re-derived independently and are
-so far checked only by suites sharing an author with the code they test. That is the exact condition the auditor
-exists to break, so it is recorded here rather than left to be inferred from the file list.
+It reaches R0, R1a, R1b, R2, R3 and R4 — not R4b, which is deliberately not a certificate and so has nothing to
+audit until its integrals are enclosed rigorously.
+
+The R4 auditor earned its place immediately. On its first run against a *genuine* certificate it returned REJECT,
+over a relative 1.7e-17 in one bound — 28 orders of magnitude above the prover's own roundoff, so not noise. The
+cause was in the emitter: a perturbation constant written as the decimal string `1.4901161193847656e-08`, meaning
+2⁻²⁶, which is 2⁻²⁶ truncated at 17 digits. The prover perturbed by one number while the certificate recorded
+another. Nobody planted that one, and no suite sharing the prover's implementation could have found it.
 
 ### It has already caught us
 

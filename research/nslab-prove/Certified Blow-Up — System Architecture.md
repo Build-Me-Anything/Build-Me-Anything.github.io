@@ -3,9 +3,10 @@
 **Scoping document, NSLab rigorous-numerics line (NSLab-Prove).** Written 2026-08-24, ladder updated 2026-08-25.
 
 **Build status.** The ladder of §4 is built through **R4b**: `cd research/nslab-prove/cap && python run-all.py` runs
-eight suites and reports ALL PASS. R0, R1a, R1b, R3 and R4 carry certificates; R2 carries one for the Galerkin
-truncation only; R4b is transcription and ordinary numerics, deliberately not a certificate. Machine C audits
-R0–R3 and does not yet reach R4.
+eight suites and reports ALL PASS (212 checks). R0, R1a, R1b, R3 and R4 carry certificates; R2 carries one for
+the Galerkin truncation only; R4b is transcription and ordinary numerics, deliberately not a certificate. Machine C
+audits R0–R4 in exact rationals and rejects 44 tampered certificates; it does not reach R4b, which has no
+certificate to audit.
 
 Numerical evidence and proof are different categories, and no quantity of the first becomes the second. This
 document scopes the only architecture on which a computer contributes to a *proof* about the Navier–Stokes or
@@ -115,12 +116,21 @@ not tidiness; it is the thing that makes aggressive search safe.
 | **B** | **Verifier** | certified ball arithmetic | close the contraction, or refuse | a certificate, or a failure with reasons |
 | **C** | **Auditor** | independent implementation | re-check B's inequalities | agreement, or a discrepancy |
 
-**Machine C is built** (`cap/auditor.py`). It imports `fractions`, `json` and `math` — and nothing else; a
-structural test asserts that it shares no module with the prover. It re-derives every bound from the problem
-definition and ā alone in **exact rational arithmetic**, so it cannot have a rounding bug. It accepts both
-real certificates, rejects all eleven tampered variants, and agrees with the prover's interval arithmetic on
-Y₀ to 6e-23. That agreement between two implementations sharing no code is worth more than any number of
-further tests written by the author of the first one.
+**Machine C is built** — four modules now (`auditor.py`, `auditor_r23.py`, `auditor_r01.py`, `auditor_r4.py`),
+covering R0 through R4. Each imports `fractions`, `json` and `math` — and nothing else; a structural test asserts
+that they share no module with the prover. They re-derive every bound from the problem definition and ā alone in
+**exact rational arithmetic**, so they cannot have a rounding bug, and each uses a *different argument* from the
+prover's: IVT and range enclosure where the prover uses Krawczyk, its own preconditioner at R2, series with proved
+remainders for π/sin/cos, and at R4 a closed-form residual with no matrix formed and nothing inverted. They accept
+the real certificates, reject all **44** tampered variants, and agree with the prover's interval arithmetic on Y₀
+to 6.4e-23.
+
+That agreement between implementations sharing no code is worth more than any number of further tests written by
+the author of the first one — and it stopped being a theoretical argument the day the R4 auditor was first run.
+It rejected a genuine certificate over a relative 1.7e-17, which turned out to be a perturbation constant written
+as a decimal string that was 2⁻²⁶ truncated at 17 digits: the prover and the certificate denoted different
+numbers. No suite sharing the prover's implementation could have seen it, because both sides of such a suite read
+the same wrong constant.
 
 **A** searches for the profile *and* for the certificate's parameters — truncation order, norm and weight,
 working precision, the approximate inverse, the proposed radius. It makes no claims. **B** takes the package and

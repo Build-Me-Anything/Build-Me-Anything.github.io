@@ -259,6 +259,73 @@ def bounds(T, vbar, lam, nu, N):
                         'tail_sup_tau': mp.nstr(tail, 8), 'lambda': mp.nstr(lam, 12)}
 
 
+def dyadic_instance(lam, vbase, dbase, M):
+    """A compact eigenproblem in which **every quantity is a dyadic rational**, so the prover's mpf values and an
+    auditor's Fractions denote the same numbers exactly.
+
+    The geometric instance below cannot do this: its eigenvector is `v_m = ρ^m/(λ̄ − 1/m²)`, whose denominator
+    carries the factor `11m² − 8` and is therefore not a power of two, so mpf rounds every entry and the residual
+    is ~1e-45 rather than 0. That is harmless for the prover — it works in interval arithmetic — but it denies an
+    exact-rational auditor any way to tell a real disagreement from a rounding artefact, which is the same trap
+    `emit_certs.py` already documents for μ = 1/10.
+
+    So this instance is built the other way round: **choose the eigenvector, then derive the operator.** Fix
+    `v_m = vbase^−m` and `d_m = dbase^−m` (both dyadic, and `d_m → 0`, so T is compact), then *define*
+
+        u_m := v_m·(λ̄ − d_m),      w := {1: vbase}
+
+    Then ⟨v, w⟩ = vbase·v₁ = 1 satisfies the phase condition exactly, and
+
+        (T v)_m = d_m v_m + u_m·⟨v, w⟩ = d_m v_m + v_m(λ̄ − d_m) = λ̄ v_m
+
+    identically, for any λ̄ — the eigenpair is exact by construction rather than by a closed form that happens to
+    be known. Everything in sight is a dyadic rational, so the residual is exactly zero and stays that way.
+
+    This is the same move the quadratic problem makes at R1b, where μ = 1/8 keeps the Catalan coefficients dyadic.
+    Returns (T, vbar) with vbar unperturbed.
+    """
+    lam = mpf(lam)
+    T = DiagPlusRankOne(d=lambda m: mpf(1) / mpf(dbase) ** m,
+                        u={m: (mpf(1) / mpf(vbase) ** m) * (lam - mpf(1) / mpf(dbase) ** m) for m in range(1, M + 1)},
+                        w={1: vbase}, M=M)
+    vbar = Seq(M)
+    for m in range(1, M + 1):
+        vbar[m] = cival(mpf(1) / mpf(vbase) ** m, 0)
+    return T, vbar
+
+
+def prove_dyadic(lam='1.375', nu='1.5', N=14, vbase=2, dbase=4, kpert=20, cexp=None):
+    """Certify the dyadic instance, optionally with an exact perturbation at mode `kpert`.
+
+    The perturbation is placed **beyond N on purpose**. A is the exact inverse of the finite block on modes ≤ N
+    and −1/λ̄ times the identity beyond it, so a residual supported only above N is mapped by a part of A that is
+    known in closed form. Y₀ is then `|c(d_k − λ̄)|·ν^k/λ̄` exactly — a number an auditor can reach **without the
+    preconditioner**, which is what makes this certificate independently checkable at all. Perturb at a mode ≤ N
+    and Y₀ depends on the numerically inverted block, which no independent implementation can reproduce.
+    """
+    lam = mpf(lam); M = 3 * N
+    T, vbar = dyadic_instance(lam, vbase, dbase, M)
+    # cexp is an EXPONENT, not a value: the perturbation is 2^-cexp, built here rather than parsed from a decimal
+    # string. The first version took c='1.4901161193847656e-08', meaning 2^-26, and that string is 2^-26 truncated
+    # at 17 digits - so the prover perturbed by one number while the certificate recorded another, and every bound
+    # was computed for a slightly different abar than an auditor would read. auditor_r4.py rejected it on its first
+    # run over a relative 1.7e-17 in Y0. Taking an integer exponent removes the possibility rather than papering
+    # over it, and is the same discipline as mu = 1/8 elsewhere in this directory.
+    if cexp is not None:
+        vbar[kpert] = vbar[kpert] + cival(mpf(1) / 2 ** cexp, 0)
+    Y0, Z1, Z2, extra = bounds(T, vbar, lam, nu, N)
+    if Y0 is None:
+        return radiipoly.Certificate(radiipoly.FAILED, 0, 0, 0, reason=extra['error']), T, vbar, lam
+    cert = radiipoly.verify(Y0, Z1, Z2)
+    cert.extra.update(extra)
+    cert.extra.update({'problem': 'compact eigenpair, dyadic instance: d_m = dbase^-m, v_m = vbase^-m, u_m = v_m(lam - d_m)',
+                       'lambda_exact': mp.nstr(lam, 12), 'N': N, 'kpert': kpert,
+                       'statement': ('A unique eigenpair (v, lambda) of this compact operator exists within r of '
+                                     '(vbar, lambdabar) in ell^1_nu x R, with the phase condition <v,w> = 1. A '
+                                     'statement about this operator only.')})
+    return cert, T, vbar, lam
+
+
 def prove_geometric(rho='0.4', nu='1.5', N=14, perturb=None):
     """Certify the exact eigenpair of D + u⟨·,e₁⟩ with u_m = ρ^m. λ = 1 + ρ exactly."""
     rho = mpf(rho)

@@ -31,7 +31,7 @@ It prints `CAP SUITES: ALL PASS (8 suites)` or it fails loudly. There is no thir
 | **R4** compact-operator eigenpairs | certificate — the route the literature actually uses |
 | **R4b** the De Gregorio profile operator | **not a certificate** — transcription plus ordinary quadrature, deliberately |
 | **R5** 2D Boussinesq / axisymmetric Euler | out of reach alone, and `cap/README.md` §R3 says *why* with a number |
-| **Machine C** the auditor | audits R0/R1a/R1b/R2/R3 in exact rationals; **not yet R4 or R4b** |
+| **Machine C** the auditor | audits R0/R1a/R1b/R2/R3/**R4** in exact rationals — 44 tampered certificates rejected; **not R4b**, which is not a certificate to audit |
 
 ## What is proved, and what is not
 
@@ -62,9 +62,11 @@ Certifying `λf = M(f)` at R4b needs exactly two things: rigorous enclosures of
 `A_{nm} = ⟨s_n, s_m⟩_{Ḣ^{1/2}(ℝ)}`, which are improper integrals currently done by ordinary quadrature, and a
 proven decay bound on them. The machinery that consumes both is built and graded at R4.
 
-Second, and cheaper: **an R4 certificate for Machine C to audit.** R4 and R4b are today checked only by suites
-sharing an author and an implementation with the code they test — precisely the condition the auditor exists to
-break.
+That is now the *only* substantial gap. The auditor gap is closed: `emit_certs.py` emits an R4 certificate on a
+dyadic instance and `auditor_r4.py` re-derives it in exact rationals, forming no matrix and inverting nothing. It
+rejected a genuine certificate on its first run — the perturbation constant had been written as a decimal string
+that was 2⁻²⁶ truncated at 17 digits, so prover and certificate denoted different numbers — which is the clearest
+demonstration this project has that an independent implementation earns its keep.
 
 ---
 

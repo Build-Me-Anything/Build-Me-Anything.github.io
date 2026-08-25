@@ -27,6 +27,7 @@ from fractions import Fraction
 import auditor
 import auditor_r23
 import auditor_r01
+import auditor_r4
 from auditor import ACCEPT, REJECT
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -48,8 +49,9 @@ def load(which):
 # --------------------------------------------------------------------------------------------------------
 print('\n[1] the auditor is independent: it imports nothing from the prover')
 PROVER_MODULES = {'ell1', 'ivutil', 'radiipoly', 'krawczyk', 'clm', 'problem_quadratic',
-                  'problem_clm_fourier', 'problem_degregorio', 'problem_burgers', 'mpmath', 'certificate'}
-for mod in ('auditor.py', 'auditor_r23.py', 'auditor_r01.py'):
+                  'problem_clm_fourier', 'problem_degregorio', 'problem_burgers', 'problem_eigen',
+                   'mpmath', 'certificate'}
+for mod in ('auditor.py', 'auditor_r23.py', 'auditor_r01.py', 'auditor_r4.py'):
     src = open(os.path.join(HERE, mod), encoding='utf-8').read()
     imported = set()
     for node in ast.walk(ast.parse(src)):
@@ -257,6 +259,60 @@ q = _Fr(7, 5)
 cc, ss = auditor_r01.cos_bracket(q), auditor_r01.sin_bracket(q)
 tot = cc * cc + ss * ss
 check('cos^2 + sin^2 = 1 at q = 7/5', tot.lo <= 1 <= tot.hi, f'{tot}')
+
+# --------------------------------------------------------------------------------------------------------
+print('\n[14] R4: the compact-operator eigenpair certificate is accepted')
+r4 = load('r4-eigen')
+v, f = auditor_r4.audit(r4)
+check('genuine R4 certificate ACCEPTed', v == ACCEPT, '; '.join(f) if v != ACCEPT else '')
+check('the audit recomputed Y0 rather than re-reading it', any('recomputed exactly' in x for x in f))
+
+
+def r4_tamper(name, mutate, expect=REJECT):
+    """Falsify one field of the R4 certificate and require the stated verdict."""
+    doc = load('r4-eigen')
+    mutate(doc)
+    v, f = auditor_r4.audit(doc)
+    detail = next((x for x in f if x.startswith('REJECT')), '')
+    check(name, v == expect, detail[:110])
+
+
+def _setb(doc, k, val):
+    doc['bounds'][k] = str(val)
+
+
+print('\n[15] R4 tampering must be rejected')
+r4_tamper('r4: Y0 halved', lambda d: _setb(d, 'Y0', Fraction(d['bounds']['Y0']) / 2))
+r4_tamper('r4: Z2 zeroed', lambda d: _setb(d, 'Z2', Fraction(0)))
+r4_tamper('r4: Z2 just below 1/lambda', lambda d: _setb(d, 'Z2', Fraction(8, 11) - Fraction(1, 10 ** 6)))
+r4_tamper('r4: Z1 pushed above 1', lambda d: _setb(d, 'Z1', Fraction(3, 2)))
+r4_tamper('r4: Z1 below the tail minimum compactness forces',
+          lambda d: _setb(d, 'Z1', Fraction(1, 10 ** 30)))
+r4_tamper('r4: r shrunk so p(r) >= 0', lambda d: d.__setitem__('r', str(Fraction(d['r']) / 1000)))
+r4_tamper('r4: abar altered ABOVE N, so the residual and Y0 move',
+          lambda d: d['abar'].__setitem__(24, [str(Fraction(d['abar'][24][0]) + Fraction(1, 2 ** 30)), '0']))
+r4_tamper('r4: abar altered BELOW N, so the residual escapes the tail',
+          lambda d: d['abar'].__setitem__(5, [str(Fraction(d['abar'][5][0]) + Fraction(1, 2 ** 30)), '0']))
+r4_tamper('r4: the phase condition broken at mode 1',
+          lambda d: d['abar'].__setitem__(0, [str(Fraction(d['abar'][0][0]) * 2), '0']))
+r4_tamper('r4: nu raised past the eigenvector radius of convergence',
+          lambda d: d['params'].__setitem__('nu', '5/2'))
+r4_tamper('r4: the problem renamed', lambda d: d.__setitem__('problem', 'something_else'))
+r4_tamper('r4: abar truncated so it disagrees with M',
+          lambda d: d.__setitem__('abar', d['abar'][:-1]))
+
+print('\n[16] R4: a blunt certificate is accepted - but bluntness is only free while p(r) < 0 survives')
+# The auditor rejects only UNDER-estimates, so an overstated bound must still be accepted. It is accepted by the
+# bound checks, not by the polynomial: p(r) at the claimed r has slack ~5e-11 here, so a bound raised within that
+# slack still closes, and one raised past it does not. Doubling Y0 or Z2 lands far outside and is correctly
+# refused - not because the auditor minds a blunt bound, but because the contraction genuinely stops closing at
+# the radius quoted. Both directions are asserted so the asymmetry cannot be mistaken for leniency.
+r4_tamper('r4: Y0 raised within the slack (blunt, still closes)',
+          lambda d: _setb(d, 'Y0', Fraction(d['bounds']['Y0']) * (1 + Fraction(1, 10 ** 9))), expect=ACCEPT)
+r4_tamper('r4: Z2 raised within the slack (blunt, still closes)',
+          lambda d: _setb(d, 'Z2', Fraction(d['bounds']['Z2']) * (1 + Fraction(1, 10 ** 6))), expect=ACCEPT)
+r4_tamper('r4: Y0 doubled - blunt AND p(r) no longer negative, so refused',
+          lambda d: _setb(d, 'Y0', Fraction(d['bounds']['Y0']) * 2))
 
 print('\n' + ('AUDIT: ALL PASS' if not FAILS else f'AUDIT: {len(FAILS)} FAILURE(S) -> ' + ', '.join(FAILS)))
 sys.exit(1 if FAILS else 0)
