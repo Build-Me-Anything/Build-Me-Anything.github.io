@@ -1,4 +1,4 @@
-# The CAP machinery — R0 to R3
+# The CAP machinery — R0 to R3, and Machine C
 
 Working code for the rigorous-numerics line described in
 [`../Certified Blow-Up — System Architecture.md`](../Certified%20Blow-Up%20—%20System%20Architecture.md). This is
@@ -7,7 +7,7 @@ tune and no third answer.
 
 ```bash
 cd research/rigorous/cap
-python run-all.py          # all five suites, 84 checks, ~5 minutes
+python run-all.py          # all six suites, 102 checks, ~6 minutes
 ```
 
 Requires `mpmath` only (already present with sympy). Pure Python, arbitrary precision, outward-rounding interval
@@ -26,7 +26,9 @@ arithmetic — slow, and deliberately so: at this scale a reader auditing every 
 | `problem_clm_fourier.py` | **R1b** | CLM as a fixed point in ℓ¹_ν; certified lower bound on T |
 | `problem_degregorio.py` | **R2** | De Gregorio steady state, Galerkin certificate, and where the machinery stops |
 | `problem_burgers.py` | **R3** | the derivative-loss cure by analytic preconditioning, and the measured point where it fails |
-| `test_r0/r1/r1b/r2/r3.py` | | 10 / 16 / 21 / 20 / 17 checks |
+| `certificate.py` | contract | writes `certificate.json` with **exact rational** data, so the auditor recomputes rather than re-parses |
+| `auditor.py` | **Machine C** | independent re-check in exact rational arithmetic. Imports `fractions`, `json`, `math` — and nothing else |
+| `test_r0/r1/r1b/r2/r3/audit.py` | | 10 / 16 / 21 / 20 / 17 / 18 checks |
 
 ## Status
 
@@ -37,6 +39,7 @@ arithmetic — slow, and deliberately so: at this scale a reader auditing every 
 | **R1b** | radii polynomials in ℓ¹_ν | **ALL PASS** — certified **T ≥ 2**, sharp; enclosure radius within 0.0001 % of the true distance |
 | **R2** | De Gregorio steady state | **ALL PASS** for the Galerkin truncation; the PDE statement is blocked, see below |
 | **R3** | the derivative-loss cure | **ALL PASS** — preconditioned Burgers certified against the exact u = sin x, and the failure boundary measured |
+| **Machine C** | independent audit | **ALL PASS** — accepts both real certificates, rejects all 11 tampered ones, agrees with the prover to 1e-21 |
 | R3 proper | 2D Boussinesq / axisymmetric Euler | out of reach alone, and §R3 now says *why* with a number |
 
 ## What R1b establishes, and why it is the one that matters
@@ -106,6 +109,36 @@ invert, and the method has no purchase at all. That is why Chen and Hou needed a
 analysis for Euler with boundary, and it is why R3 proper is not reachable by extending this file.
 
 Stating it with a number beats asserting it in prose, which is what the earlier drafts did.
+
+## Machine C — the auditor, and why it is the most valuable thing here
+
+Every suite above shares an author *and an implementation* with the code it tests, so a shared misconception
+passes silently through both. That is not a hypothetical: this project has already shipped a norm that rounded to
+nearest while being used as an upper bound, and every certificate would still have printed CLOSED.
+
+`auditor.py` imports **`fractions`, `json` and `math`. Nothing else** — a structural test asserts it. It
+re-derives Y₀, Z₁ and Z₂ from the problem definition and ā alone, in **exact rational arithmetic**, using a
+different data structure (sparse dict versus dense array) and a separately written convolution. It cannot have a
+rounding bug, because it does no rounding.
+
+It checks three things, and only rejects in one direction:
+
+1. **the claimed bounds are not under-estimates** — a bound larger than necessary is blunt, a bound smaller than
+   the truth is fatal, and only the second is refused;
+2. **p(r) < 0 at the claimed radius**, in exact arithmetic;
+3. **Z₁ < 1**.
+
+Most of its suite is tampering, because an auditor that accepts everything is worse than none — it converts an
+unchecked claim into an apparently checked one. Y₀ halved, Z₁ halved, Z₁ pushed above 1, Z₂ zeroed, r shrunk until
+the polynomial is positive, the problem renamed, and — the one that proves it recomputes rather than re-reads — a
+single coefficient of ā altered. **All eleven are rejected.**
+
+And the number worth keeping: on Y₀ the two implementations, one in interval floating point and one in exact
+rationals, sharing no code, agree to **6e-23** (quadratic) and **3e-21** (CLM) relative.
+
+Parameters are chosen exactly representable in both binary and rational form — mu = 1/8, nu = 3/2, q = 1/2 — so
+a disagreement can never be a formatting artefact. With mu = 1/10 the prover's `mpf('0.1')` is the nearest double
+rather than one tenth, and the two would differ at 1e-40 for no interesting reason.
 
 ## The three failures worth keeping
 

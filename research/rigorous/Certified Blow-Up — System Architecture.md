@@ -102,6 +102,13 @@ not tidiness; it is the thing that makes aggressive search safe.
 | **B** | **Verifier** | certified ball arithmetic | close the contraction, or refuse | a certificate, or a failure with reasons |
 | **C** | **Auditor** | independent implementation | re-check B's inequalities | agreement, or a discrepancy |
 
+**Machine C is built** (`cap/auditor.py`). It imports `fractions`, `json` and `math` — and nothing else; a
+structural test asserts that it shares no module with the prover. It re-derives every bound from the problem
+definition and ā alone in **exact rational arithmetic**, so it cannot have a rounding bug. It accepts both
+real certificates, rejects all eleven tampered variants, and agrees with the prover's interval arithmetic on
+Y₀ to 6e-23. That agreement between two implementations sharing no code is worth more than any number of
+further tests written by the author of the first one.
+
 **A** searches for the profile *and* for the certificate's parameters — truncation order, norm and weight,
 working precision, the approximate inverse, the proposed radius. It makes no claims. **B** takes the package and
 returns a binary verdict. **C** exists because B is software, and software is wrong; the certificate is a finite
@@ -145,6 +152,12 @@ problem with a closed-form answer. B is graded before it is trusted, exactly as 
 the archive before any money was spent on it.
 
 ### The interface, written down
+
+**Implemented** in `cap/certificate.py`, with one design rule learned in the
+building: every number the auditor needs is carried as an **exact rational**, never a decimal rendering of a
+floating-point value. Otherwise prover and auditor disagree in the last bits for reasons of formatting, and a
+real discrepancy becomes indistinguishable from a rounding artefact. For the same reason the certified problems
+use parameters exactly representable in both binary and rational form (mu = 1/8, nu = 3/2, q = 1/2).
 
 A frozen contract has to be a file, not an intention. Both artefacts are archived and hashed, in the same idiom as
 `final.json`.
