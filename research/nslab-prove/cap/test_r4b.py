@@ -21,6 +21,7 @@ from mpmath import iv
 import problem_dg_profile as P
 import sici
 import lehmann
+from ivutil import lo, hi
 
 mp.dps = 20
 FAILS = []
@@ -155,18 +156,26 @@ for n in (1, 2, 8, 24):
 print('\n[11] it must REFUSE where the Leibniz hypothesis has not been established')
 # The remainder bound is valid only once the terms are decreasing, which needs 2k+3 > x. Truncating earlier and
 # applying it anyway would not be a weaker bound, it would be a false one - so the module raises instead.
+# `terms` is a FLOOR, not a cap - the summation continues until the hypothesis holds AND the first omitted term
+# is negligible - so the refusal is provoked with max_terms, which caps it.
 refused = False
 try:
-    sici.si(50, terms=5)
+    sici.si(50, max_terms=5)
 except ValueError:
     refused = True
-check('si() refuses to bound a series truncated before the terms provably decrease', refused)
+check('si() refuses when capped before the terms provably decrease', refused)
+refused_useless = False
+try:
+    sici.si(50, max_terms=60)      # past the hypothesis (2k+3 > 50 at k = 24) but the term is still huge
+except ValueError:
+    refused_useless = True
+check('si() refuses a bound that would be sound but uselessly wide', refused_useless)
 ok_when_enough = True
 try:
-    sici.si(50, terms=200)
+    sici.si(50)
 except ValueError:
     ok_when_enough = False
-check('si() returns a bound once enough terms are summed', ok_when_enough)
+check('si() returns a bound when left to run to convergence', ok_when_enough)
 
 print('\n[12] the matrix entries as certified intervals')
 for (n, m) in [(1, 1), (2, 2), (1, 2), (2, 3), (3, 7), (1, 12)]:
@@ -286,6 +295,56 @@ check('bracket_tau refuses when the requested index is not bracketed',
       lehmann.bracket_tau(A1d, A2d, 2, 1, mpf('-10'), mpf('-5')) is None)
 
 
+print('\n[17] A2 = A^T B^-1 A: the Lehmann matrix, with no Hilbert transform')
+# M maps V into V and {s_k} is a basis of V, so M s_m = sum_k c_km s_k with c_nm = A_nm/(n^2 pi^2), giving
+# A2_ij = sum_k A_ki A_kj/(k^2 pi^2). The object that blocked Lehmann is the matrix already certified, and the
+# tail bound on that sum IS the Galerkin truncation bound this rung was missing - the two open problems were one.
+#
+# The reference values come from a genuinely INDEPENDENT route: A2 computed from the operator instead, via the
+# source's identity d_x M(f) = -chi(H f + c(f)) with c(f) = -(1/2) int H f, which needs the Hilbert transform of
+# a truncated sine and a nested principal-value quadrature. Computed at dps=15, so they are good to ~1e-10.
+A2_REF = {(1, 1): '0.818798671591', (1, 2): '0.123900951841',
+          (2, 2): '0.913366238315', (2, 3): '0.06869751436'}
+for (i, j), r in A2_REF.items():
+    e = P.A2_enclosure(i, j)
+    check(f'A2_{i},{j} encloses the independently computed value',
+          lo(e) <= mpf(r) <= hi(e), f'[{mp.nstr(lo(e), 10)}, {mp.nstr(hi(e), 10)}] vs {r}')
+
+e_ij, e_ji = P.A2_enclosure(1, 3), P.A2_enclosure(3, 1)
+check('A2 is symmetric', lo(e_ij) <= hi(e_ji) and lo(e_ji) <= hi(e_ij))
+
+print('\n[18] the truncation tail is bounded, and the bound behaves')
+widths = [hi(P.A2_enclosure(1, 1, K=K)) - lo(P.A2_enclosure(1, 1, K=K)) for K in (40, 80, 160)]
+check('the enclosure narrows as K grows', widths[0] > widths[1] > widths[2],
+      f'{mp.nstr(widths[0], 3)} -> {mp.nstr(widths[1], 3)} -> {mp.nstr(widths[2], 3)}')
+t1, t2 = P.A2_tail_bound(1, 1, 40), P.A2_tail_bound(1, 1, 160)
+check('the tail bound itself falls like K^-3 (four-fold K, ~64-fold drop)',
+      hi(t2) * 30 < hi(t1), f'{mp.nstr(hi(t1), 3)} -> {mp.nstr(hi(t2), 3)}')
+
+refused = False
+try:
+    P.A2_tail_bound(4, 4, 5)          # K < 2*max(i,j): the entry bound does not hold for every term
+except ValueError:
+    refused = True
+check('A2_tail_bound refuses when K is too small for its own entry bound', refused)
+
+print('\n[19] the two lemmas the tail bound rests on')
+# |Ci(x)| <= 2/x, from Ci(x) = sin(x)/x - int_x^inf sin t/t^2 dt. Checked against the certified Ci enclosures.
+for x in (2, 10, 60, 150):
+    b = P._ci_tail_bound(x)
+    c = sici.ci(x)
+    check(f'|Ci({x})| <= 2/{x}', max(abs(lo(c)), abs(hi(c))) <= hi(b),
+          f'|Ci| = {mp.nstr(max(abs(lo(c)), abs(hi(c))), 4)} <= {mp.nstr(hi(b), 4)}')
+
+# and the blunt entry bound must actually bound the entry, for every k >= 2m
+for m in (1, 2, 3):
+    ok = True
+    for k in (2 * m, 3 * m, 10 * m, 40 * m):
+        if abs(P.A_entry(k, m)) > hi(P.A_entry_abs_bound(k, m)):
+            ok = False
+    check(f'|A_k,{m}| <= A_entry_abs_bound for k = 2m, 3m, 10m, 40m', ok)
+
+
 print('\n' + ('R4b: ALL PASS' if not FAILS else f'R4b: {len(FAILS)} FAILURE(S) -> ' + ', '.join(FAILS)))
 print('\nSCOPE: the Galerkin numbers are ORDINARY numerics, not a certificate. What IS established here is that')
 print('       the operator is transcribed correctly and our discretisation reproduces the paper.')
@@ -297,4 +356,7 @@ print('       replace it - graded valid and quadratically convergent on the comp
 print('       NOT yet instantiated for M, because that needs A2 = <M w_i, M w_j>_H1, i.e. M applied to a trial')
 print('       function rather than tested against one. Lehmann also does not remove the dependence on')
 print('       Corollary 3.7: it converts it from the answer into an a priori input for choosing the shift.')
+print('       A2 IS NOW AVAILABLE: A2 = A^T B^-1 A needs no Hilbert transform, and its truncation tail is')
+print('       bounded in closed form - so the last missing ingredient for instantiating Lehmann on M exists.')
+print('       What has NOT been done is wiring it through and re-checking the shift hypothesis on M itself.')
 sys.exit(1 if FAILS else 0)

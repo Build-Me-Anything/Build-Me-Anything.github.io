@@ -60,7 +60,7 @@ def working_dps(x, target=30):
     return int(float(x) / math.log(10)) + target + 20
 
 
-def _enclose(x, terms, first, ratio, need_index):
+def _enclose(x, terms, first, ratio, need_index, tol=None, max_terms=200000):
     """Sum an alternating series in interval arithmetic and bound the tail by the first omitted term.
 
     `first`   : the k = start term, as an interval
@@ -70,24 +70,40 @@ def _enclose(x, terms, first, ratio, need_index):
     Raises ValueError rather than returning a bound whose hypothesis has not been met. A bound that assumes
     monotonicity it has not checked is not a weaker bound, it is a false one.
     """
+    tol = tol if tol is not None else mpf(10) ** (-(mp.dps - 10))
     total = iv.mpf(0)
     term = first
     sign = 1
     k = 0
-    for k in range(terms):
+    # Summing a FIXED number of terms is wrong for large x and was a real defect: the terms peak near k ~ x/2 at
+    # magnitude ~e^x, so a count adequate at x = 150 leaves the first omitted term at ~1e21 when x = 1000. The
+    # Leibniz padding was still SOUND - the enclosure honestly contained the answer - but its width was 1e21,
+    # which is useless rather than wrong. Caught by A2_enclosure at K = 160. So the loop now runs until the term
+    # is genuinely negligible AND the hypothesis holds, with `terms` as a floor rather than the stopping rule.
+    for k in range(min(terms, max_terms)):
         total = total + (term if sign > 0 else -term)
         term = term * ratio(k)
         sign = -sign
+    while k + 1 < max_terms and (not need_index(k + 1) or abs(term) > tol):
+        k += 1
+        total = total + (term if sign > 0 else -term)
+        term = term * ratio(k)
+        sign = -sign
+    terms = k + 1
     if not need_index(terms):
         raise ValueError('series truncated at k=%d before the terms are provably decreasing; the Leibniz '
                          'remainder does not apply here and no bound is returned' % terms)
+    if abs(term) > tol:
+        raise ValueError('after %d terms the first omitted term is still %s > tol; the Leibniz bound would be '
+                         'sound but useless, so no bound is returned rather than a vacuous one'
+                         % (terms, mp.nstr(mpf(abs(term).b), 4)))
     # |remainder| <= |first omitted term|, so widen symmetrically by it
     mag = iv.mpf(abs(term))
     pad = iv.mpf([-mag.b, mag.b])
     return total + pad
 
 
-def si(x, target=30, terms=None):
+def si(x, target=30, terms=None, max_terms=200000):
     """Enclosure of Si(x) = ∫₀^x sin t / t dt, for x >= 0 an interval or a real."""
     X = iv.mpf(x)
     xhi = float(mpf(X.b))
@@ -101,13 +117,13 @@ def si(x, target=30, terms=None):
         ratio = lambda k: x2 * iv.mpf(2 * k + 1) / (iv.mpf(2 * k + 2) * iv.mpf(2 * k + 3) ** 2)
         # hypothesis: 2k+3 > x from index k onward
         need = lambda k: (2 * k + 3) > xhi
-        out = _enclose(X, n, X, ratio, need)
+        out = _enclose(X, n, X, ratio, need, tol=mpf(10) ** (-(target + 12)), max_terms=max_terms)
         return iv.mpf([out.a, out.b])
     finally:
         iv.dps = dps_saved
 
 
-def cin(x, target=30, terms=None):
+def cin(x, target=30, terms=None, max_terms=200000):
     """Enclosure of Cin(x) = ∫₀^x (1 − cos t)/t dt, the entire part of −Ci."""
     X = iv.mpf(x)
     xhi = float(mpf(X.b))
@@ -121,20 +137,20 @@ def cin(x, target=30, terms=None):
         first = x2 / iv.mpf(4)
         ratio = lambda j: x2 * iv.mpf(2 * (j + 1)) / (iv.mpf(2 * (j + 1) + 1) * iv.mpf(2 * (j + 1) + 2) ** 2)
         need = lambda j: (2 * (j + 1) + 2) > xhi
-        out = _enclose(X, n, first, ratio, need)
+        out = _enclose(X, n, first, ratio, need, tol=mpf(10) ** (-(target + 12)), max_terms=max_terms)
         return iv.mpf([out.a, out.b])
     finally:
         iv.dps = dps_saved
 
 
-def ci(x, target=30, terms=None):
+def ci(x, target=30, terms=None, max_terms=200000):
     """Enclosure of Ci(x) = γ + ln x − Cin(x), for x > 0."""
     X = iv.mpf(x)
     xhi = float(mpf(X.b))
     dps_saved = iv.dps
     try:
         iv.dps = working_dps(xhi, target)
-        val = iv.euler + iv.log(iv.mpf(x)) - cin(x, target, terms)
+        val = iv.euler + iv.log(iv.mpf(x)) - cin(x, target, terms, max_terms)
         return iv.mpf([val.a, val.b])
     finally:
         iv.dps = dps_saved

@@ -5,10 +5,10 @@ a DNS run is a measurement with error bars that shrink if you spend more, and a 
 list of inequalities that is either true or refused. No quantity of the first becomes the second.
 
 ```bash
-cd research/nslab-prove/cap && python run-all.py     # 8 suites, 282 checks, ~4.5 min, mpmath only
+cd research/nslab-prove/cap && python run-all.py     # 9 suites, 325 checks, ~4.5 min, mpmath only
 ```
 
-It prints `CAP SUITES: ALL PASS (8 suites)` or it fails loudly. There is no third answer and no tolerance to tune.
+It prints `CAP SUITES: ALL PASS (9 suites)` or it fails loudly. There is no third answer and no tolerance to tune.
 
 ## Read in this order
 
@@ -93,13 +93,23 @@ source's comparison operator, where `M̃ s_n = λ̃_n s_n` makes every Lehmann m
 trial space tried, and the worst relative gap falls **0.153 → 0.0056 → 6.0e-5** as the trial space improves —
 the quadratic convergence Lehmann predicts.
 
-**It is not yet instantiated for M, and two things are why.** First, `A₂ = ⟨M w_i, M w_j⟩_{Ḣ¹}` needs M *applied*
-to a trial function, not merely tested against one; by the source's identity `∂ₓM(f) = −χ(H(f) + c(f))` it equals
-`∫₋₁¹ (H w_i + c(w_i))(H w_j + c(w_j)) dx`, which wants a closed form for the Hilbert transform of a truncated
-sine and then an integral of a product of two — a derivation not done here. Goerisch's extension exists precisely
-to replace an unavailable `A₂`, and naming it is not the same as having it. Second, **Lehmann does not remove the
-dependence on Corollary 3.7**: it converts it from *the answer* into an *a priori input* for choosing the shift,
-which is a real improvement and not an elimination.
+**`A₂` was the blocker, and it dissolved.** It looked as though it needed M *applied* to a trial function — by the
+source's identity, `∫₋₁¹ (H w_i + c(w_i))(H w_j + c(w_j)) dx`, wanting the Hilbert transform of a truncated sine.
+It does not. M maps V into V and `{s_k}` is a basis of V, so `M s_m = Σ_k c_{km} s_k`; testing with `s_n` in `Ḣ¹`
+and using `⟨s_n, s_m⟩_{Ḣ¹} = n²π²δ_{nm}` gives `c_{nm} = A_{nm}/(n²π²)`, hence
+
+    A₂ = Aᵀ B⁻¹ A,    A₂_{ij} = Σ_k A_{ki} A_{kj} / (k²π²),   B = diag(k²π²)
+
+**no Hilbert transform anywhere** — just the matrix already certified, plus a tail. And **the tail bound on that
+sum *is* the Galerkin truncation bound this rung was missing.** The two open problems were one problem. Both are
+now in `A2_enclosure`, with the tail bounded in closed form from `|Ci(x)| ≤ 2/x` and three elementary
+`∫ln^p(x)/x⁴` moments. Verified against the Hilbert-transform route — computed independently, through the
+operator — which the certified interval contains at every entry tested.
+
+**What remains before Lehmann is instantiated on M** is wiring `A₂` through and re-checking the shift hypothesis
+`λ_{J+1} < −ρ < λ_J` for M itself. And **Lehmann still does not remove the dependence on Corollary 3.7**: it
+converts it from *the answer* into an *a priori input* for choosing that shift — a real improvement, not an
+elimination.
 
 One thing to resolve first: `problem_dg_profile.bracket`'s prose and its own formula **disagree** about
 Corollary 3.7 — 0.2026/n as written, 0.06450/n as coded. Both upper bounds agree and every computed eigenvalue

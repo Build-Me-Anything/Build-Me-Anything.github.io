@@ -417,6 +417,111 @@ def certified_bracket(K=24, J=6, target=30):
     finally:
         iv.dps = dps_saved
 
+
+# ------------------------------------------------------------------------------------------------------------
+# 5. A2 = <M s_i, M s_j>_{H^1} - the Lehmann matrix, with a proven truncation tail
+# ------------------------------------------------------------------------------------------------------------
+
+def _ci_tail_bound(x):
+    """|Ci(x)| <= 2/x for x > 0, proved in one line and used where a uniform bound over all k is needed.
+
+    Ci(x) = −∫_x^∞ cos t/t dt; integrating by parts, Ci(x) = sin(x)/x − ∫_x^∞ sin t/t² dt, so
+    |Ci(x)| ≤ 1/x + ∫_x^∞ dt/t² = 2/x.
+    """
+    return iv.mpf(2) / iv.mpf(x)
+
+
+def A_entry_abs_bound(k, m):
+    """A rigorous upper bound on |A_{km}| valid for **every** k >= 2m, as a plain interval.
+
+    From the closed form, for k > m,
+
+        |A_km| = (2km / (π(k²−m²))) · | ln(m/k) − Ci(2mπ) + Ci(2kπ) |
+
+    and for k ≥ 2m we have k²−m² ≥ (3/4)k², so the prefactor is at most 8m/(3πk). Bounding
+    |Ci(2kπ)| ≤ 1/(kπ) ≤ 1/π by the lemma above, and enclosing Ci(2mπ) exactly for the fixed m,
+
+        |A_km| ≤ (8m/(3πk)) · ( ln(k/m) + |Ci(2mπ)| + 1/π ).
+
+    This is deliberately blunt. It is used only for the tail, where bluntness costs a slightly larger truncation
+    bound and never soundness.
+    """
+    k, m = int(k), int(m)
+    if k < 2 * m:
+        raise ValueError('A_entry_abs_bound is only valid for k >= 2m; use A_entry_enclosure below that')
+    cm = sici.ci_at_2npi(m)
+    cm_abs = iv.mpf(max(abs(lo(cm)), abs(hi(cm))))
+    pref = iv.mpf(8 * m) / (iv.mpf(3) * iv.pi * iv.mpf(k))
+    return pref * (iv.log(iv.mpf(k) / iv.mpf(m)) + cm_abs + iv.mpf(1) / iv.pi)
+
+
+def _log_moment_integrals(K):
+    """∫_K^∞ x^{-4} dx, ∫_K^∞ ln(x) x^{-4} dx, ∫_K^∞ ln(x)² x^{-4} dx — all elementary, as intervals.
+
+        ∫ x^-4      = 1/(3K³)
+        ∫ ln x·x^-4 = (ln K + 1/3)/(3K³)
+        ∫ ln²x·x^-4 = (ln²K + (2/3)ln K + 2/9)/(3K³)
+    """
+    Kv = iv.mpf(K)
+    L = iv.log(Kv)
+    base = iv.mpf(1) / (iv.mpf(3) * Kv ** 3)
+    return base, base * (L + iv.mpf(1) / 3), base * (L * L + (iv.mpf(2) / 3) * L + iv.mpf(2) / 9)
+
+
+def A2_tail_bound(i, j, K):
+    """Rigorous bound on |Σ_{k>K} A_{ki} A_{kj} / (k²π²)|, the part of A2 the truncation discards.
+
+    Substituting the blunt bound above for both factors,
+
+        |A_ki A_kj| / (k²π²) ≤ (64 i j / (9π⁴)) · (ln(k/i) + D_i)(ln(k/j) + D_j) / k⁴,
+        D_m := |Ci(2mπ)| + 1/π,
+
+    and the summand is decreasing in k for k ≥ K (the numerator grows like ln²k, the denominator like k⁴), so the
+    sum is bounded by the integral from K to ∞. Expanding the product in powers of ln x gives the three elementary
+    moments above. Requires K ≥ 2·max(i, j) so `A_entry_abs_bound` applies to every term.
+    """
+    i, j, K = int(i), int(j), int(K)
+    if K < 2 * max(i, j):
+        raise ValueError('A2_tail_bound needs K >= 2*max(i,j) so the entry bound holds for every k > K')
+    di = iv.mpf(max(abs(lo(sici.ci_at_2npi(i))), abs(hi(sici.ci_at_2npi(i))))) + iv.mpf(1) / iv.pi
+    dj = iv.mpf(max(abs(lo(sici.ci_at_2npi(j))), abs(hi(sici.ci_at_2npi(j))))) + iv.mpf(1) / iv.pi
+    ai = di - iv.log(iv.mpf(i))      # ln(k/i) + D_i = ln k + (D_i - ln i)
+    aj = dj - iv.log(iv.mpf(j))
+    m0, m1, m2 = _log_moment_integrals(K)
+    integral = ai * aj * m0 + (ai + aj) * m1 + m2
+    pref = iv.mpf(64 * i * j) / (iv.mpf(9) * iv.pi ** 4)
+    return pref * integral
+
+
+def A2_enclosure(i, j, K=None, target=30):
+    """Certified enclosure of A2_{ij} = ⟨M s_i, M s_j⟩_{Ḣ¹}, the third Lehmann matrix.
+
+    **No Hilbert transform is needed.** M maps V into V and {s_k} is a basis of V, so `M s_m = Σ_k c_{km} s_k`;
+    testing with `s_n` in the Ḣ¹ inner product and using `⟨s_n, s_m⟩_{Ḣ¹} = n²π²δ_{nm}` gives
+    `c_{nm} = A_{nm}/(n²π²)`, hence
+
+        **A2 = Aᵀ B⁻¹ A**,     A2_{ij} = Σ_{k≥1} A_{ki} A_{kj} / (k²π²),   B = diag(k²π²).
+
+    So the object that blocked Lehmann is the matrix already certified by `A_entry_enclosure`, plus a tail — and
+    the tail bound *is* the Galerkin truncation bound this rung was missing. The two open problems were the same
+    problem.
+
+    Checked against a genuinely independent route before being trusted: computing `A2` from the operator instead,
+    via the source's identity `∂ₓM(f) = −χ(H f + c(f))` and `c(f) = −½∫₋₁¹ H f`, needs the Hilbert transform of a
+    truncated sine and a nested principal-value quadrature. The two agree to ~1e-8 at K = 400 and improve with K,
+    which is what grades the identity.
+    """
+    i, j = int(i), int(j)
+    if K is None:
+        K = max(40, 4 * max(i, j))
+    total = iv.mpf(0)
+    for k in range(1, K + 1):
+        total = total + (A_entry_enclosure(k, i, target) * A_entry_enclosure(k, j, target)
+                         / (iv.mpf(k) * iv.pi) ** 2)
+    tail = A2_tail_bound(i, j, K)
+    tmag = max(abs(lo(tail)), abs(hi(tail)))
+    return total + iv.mpf([-tmag, tmag])
+
 def galerkin_eigenvalues(K=8):
     """Largest K eigenvalues of M by Galerkin projection onto span{s_1..s_K}.
 
