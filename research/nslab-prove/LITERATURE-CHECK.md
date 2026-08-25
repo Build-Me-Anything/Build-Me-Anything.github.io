@@ -280,3 +280,24 @@ by the checking agent and not found in a source, so it is recorded here as an ob
 Four refutations, one softening, one not-found — against machinery that passed 138 of its own checks. That ratio
 is the argument for the fleet: internal tests cannot catch a claim that is wrong about the *literature* rather
 than about the arithmetic.
+
+---
+
+# Third check: the landscape survey (2026-08-25)
+
+`research/literature/Computer-Assisted Proofs of Fluid Singularity — Landscape Survey.md` answers "has anyone
+built this before?" — yes, comprehensively, by several strong groups using off-the-shelf libraries. Its
+De Gregorio findings (the S¹ C^α/smooth split, the sharp transition at `a = 1`) are already recorded above; two
+items are new and belong here rather than in a transcript:
+
+**Machine C's pattern: NOT FOUND.** No published example was found of a fluid computer-assisted proof being
+independently re-derived by a second implementation using *different arguments*. Formalisation inside a proof
+assistant exists, but that mechanises the same argument in a trusted kernel rather than re-deriving it.
+**NOT FOUND is a search result, not a proof of novelty**, and this line has been wrong about novelty before.
+
+The survey's recommendation follows from it: do not compete on the mathematics, target **independent
+verifiability** — its target T1, which is the piece R4b is already blocked on, and which answers AIM workshop
+Problem 3 (a *proof-emitting* eigenvalue enclosure, for a *structured* operator) rather than a wish of our own.
+
+**Unverified, recorded so it is not silently inherited:** a 2026 survey, *Singularity Formation: Synergy in
+Theoretical, Numerical and Machine Learning Approaches*, arXiv:2604.16842 — cited to us, not checked.
