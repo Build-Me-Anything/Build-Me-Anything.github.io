@@ -432,7 +432,7 @@ is not equivalent to convergence.
 | 707 | ≈ 2 800 | 128, 160, 192, 224, **256** | 38.2 → 39.1 → 38.9 → 39.9 → **40.3** | 1.0 % | ±2.0 % | 2.3 % (worst 6 %) | 0.09 | passes the criterion — but **read as "has not moved yet"**: Re 2000 passed on three rungs and still broke |
 | 1000 | ≈ 4 000 | 160 … 288, **384** (fp64) | 56.0 → 65.6 → 62.8 → **53.2** → 55.4 → **61.8** | **10.5 %** | ±8.9 % | 6.4 % (worst 13 %) | 0.05 | not converged — **the first shelf**, and still climbing at 384³ |
 | 1414 | ≈ 5 700 | 192 … 288, **384** (fp64) | 87.4 → 94.9 → 93.1 → **87.0** → **103.1** | **15.6 %** | ±9.2 % | 12.3 % (worst 25 %) | 0.05 | not converged — **the second shelf**, new high at 384³ |
-| 2000 | ≈ 8 000 | 96 … 288, 320, 384, **512** (float64) | 52.8 → … → 132.2 → 132.7 → 134.1 → **164.4** | **18.4 %** | ±14.4 % | 10.8 % (worst 29 %) | 0.01 | **NOT converged — a THREE-rung shelf; see below** |
+| 2000 | ≈ 8 000 | 96 … 384, 512 (fp64), **640** (fp32) | 52.8 → … → 134.1 → **164.4** → 158.5 | 3.7 % | ±12.0 % | 10.9 % (worst 34 %) | **1.68** | **NOT converged — three-rung shelf, then the peak changes event; see below** |
 | 4000 | ≈ 16 000 | 96, 192, 256 | (grid) 60.7 → 108.5 → 138.8 | 21.8 % | ±40.9 % | 21.1 % (worst 47 %) | 0.02 | not converged (256³ is this card's float64 ceiling) |
 
 **Re 1414 is the sharper demonstration of the shelf.** At Re 1000 two rungs agreed to 4.4 % before the drop; at
@@ -455,6 +455,28 @@ with a ±0.8 % band, in double precision, with the health report grading PASS at
 from the value the next rung produced.** The shelf phenomenon is therefore not a two-rung artefact that a third rung
 cures — the number of consecutive agreeing rungs is not itself evidence. Everything in this study that rests on
 "the sequence stopped moving" must be read as "the sequence has not moved *yet, at the resolutions reached*".
+
+**A 640³ rung then showed that even the scalar sequence was comparing unlike things.** In single precision on the
+same rented A100 (2.35 h, 7317 steps) the global interpolated maximum came out at **158.5, only 3.7 % below the 512³
+value** — which read as reassurance until the structural gate caught it: **the peak instant moved by 1.68**, far
+outside the 0.3 tolerance. The history has *two* events, and the global maximum changed which one it belongs to:
+
+| rung | event A (t ≈ 8.5) | event B (t ≈ 10.0–10.3) | global max |
+|---|---|---|---|
+| 384³ fp64 | 119.0 | 91.4 | 134.1 (event A) |
+| 512³ fp64 | 139.7 | 93.2 | **164.4 (event A)** |
+| 640³ fp32 | 134.9 | **118.4** | **158.5 (event B)** |
+
+Event A moves 17 % from 384³ to 512³ and then −3 % to 640³; **event B moves +2 % and then +27 %**. Neither is
+converged, and the two "close" global numbers — 164.4 and 158.5 — are maxima of *different physical events*. Had the
+scalar been read alone, this rung would have been recorded as convergence. **This is the clearest vindication the
+archive contains of requiring the peak instant to agree as well as the peak value**, and it is why the ladder tables
+should from here on be read per event rather than as a single global maximum.
+
+*(Instrument note: this run reports `health FAIL`, but on rows that float32 cannot pass — divergence L∞ and the
+nonlinear-transfer residual measure quantities that are exactly zero in exact arithmetic, and the cutoff pile-up read
+15.38 at t = 0.5 from the spectral noise floor. Runner **0.1.3** ungrades all three in single precision; this run was
+made with 0.1.2, so its FAIL is instrumental, not physical.)*
 
 **What the ladder looks like once that is applied: nothing in it is converged.** An earlier draft of this section
 called it "an honest oddity" that Re 1000 and Re 1414 were unconverged while their neighbours Re 707 and Re 2000 were

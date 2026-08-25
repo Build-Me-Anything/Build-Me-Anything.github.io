@@ -9,7 +9,7 @@ dek: What this is, what it is not, who is doing it, and how to check any number 
 The open notebook of a small research programme called **NSLab** — the Navier–Stokes Regularity Laboratory —
 run by one aeronautical engineer on one laptop, using an instrument built from scratch for the purpose.
 
-The instrument is **The Pocket Wind Tunnel**: a single HTML file, about 376 kB, that opens from disk with no
+The instrument is **The Pocket Wind Tunnel**: a single HTML file, about 388 kB, that opens from disk with no
 network, no framework and no dependencies. It began as an aerofoil tool and grew a research mode that
 integrates the three-dimensional incompressible Navier–Stokes equations on the periodic box with a Fourier
 pseudo-spectral method. The full story is in

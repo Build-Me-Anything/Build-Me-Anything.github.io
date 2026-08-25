@@ -3,7 +3,10 @@
 //   node research/tools/md2docx.js <file.md> [more.md ...]     → writes <file>.docx next to each input
 // Requires the `docx` npm package: set DOCX_MODULE to its path if it is not resolvable (node_modules).
 const fs = require('fs'), path = require('path');
-const docx = require(process.env.DOCX_MODULE || 'docx');
+// Resolve `docx` from a stable, session-independent store first: the scratchpad node_modules these tools used
+// to be pointed at is deleted when a session ends, which broke every rebuild until it was hunted down again.
+const NM = 'C:/Users/User/.claude/node-tools/node_modules';
+const docx = require(process.env.DOCX_MODULE || (require('fs').existsSync(NM + '/docx') ? NM + '/docx' : 'docx'));
 const { Document, Packer, Paragraph, TextRun, HeadingLevel, Table, TableRow, TableCell, WidthType, ShadingType, AlignmentType, LevelFormat, BorderStyle, ExternalHyperlink, PageNumber, Footer } = docx;
 
 const FONT = 'Calibri', MONO = 'Consolas', PAGE_W = 11906, MARGIN = 1134;   // A4, 2 cm margins (DXA)

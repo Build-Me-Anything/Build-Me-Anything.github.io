@@ -26,7 +26,7 @@ are further apart than they look.
 
 |  |  |
 |---|---|
-| 🌀 **The Pocket Wind Tunnel** | An offline aerodynamics toolkit in **a single 376 kB HTML file**. Opens from disk: no network, no framework, no dependencies, no build step. Panel method with an integral boundary layer, wind-tunnel wall corrections, 2D compressible RANS (Spalart–Allmaras, k-ω SST), hypersonic shock-expansion, and a local-LLM assistant that never leaves the machine. |
+| 🌀 **The Pocket Wind Tunnel** | An offline aerodynamics toolkit in **a single 388 kB HTML file**. Opens from disk: no network, no framework, no dependencies, no build step. Panel method with an integral boundary layer, wind-tunnel wall corrections, 2D compressible RANS (Spalart–Allmaras, k-ω SST), hypersonic shock-expansion, and a local-LLM assistant that never leaves the machine. |
 | 🔬 **NSLab** | The Navier–Stokes Regularity Laboratory. A Fourier pseudo-spectral solver for the 3D incompressible equations on the periodic box — implemented **three times** (browser, Node, CuPy on a GPU) in double precision, agreeing to 3·10⁻¹⁵ on small cases and 4·10⁻¹² over 1229 steps at 192³. |
 | 📖 **The logbook** | The programme written up in public, at **[build-me-anything.github.io](https://build-me-anything.github.io)** — generated from the run archive, so a post about an experiment still running refreshes itself. |
 

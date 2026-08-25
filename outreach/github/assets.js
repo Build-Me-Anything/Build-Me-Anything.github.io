@@ -78,7 +78,7 @@ body { margin: 0; background: #05080c; }
     <p>An offline wind tunnel that grew a verified Navier&ndash;Stokes laboratory.</p>
   </div>
   <div class="strip">
-    <span><b>376 kB</b> single file</span>
+    <span><b>388 kB</b> single file</span>
     <span><b>3</b> implementations, agreeing to <b>4&middot;10&#8315;&#185;&#178;</b></span>
     <span><b>3</b> studies, graded</span>
     <span>evidence, <b>never a proof</b></span>
@@ -123,7 +123,7 @@ body { margin: 0; background: #05080c; }
     <h1>Build Me <em>Anything</em></h1>
     <p>An offline wind tunnel that grew a verified Navier&ndash;Stokes laboratory</p>
   </div>
-  <div class="foot"><b>376 kB</b> single file &nbsp;&middot;&nbsp; <b>3</b> studies, graded &nbsp;&middot;&nbsp; numerical evidence, <b>never a proof</b></div>
+  <div class="foot"><b>388 kB</b> single file &nbsp;&middot;&nbsp; <b>3</b> studies, graded &nbsp;&middot;&nbsp; numerical evidence, <b>never a proof</b></div>
 </div></body></html>`;
 
 const figure = dark => `<!doctype html><html${dark ? ' data-theme="dark"' : ' data-theme="light"'}><head><meta charset="utf-8"><style>

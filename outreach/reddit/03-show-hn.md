@@ -11,7 +11,7 @@ undisclosed AI authorship and generous about honest, well-verified hobby enginee
 
 ## Title options
 
-1. **Show HN: A 376 kB offline HTML file that runs a verified 3D Navier–Stokes DNS**
+1. **Show HN: A 388 kB offline HTML file that runs a verified 3D Navier–Stokes DNS**
 2. Show HN: I built an offline aerodynamics tool that grew a Navier–Stokes research programme
 3. Show HN: Pocket Wind Tunnel – single-file CFD, no dependencies, with a verified spectral DNS inside
 

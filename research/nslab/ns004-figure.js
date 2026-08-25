@@ -43,13 +43,19 @@ for (const Re of Res) {
 // triangle = lower bound / non-convergence demonstrated (criterion not met)
 // PENDING names the rung awaited for each Reynolds number; when that rung appears in the archive the status
 // recomputes itself, so the figure cannot drift out of step with the runs.
-const PENDING = { 707: 256, 1000: 288, 1414: 288 };
+// Re 707 met the criterion but is the ONLY ladder never carried beyond its plateau, and three plateaus have since
+// broken. It is therefore held provisional awaiting a rung past 256³ — the same rule that broke Re 1000/1414/2000.
+const PENDING = { 707: 320 };
 const status = (Re) => {
   const L = byRe.get(Re) || [], met = conv.some(c => c.Re === Re);
   const awaited = PENDING[Re], landed = awaited == null || L.some(r => r.N >= awaited);
-  if (!met) {   // a sequence whose maximum is not at its finest rung plateaued and then fell: a shelf, not a climb
+  if (!met) {
     const v = L.map(val); let im = 0; for (let k = 0; k < v.length; k++) if (v[k] > v[im]) im = k;
-    return { kind: 'bound', label: (im > 0 && im < v.length - 1) ? 'false convergence shelf' : 'climbing' };
+    const fell = v.some((x, k) => k > 0 && x < v[k - 1]);          // a plateau that broke downward at some rung
+    const label = (im > 0 && im < v.length - 1) ? 'false convergence shelf'   // max is interior: still on the far side
+                : fell ? 'shelf, then new high'                                // fell once, now above everything
+                : 'climbing';                                                 // monotone: never plateaued at all
+    return { kind: 'bound', label, shelf: (im > 0 && im < v.length - 1) || fell };
   }
   if (!landed) return { kind: 'open', label: 'under verification' };
   return { kind: 'filled', label: 'converged' };
@@ -57,8 +63,8 @@ const status = (Re) => {
 
 // Layout is laid out so nothing overlaps: plot area ends at H − P.b, tick labels sit 15 px below it, the panel
 // caption 20 px below those, and the two legend lines below that again.
-const W = 1000, H = 500, P = { l: 64, r: 24, t: 30, b: 110 }, half = (W - P.l - P.r - 44) / 2;
-const AX = H - P.b + 15, CAP = H - P.b + 36, LEG1 = H - P.b + 62, LEG2 = H - P.b + 82;
+const W = 1000, H = 522, P = { l: 64, r: 24, t: 30, b: 110 }, half = (W - P.l - P.r - 44) / 2;
+const AX = H - P.b + 15, CAP = H - P.b + 36, LEG1 = H - P.b + 62, LEG2 = H - P.b + 82, LEG3 = H - P.b + 104;
 const COL = ['#4cc9f0', '#ffd166', '#f4a261', '#a78bfa', '#ff8fa8', '#06d6a0'];   // Re 1000 amber: the shelf case the figure is about should not read as muted grey
 // Colour means Reynolds number, in both panels; SHAPE alone means status. (An earlier version coloured by status in
 // the right panel, which collided with the series palette — Re 1000 read green there and green meant "converged".)
@@ -75,7 +81,7 @@ const frame = (x0, title) => { svg += `<rect x="${x0}" y="${P.t}" width="${half}
   const X = n => x0 + (Math.log(n) - Math.log(Nmin)) / (Math.log(Nmax) - Math.log(Nmin)) * half;
   const Y = v => P.t + (1 - v / vmax) * (H - P.t - P.b);
   frame(x0, 'spectrally interpolated peak max|ω| against grid size');
-  for (const n of [96, 128, 160, 192, 224, 256, 288, 320, 384]) { svg += `<line x1="${X(n)}" y1="${P.t}" x2="${X(n)}" y2="${H - P.b}" stroke="#223040"/><text x="${X(n)}" y="${AX}" fill="#8a9bb0" font-size="10" text-anchor="middle">${n}³</text>`; }
+  for (const n of [96, 128, 192, 256, 320, 384, 512, 640]) { svg += `<line x1="${X(n)}" y1="${P.t}" x2="${X(n)}" y2="${H - P.b}" stroke="#223040"/><text x="${X(n)}" y="${AX}" fill="#8a9bb0" font-size="10" text-anchor="middle">${n}³</text>`; }
   for (let v = 0; v <= vmax; v += 25) { svg += `<line x1="${x0}" y1="${Y(v)}" x2="${x0 + half}" y2="${Y(v)}" stroke="#223040"/><text x="${x0 - 6}" y="${Y(v) + 4}" fill="#8a9bb0" font-size="10" text-anchor="end">${v}</text>`; }
   Res.forEach((Re, i) => {
     const L = byRe.get(Re), c = COL[i % COL.length], st = status(Re);
@@ -109,7 +115,7 @@ const frame = (x0, title) => { svg += `<rect x="${x0}" y="${P.t}" width="${half}
   const X = r => x0 + (Math.log(r) - Math.log(rlo)) / (Math.log(rhi) - Math.log(rlo)) * half;
   const Y = n => P.t + (1 - (Math.log(n) - Math.log(nlo)) / (Math.log(nhi) - Math.log(nlo))) * (H - P.t - P.b);
   for (const r of RES) svg += `<line x1="${X(r)}" y1="${P.t}" x2="${X(r)}" y2="${H - P.b}" stroke="#223040"/><text x="${X(r)}" y="${AX}" fill="#8a9bb0" font-size="10" text-anchor="middle">Re ${r}</text>`;
-  for (const n of [128, 192, 256, 320]) if (n > nlo && n < nhi) svg += `<line x1="${x0}" y1="${Y(n)}" x2="${x0 + half}" y2="${Y(n)}" stroke="#223040"/><text x="${x0 - 6}" y="${Y(n) + 4}" fill="#8a9bb0" font-size="10" text-anchor="end">${n}³</text>`;
+  for (const n of [128, 192, 256, 384, 512]) if (n > nlo && n < nhi) svg += `<line x1="${x0}" y1="${Y(n)}" x2="${x0 + half}" y2="${Y(n)}" stroke="#223040"/><text x="${x0 - 6}" y="${Y(n) + 4}" fill="#8a9bb0" font-size="10" text-anchor="end">${n}³</text>`;
   for (const r of RES) {
     const L = byRe.get(r), st = status(r), c = colOf(r);
     svg += `<line x1="${X(r)}" y1="${Y(L[0].N)}" x2="${X(r)}" y2="${Y(L[L.length - 1].N)}" stroke="${c}" stroke-width="1.4" opacity="0.5"/>`;
@@ -121,9 +127,10 @@ const frame = (x0, title) => { svg += `<rect x="${x0}" y="${P.t}" width="${half}
     svg += `<text x="${X(r)}" y="${Y(cand.N) - 14}" fill="${c}" font-size="10" text-anchor="middle">${cand.N}³</text>`;
   }
   const nConv = RES.filter(r => status(r).kind === 'filled').length;
+  const l2 = nConv === 0 ? 'no Reynolds number here has a' : `only ${nConv} of ${RES.length} Reynolds numbers have a`;
   svg += `<text x="${x0 + 12}" y="${P.t + 20}" fill="#8a9bb0" font-size="11">no viscosity-scaling fit is drawn:</text>`;
-  svg += `<text x="${x0 + 12}" y="${P.t + 36}" fill="#8a9bb0" font-size="11">only ${nConv} of ${RES.length} Reynolds numbers</text>`;
-  svg += `<text x="${x0 + 12}" y="${P.t + 52}" fill="#8a9bb0" font-size="11">have a converged pointwise maximum</text>`;
+  svg += `<text x="${x0 + 12}" y="${P.t + 36}" fill="#8a9bb0" font-size="11">${l2}</text>`;
+  svg += `<text x="${x0 + 12}" y="${P.t + 52}" fill="#8a9bb0" font-size="11">converged pointwise maximum</text>`;
 }
 // ---- (retained, unused) log–log scaling panel ----
 if (false) {
@@ -150,14 +157,22 @@ if (false) {
     svg += `<text x="${x0 + 12}" y="${P.t + 78}" fill="#5b6b80" font-size="10">withdrawn fit, kept for audit: max|ω| ∝ ν^−${f.p.toFixed(2)}, Z_max ∝ ν^−${fit('Z').p.toFixed(2)} · float32 exploration grade</text>`;
   } else svg += `<text x="${x0 + half / 2}" y="${H / 2}" fill="#5b6b80" font-size="13" text-anchor="middle">fewer than two converged Reynolds numbers</text>`;
 }
-svg += `<text x="${P.l}" y="${P.t - 10}" fill="#e6edf5" font-size="13">NS-004 · Resolution cost of the pointwise maximum — two converged Reynolds numbers, two false-convergence shelves</text>`;
+{ // the headline counts itself from the data, so it cannot fall out of step with the runs the way a typed one did
+  const k = Res.map(status), nf = k.filter(x => x.kind === 'filled').length, nsh = k.filter(x => x.shelf).length;
+  const shelves = `${nsh} of ${Res.length} ladders show a false-convergence shelf`;
+  const head = nf === 0 ? `no converged Reynolds number — ${shelves}`
+                        : `${nf} converged of ${Res.length} Reynolds numbers — ${shelves}`;
+  svg += `<text x="${P.l}" y="${P.t - 10}" fill="#e6edf5" font-size="13">NS-004 · Resolution cost of the pointwise maximum — ${head}</text>`; }
 // legend: the three marker states, stated once and applying to both panels
 {
   const lx = P.l;
   svg += `<circle cx="${lx + 6}" cy="${LEG1 - 4}" r="5.5" fill="#8a9bb0" stroke="#8a9bb0" stroke-width="2"/><text x="${lx + 18}" y="${LEG1}" fill="#aab8c9" font-size="11">filled — verified converged</text>`;
   svg += `<circle cx="${lx + 216}" cy="${LEG1 - 4}" r="5.5" fill="none" stroke="#8a9bb0" stroke-width="2"/><text x="${lx + 228}" y="${LEG1}" fill="#aab8c9" font-size="11">open — under verification: a previously accepted verdict, held provisional until its further rung lands</text>`;
   svg += `<path d="M ${lx + 6} ${LEG2 - 10} l -6 10 h 12 z" fill="#8a9bb0"/><text x="${lx + 18}" y="${LEG2}" fill="#aab8c9" font-size="11">triangle — lower bound: non-convergence demonstrated, the sequence has not stopped moving</text>`;
+  // the 640³ rung is plotted as the GLOBAL maximum, which at that rung belongs to a different vorticity event than
+  // at 512³ — the curve segment is therefore not a like-for-like refinement step, and says so rather than being hidden
+  svg += `<text x="${lx}" y="${LEG3}" fill="#ff8fa8" font-size="11">Re 2000, 640³: the global maximum belongs to a different vorticity event (t ≈ 10.0) than at 512³ (t ≈ 8.5) — that segment is not a like-for-like step. Per event: A 139.7 → 134.9, B 93.2 → 118.4.</text>`;
 }
 svg += `</svg>`;
 fs.writeFileSync(OUT, svg);
-console.log('wrote', OUT, '·', conv.length, 'converged of', Res.length, 'Reynolds numbers');
+console.log('wrote', OUT, '·', Res.map(status).filter(k => k.kind === 'filled').length, 'converged (status) of', Res.length, 'Reynolds numbers ·', conv.length, 'meet the scalar+structural criterion');

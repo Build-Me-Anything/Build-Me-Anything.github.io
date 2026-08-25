@@ -5,7 +5,7 @@ date: 2026-08-22
 study: The instrument
 order: 20
 tag: engineering
-dek: A 376 kB HTML file that opens from disk with no network, no framework and no dependencies — and inside it, a double-precision pseudo-spectral Navier–Stokes solver that agrees with its own GPU twin to fifteen digits.
+dek: A 388 kB HTML file that opens from disk with no network, no framework and no dependencies — and inside it, a double-precision pseudo-spectral Navier–Stokes solver that agrees with its own GPU twin to fifteen digits.
 ---
 
 The research programme has an unusual instrument, so it is worth describing before any of the results.

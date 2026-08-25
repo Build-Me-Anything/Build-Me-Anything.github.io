@@ -1,6 +1,9 @@
 // Builds the designed Word cover sheet for The Pocket Wind Tunnel (docx-js). Usage: node research/tools/cover-sheet.js
 const fs = require('fs'), path = require('path');
-const docx = require(process.env.DOCX_MODULE || 'docx');
+// Resolve `docx` from a stable, session-independent store first: the scratchpad node_modules these tools used
+// to be pointed at is deleted when a session ends, which broke every rebuild until it was hunted down again.
+const NM = 'C:/Users/User/.claude/node-tools/node_modules';
+const docx = require(process.env.DOCX_MODULE || (require('fs').existsSync(NM + '/docx') ? NM + '/docx' : 'docx'));
 const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, ShadingType, AlignmentType, BorderStyle, PageBreak, Footer, PageNumber, LevelFormat, HeadingLevel, ImageRun } = docx;
 const MARK = fs.readFileSync(path.join(__dirname, 'logo', 'pwt-logo-mark.png'));
 const FONT = 'Calibri', PAGE_W = 11906, MARGIN = 1134, CW = PAGE_W - 2 * MARGIN;
@@ -35,14 +38,15 @@ const cover = [
     ['Second study', 'NS-002 — antiparallel vortex-tube reconnection, Re = 4000 (Re_Γ ≈ 16 000), 96³ → 256³ on the GPU'],
     ['Third study', 'NS-003 — the same reconnection at Re = 2000 (Re_Γ ≈ 8 000), with interpolated maxima, image diagnostic and worst-instant verdicts'],
     ['Fourth study', 'NS-004 — Reynolds ladder, Re = 707 … 4000: what a converged pointwise maximum costs, and how a false convergence shelf was found and corrected'],
+    ['Fifth study', 'NS-005 — the Re = 2000 convergence claim tested to 640³ on a rented A100 and withdrawn: a three-rung plateau broke by 18 %, and at the finest rung the maximum changed which vortical event it belongs to'],
     ['Principal investigator', 'Michael — aeronautical engineer'],
     ['Instrument, verification & analysis', 'Claude (Anthropic)'],
-    ['Deliverable', 'Pocket Wind Tunnel.html — one 376 kB file; runs from disk, no network, no dependencies'],
-    ['Batch layer', 'run-ns-long.js (CPU, Node) · nslab_gpu.py (CuPy float64, RTX 3060)'],
+    ['Deliverable', 'Pocket Wind Tunnel.html — one 388 kB file; runs from disk, no network, no dependencies'],
+    ['Batch layer', 'run-ns-long.js (CPU, Node) · nslab_gpu.py (CuPy float64, RTX 3060; rungs above 256³ on a rented A100-80GB)'],
     ['Evidence archive', 'research/nslab/ — build-stamped runs, ladders, dossiers, analyses'],
-    ['Versions', 'Pocket Wind Tunnel 0.5.0 · NSLab 0.1.0 · GPU runner 0.1.1'],
+    ['Versions', 'Pocket Wind Tunnel 0.5.1 · NSLab 0.1.2 · GPU runner 0.1.3'],
     ['Verification', 'five suites ALL PASS; node build.js --verify refuses to build otherwise'],
-    ['Date', '23 August 2026'],
+    ['Date', '25 August 2026'],
   ]),
   new Paragraph({ spacing: { before: 600, after: 0 }, children: [run('Numerical evidence only. Nothing in this project is a proof of global regularity or of finite-time breakdown of the Navier–Stokes equations.', { size: 17, italics: true, color: GREY })] }),
   new Paragraph({ children: [new PageBreak()] }),
@@ -68,7 +72,7 @@ const page2 = [
     ['G2', 'Taylor–Green reproduced (ε_max within 1 % of the 512³ reference at 192³)', 'done for the energetics; max|ω| not converged'],
     ['G3', 'Grid / time-step refinement automated with verdicts', 'done'],
     ['G4', 'Vorticity / stretching diagnostics validated', 'done'],
-    ['G5', 'Reproducible long-time experiments archived', 'done for NS-001 (24³ … 256³), NS-002 and NS-003 (96³ … 256³)'],
+    ['G5', 'Reproducible long-time experiments archived', 'done — NS-001 to NS-005, 24³ … 640³, 70+ archived runs'],
     ['G6–G9', 'Resolution-independent phenomenon → inequality → proof', 'not started'],
   ], [900, 5800, 2938]),
   spacer(240),
@@ -78,7 +82,8 @@ const page2 = [
     'Taylor–Green, Re 1600, 256³: ε_max = 0.01291 at t = 8.88 — Brachet 0.0126, 512³ spectral ≈ 0.013; CPU and GPU implementations agree to 3×10⁻¹³.',
     'Maximum vorticity: 37.0 → 55.1 → 74.3 from 96³ to 256³ — the quantity the Beale–Kato–Majda criterion controls is the one that has not converged.',
     'Antiparallel tubes, Re 4000, 96³ → 256³ on the GPU: ε_max and Z_max converge to 1 % while max|ω| climbs 61 → 109 → 139 (∝ N^0.85) and the stretching term triples — a reconnection bridge thinner than the grid at kmax·η = 1.8. Evidence about the instrument\'s reach, not about the equations.',
-    'The same reconnection at Re 2000: energetics converged by 192³; max|ω| 52 → 92 → 109 with falling exponents; a float32 extension to 288³/320³ then flattened the peak at ≈ 130 (0.4 % at the last rung), and this was written up as the programme\'s first observed convergence of a pointwise maximum. That claim is withdrawn: a float64 512³ rung moved it +18.4 % to 164.4. No tube Reynolds number has a demonstrated converged pointwise maximum.',
+    'Antiparallel tubes, Re 2000, eight rungs from 96³ to 640³: the peak maximum vorticity held to ±0.8 % across three consecutive refinements in double precision, with every health diagnostic passing — and then moved 18 % at 512³. The plateau was an artefact of resolution, not a property of the flow. This is the programme\'s central methodological result: agreement between adjacent grids is evidence of local plateauing, not of convergence, and a rung beyond the plateau is required.',
+    'No tube Reynolds number in the study has a demonstrated converged pointwise maximum. Energetics are a different matter: ε_max holds to ±0.5 % across a 2.7× range of grid sizes while the pointwise peak moves 42 %.',    'The same reconnection at Re 2000: energetics converged by 192³; max|ω| 52 → 92 → 109 with falling exponents; a float32 extension to 288³/320³ then flattened the peak at ≈ 130 (0.4 % at the last rung), and this was written up as the programme\'s first observed convergence of a pointwise maximum. That claim is withdrawn: a float64 512³ rung moved it +18.4 % to 164.4. No tube Reynolds number has a demonstrated converged pointwise maximum.',
     'A plateau can be a shelf: at Re 1000 two successive rungs (192³, 224³) sat within 4.4 % of each other and both lay ≈ 20 % above the next rung, while a half-time-step repeat reproduced that finer rung to 0.02 % — temporal convergence demonstrated, spatial convergence not. Two convergence verdicts were withdrawn as a result, and a viscosity scaling with them.',
   ].map(t => new Paragraph({ children: [run(t, { size: 20 })], numbering: { reference: 'bullets', level: 0 }, spacing: { after: 80 } })),
   spacer(200),

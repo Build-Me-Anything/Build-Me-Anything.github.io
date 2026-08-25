@@ -14,7 +14,7 @@
 That was the whole brief, given to an AI on 21 August 2026 along with a CV. This repository is what came back,
 and what it turned into two days later.
 
-**[The Pocket Wind Tunnel](pocket-wind-tunnel/)** — an offline aerodynamics toolkit in a single 376 kB HTML
+**[The Pocket Wind Tunnel](pocket-wind-tunnel/)** — an offline aerodynamics toolkit in a single 388 kB HTML
 file. It opens from disk. No network, no framework, no dependencies, no build step for the reader.
 
 **[NSLab](research/nslab/)** — the Navier–Stokes Regularity Laboratory: a verified pseudo-spectral solver for
