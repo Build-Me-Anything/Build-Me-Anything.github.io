@@ -5,7 +5,7 @@ a DNS run is a measurement with error bars that shrink if you spend more, and a 
 list of inequalities that is either true or refused. No quantity of the first becomes the second.
 
 ```bash
-cd research/nslab-prove/cap && python run-all.py     # 8 suites, 243 checks, ~4.5 min, mpmath only
+cd research/nslab-prove/cap && python run-all.py     # 8 suites, 273 checks, ~4.5 min, mpmath only
 ```
 
 It prints `CAP SUITES: ALL PASS (8 suites)` or it fails loudly. There is no third answer and no tolerance to tune.
@@ -70,8 +70,28 @@ elementary `2k+3 > x`, and the module *refuses* rather than applying the bound w
 `A_entry_enclosure(n, m)` returns a certified interval for every matrix entry, graded against mpmath's
 independently implemented `si`/`ci`.
 
-**What remains is one thing: a proven bound on the Galerkin truncation error.** Certified entries of a finite
-section say nothing about the operator's spectrum until that exists, and the suite prints that on every run.
+**And there is now a certified two-sided bracket** — `certified_bracket` — on the six leading eigenvalues:
+
+| j | certified bracket | published | vs the published lower bound |
+|---|---|---|---|
+| 1 | [0.2895674, 0.3183099) | 0.2896 | ×1.43 |
+| 2 | [0.1508500, 0.1591549) | 0.1509 | ×1.49 |
+| 6 | [0.0519998, 0.0530516) | 0.0520 | ×1.54 |
+
+**Read the halves separately, because they are not the same kind of thing.** The **lower** half is ours and needs
+no truncation estimate at all: by Courant–Fischer on `V`, *any* j-dimensional trial subspace bounds `λ_j` from
+below, so certified entries plus Gershgorin give it directly — which is why Rayleigh–Ritz converges from below.
+The **upper** half is Corollary 3.7 of the source, used as a **citation**. Nothing here derives an upper bound.
+
+So the Galerkin truncation error is *bounded* by the bracket width, but not by an argument of ours. A
+self-derived upper bound is the **Lehmann–Maehly–Goerisch** construction, which takes an a priori spectral
+separation — Corollary 3.7 supplies exactly that — and returns sharp upper bounds. It is **not implemented**, and
+calling what exists a truncation bound without that distinction would be an overclaim.
+
+One thing to resolve first: `problem_dg_profile.bracket`'s prose and its own formula **disagree** about
+Corollary 3.7 — 0.2026/n as written, 0.06450/n as coded. Both upper bounds agree and every computed eigenvalue
+satisfies both lower bounds, so nothing is unsound; the code keeps the weaker one deliberately, and the table
+above quotes the improvement against the *tighter* reading. Flagged for the `oracle-hunter`.
 
 Finding the closed form also corrected the quadrature it replaced, which carried a relative error of order 1e-4
 from truncating its tail — the same order as the tolerance the published-eigenvalue check was using. With exact

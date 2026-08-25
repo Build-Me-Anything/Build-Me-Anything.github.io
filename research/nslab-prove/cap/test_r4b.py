@@ -174,11 +174,51 @@ for (n, m) in [(1, 1), (2, 2), (1, 2), (2, 3), (3, 7), (1, 12)]:
           mpf(e.a) <= v <= mpf(e.b), f'width {mp.nstr(mpf(e.b) - mpf(e.a), 3)}')
 
 
+print('\n[13] A CERTIFIED two-sided bracket on the six eigenvalues')
+# The lower half is ours and is the payoff of the certified entries: by Courant-Fischer on V, ANY j-dimensional
+# trial subspace of V gives lambda_j >= min of the Rayleigh quotient over it, so Rayleigh-Ritz bounds from below
+# with no truncation estimate at all. The upper half is Corollary 3.7 of the source, used as a citation - this
+# module derives no upper bound, and the bracket's width is set by how loose that corollary is.
+BR = P.certified_bracket(K=16, J=6)
+for j, (lo_, hi_) in enumerate(BR, start=1):
+    check(f'lambda_{j}: a bracket was produced rather than a refusal', lo_ is not None and hi_ is not None)
+for j, (lo_, hi_) in enumerate(BR, start=1):
+    check(f'lambda_{j} bracket is non-empty and ordered', lo_ < hi_,
+          f'[{mp.nstr(lo_, 10)}, {mp.nstr(hi_, 10)})')
+# The published values are rounded to four decimals, so 0.0773 stands for the interval [0.07725, 0.07735] and
+# comparing a certified bound against the rounded NUMBER is a category error. It bit here: the certified lower
+# bound for lambda_4 is 0.0773064, which exceeds the printed 0.0773 while sitting comfortably inside what 0.0773
+# actually denotes - our bound is sharper than the published value's own precision. The check is therefore that
+# the certified bracket INTERSECTS the rounding interval.
+for j, (lo_, hi_) in enumerate(BR, start=1):
+    pub = P.PUBLISHED[j - 1]
+    plo, phi = pub - mpf('0.00005'), pub + mpf('0.00005')
+    check(f'lambda_{j}: the certified bracket is consistent with the published value',
+          lo_ <= phi and hi_ >= plo,
+          f'[{mp.nstr(lo_, 9)}, {mp.nstr(hi_, 9)}) meets [{mp.nstr(plo, 6)}, {mp.nstr(phi, 6)}]')
+for j, (lo_, hi_) in enumerate(BR, start=1):
+    ev = P.galerkin_eigenvalues(16)[j - 1]
+    check(f'lambda_{j}: the certified lower bound does not exceed the Rayleigh-Ritz value',
+          lo_ <= ev, f'{mp.nstr(lo_, 10)} <= {mp.nstr(ev, 10)}')
+
+print('\n[14] the certified lower bound must BEAT the published one, or it is not worth having')
+# Quoted against the CONSERVATIVE reading of Corollary 3.7 - see the warning in P.bracket, where this file's
+# prose and its own formula disagree about whether the published lower bound is 0.2026/n or 0.06450/n. Using the
+# tighter of the two makes this claim harder to satisfy, which is the right direction when the source has not
+# been re-read.
+for j, (lo_, hi_) in enumerate(BR, start=1):
+    published_lower = (2 / MPPI ** 2) / j
+    check(f'lambda_{j}: certified lower beats the published lower', lo_ > published_lower,
+          f'{mp.nstr(lo_, 8)} > {mp.nstr(published_lower, 8)}  (x{mp.nstr(lo_ / published_lower, 3)})')
+
+
 print('\n' + ('R4b: ALL PASS' if not FAILS else f'R4b: {len(FAILS)} FAILURE(S) -> ' + ', '.join(FAILS)))
 print('\nSCOPE: the Galerkin numbers are ORDINARY numerics, not a certificate. What IS established here is that')
 print('       the operator is transcribed correctly and our discretisation reproduces the paper.')
-print('       The A_{nm} are CLOSED FORMS in Si and Ci at multiples of 2*pi, and sici.py now encloses those')
-print('       RIGOROUSLY, so A_entry_enclosure returns a certified interval for each entry. What is still')
-print('       missing is the second piece: a proven bound on the GALERKIN TRUNCATION error. Certified entries')
-print('       of a finite section say nothing about the spectrum of the operator until that exists.')
+print('       The A_{nm} are CLOSED FORMS in Si and Ci, enclosed rigorously by sici.py, and certified_bracket')
+print('       turns them into a genuine two-sided bracket on lambda_1..lambda_6. But the LOWER half is ours')
+print('       (Courant-Fischer, no truncation estimate needed) and the UPPER half is Corollary 3.7 of the')
+print('       source, used as a citation. No upper bound is derived here, so the Galerkin truncation error is')
+print('       bounded by the bracket width without an argument of ours. Lehmann-Maehly-Goerisch is the route')
+print('       to a self-derived upper bound; it is NOT implemented.')
 sys.exit(1 if FAILS else 0)

@@ -118,7 +118,24 @@ def comparison_eigenvalue(n):
 
 
 def bracket(n):
-    """The rigorous two-sided bracket of Corollary 3.7: (2/π²)λ̃_n ≤ λ_n < λ̃_n, as an interval."""
+    """The rigorous two-sided bracket of Corollary 3.7: (2/π²)λ̃_n ≤ λ_n < λ̃_n, as an interval.
+
+    **UNRESOLVED — this file's prose and its own formula disagree, and the source has not been re-read.** The
+    module docstring above states the bracket as "0.2026/n ≤ λ_n < 0.3183/n". The formula implemented here is
+    `(2/π²)·λ̃_n` with `λ̃_n = 1/(nπ)`, which is `2/(π³n) = 0.06450/n` — not 0.2026/n. The two readings are:
+
+        (a) as coded   λ_n ≥ (2/π²)·λ̃_n = 0.06450/n
+        (b) as written λ_n ≥ (2/π²)/n   = 0.20264/n
+
+    Both upper bounds agree at `λ̃_n = 0.31831/n`, and both lower bounds hold for every eigenvalue computed here,
+    so nothing downstream is unsound either way — (a) is simply the weaker gate. It is left as coded **on
+    purpose**: adopting the tighter reading without re-reading Huang-Tong-Wei would be exactly the unverified
+    tightening this line forbids, and `in_bracket` is used as an acceptance gate, where weaker-but-certain beats
+    stronger-but-assumed.
+
+    Flagged for the `oracle-hunter`. Until then, quote the improvement of `certified_bracket`'s lower bound over
+    the published one against reading (b), the conservative choice.
+    """
     hi_ = comparison_eigenvalue(n)
     lo_ = (2 / MPPI ** 2) * hi_
     return lo_, hi_
@@ -264,6 +281,141 @@ def A_entry_quadrature(n, m, breaks_per_side=None):
     val = quad(integrand, breaks)
     return 4 * MPPI * sgn * n * m * val
 
+
+
+# ------------------------------------------------------------------------------------------------------------
+# 4. certified two-sided bracket on the eigenvalues - the first rigorous statement about this operator here
+# ------------------------------------------------------------------------------------------------------------
+
+def _approx_eigenvectors(K, J):
+    """Machine A. Ordinary numerics, deliberately: the trial subspace may be anything at all.
+
+    Its quality changes how SHARP the bound below is and can never change whether the bound is TRUE - the same
+    property that lets R0 feed a deliberately terrible preconditioner to Krawczyk and still demand soundness.
+    Returns J coefficient vectors in the s-basis, ordered by decreasing Rayleigh quotient.
+    """
+    A = mp.matrix(K, K)
+    for i in range(K):
+        for j in range(i, K):
+            v = A_entry(i + 1, j + 1)
+            A[i, j] = v
+            A[j, i] = v
+    Bd = [(n * MPPI) ** 2 for n in range(1, K + 1)]
+    C = mp.matrix(K, K)
+    for i in range(K):
+        for j in range(K):
+            C[i, j] = A[i, j] / (msqrt(Bd[i]) * msqrt(Bd[j]))
+    E, Q = mp.eig(C)
+    order = sorted(range(K), key=lambda i: -mp.re(E[i]))
+    return [[mp.re(Q[i, idx]) / msqrt(Bd[i]) for i in range(K)] for idx in order[:J]]
+
+
+def _gershgorin_min(G, j):
+    """Rigorous lower bound on the smallest eigenvalue of a symmetric interval matrix."""
+    best = None
+    for i in range(j):
+        row = lo(G[i][i])
+        for k in range(j):
+            if k != i:
+                row -= max(abs(lo(G[i][k])), abs(hi(G[i][k])))
+        best = row if best is None else min(best, row)
+    return best
+
+
+def _gershgorin_max(G, j):
+    """Rigorous upper bound on the largest eigenvalue of a symmetric interval matrix."""
+    best = None
+    for i in range(j):
+        row = hi(G[i][i])
+        for k in range(j):
+            if k != i:
+                row += max(abs(lo(G[i][k])), abs(hi(G[i][k])))
+        best = row if best is None else max(best, row)
+    return best
+
+
+def certified_bracket(K=24, J=6, target=30):
+    """A **certified** two-sided bracket on the J largest eigenvalues of M. Returns [(lo, hi), ...].
+
+    Lower bound - ours, and this is the part the certified entries buy
+    ------------------------------------------------------------------
+    By Courant-Fischer on V, with R(f) = ⟨f, Mf⟩_{Ḣ¹}/⟨f,f⟩_{Ḣ¹} = (cᵀAc)/(cᵀBc) and B = diag(n²π²),
+
+        λ_j = max_{dim S = j} min_{0≠f∈S} R(f)  ≥  min_{0≠f∈S₀} R(f)   for ANY j-dimensional S₀ ⊆ V.
+
+    `s_n = χ sin(nπx)` lies in V (odd, and vanishing at ±1, so in H¹₀), so any span of them is admissible. Taking
+    S₀ from the computed eigenvectors and writing `G_A = VᵀAV`, `G_B = VᵀBV`,
+
+        λ_j ≥ λ_min(G_A, G_B) ≥ λ_min(G_A) / λ_max(G_B),
+
+    the last step valid because **A is positive semi-definite** — it is the Gram matrix of the Ḣ^{1/2} inner
+    product on a linearly independent set, so `cᵀAc = ‖Σ c_n s_n‖²_{Ḣ^{1/2}} ≥ 0`. Both remaining quantities are
+    bounded by Gershgorin in interval arithmetic, using `A_entry_enclosure` for every entry. **No truncation
+    estimate is needed for this half**: min-max gives it away free, which is why Rayleigh-Ritz converges from
+    below.
+
+    Upper bound - **theirs, not ours**
+    ----------------------------------
+    Corollary 3.7 of the source: `λ_n < λ̃_n = 1/(nπ)`, strictly. That is a published theorem, used here as a
+    citation. **This module does not derive an upper bound**, and the bracket is therefore not a self-contained
+    result: its width is set by how loose Corollary 3.7 is, not by anything computed here.
+
+    What that means for the truncation error
+    ----------------------------------------
+    The Galerkin truncation error `λ_j − λ_j^{(K)}` is *bounded* by the width of this bracket, but not by an
+    argument of ours — the upper half is borrowed. A self-derived upper bound is the standard
+    **Lehmann-Maehly-Goerisch** construction, which takes an a priori separation of the spectrum (Corollary 3.7
+    supplies exactly that) and returns sharp upper bounds. It is **not implemented here**, and calling this a
+    truncation bound without that distinction would be an overclaim.
+    """
+    V = _approx_eigenvectors(K, J)
+    dps_saved = iv.dps
+    try:
+        iv.dps = target + 15
+        Aiv = [[None] * K for _ in range(K)]
+        for i in range(K):
+            for j in range(i, K):
+                e = A_entry_enclosure(i + 1, j + 1, target)
+                Aiv[i][j] = e
+                Aiv[j][i] = e
+        Biv = [(iv.mpf(n) * iv.pi) ** 2 for n in range(1, K + 1)]
+        Viv = [[iv.mpf(mp.nstr(c, target + 5)) for c in vec] for vec in V]
+
+        # precompute A·v_b once per b, so the double loop below is O(J²K) rather than O(J²K²)
+        Av = []
+        for b in range(J):
+            col = []
+            for p in range(K):
+                s = iv.mpf(0)
+                for q in range(K):
+                    s = s + Aiv[p][q] * Viv[b][q]
+                col.append(s)
+            Av.append(col)
+
+        out = []
+        for j in range(1, J + 1):
+            GA = [[iv.mpf(0)] * j for _ in range(j)]
+            GB = [[iv.mpf(0)] * j for _ in range(j)]
+            for a in range(j):
+                for b in range(j):
+                    sa = iv.mpf(0)
+                    sb = iv.mpf(0)
+                    for p in range(K):
+                        sa = sa + Viv[a][p] * Av[b][p]
+                        sb = sb + Viv[a][p] * Biv[p] * Viv[b][p]
+                    GA[a][b] = sa
+                    GB[a][b] = sb
+            gmin = _gershgorin_min(GA, j)
+            gmax = _gershgorin_max(GB, j)
+            if not (gmin > 0 and gmax > 0):
+                out.append((None, None))     # refuse rather than return a bound the hypothesis does not support
+                continue
+            lower = gmin / gmax
+            upper = hi(iv.mpf(1) / (iv.mpf(j) * iv.pi))
+            out.append((lower, upper))
+        return out
+    finally:
+        iv.dps = dps_saved
 
 def galerkin_eigenvalues(K=8):
     """Largest K eigenvalues of M by Galerkin projection onto span{s_1..s_K}.

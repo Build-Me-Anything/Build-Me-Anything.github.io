@@ -7,7 +7,7 @@ tune and no third answer.
 
 ```bash
 cd research/nslab-prove/cap
-python run-all.py          # all eight suites, 243 checks, ~4.5 minutes (R1b is most of it)
+python run-all.py          # all eight suites, 273 checks, ~4.5 minutes (R1b is most of it)
 ```
 
 Requires `mpmath` only (already present with sympy). Pure Python, arbitrary precision, outward-rounding interval
@@ -36,7 +36,7 @@ arithmetic — slow, and deliberately so: at this scale a reader auditing every 
 | `sici.py` | **R4b** | rigorous enclosures of Si and Ci by convergent series with a **proved** Leibniz remainder; refuses where the hypothesis is unmet |
 | `emit_certs.py` | contract | runs the provers and writes their certificates into `certs/` |
 | `run-all.py` | | one command, eight suites, and it fails loudly — the `build.js --verify` of this line |
-| `test_r0/r1/r1b/r2/r3/r4/r4b/audit.py` | | 11 / 25 / 22 / 18 / 17 / 18 / 63 / 69 checks — **243** in total |
+| `test_r0/r1/r1b/r2/r3/r4/r4b/audit.py` | | 11 / 25 / 22 / 18 / 17 / 18 / 93 / 69 checks — **273** in total |
 
 ## Status
 
@@ -57,12 +57,18 @@ a certificate, so there is nothing to audit yet. R4b is therefore still checked 
 and an implementation with the code it tests, and that is the correct description of its status rather than a
 defect to hide.
 
-**What that gap now costs has fallen sharply, twice.** The R4b matrix entries were an improper oscillatory
-integral evaluated by quadrature. They have a **closed form** in Si and Ci (below), and `sici.py` now encloses
-those **rigorously**, so `A_entry_enclosure` returns a certified interval for every entry. Of the two pieces the
-certificate needed, the first is done and only the second remains: **a proven bound on the Galerkin truncation
-error.** Certified entries of a finite section say nothing about the operator's spectrum until that exists, and
-the suite prints that caveat on every run.
+**What that gap now costs has fallen sharply.** The R4b matrix entries were an improper oscillatory integral
+evaluated by quadrature. They have a **closed form** in Si and Ci (below), `sici.py` encloses those
+**rigorously**, and `certified_bracket` turns them into a genuine two-sided bracket on λ₁…λ₆ — for example
+`λ₁ ∈ [0.2895674, 0.3183099)`, whose lower end beats the published lower bound by ×1.43.
+
+**But the two halves of that bracket are not the same kind of thing, and the difference is the whole point.** The
+lower half is ours and needs **no truncation estimate at all**: Courant–Fischer says any j-dimensional trial
+subspace of V bounds λ_j from below, so certified entries plus Gershgorin deliver it — that is exactly why
+Rayleigh–Ritz converges from below. The upper half is **Corollary 3.7 of the source, used as a citation**.
+Nothing here derives an upper bound, so the Galerkin truncation error is bounded by the bracket width without an
+argument of ours. **Lehmann–Maehly–Goerisch** is the route to a self-derived one — it consumes exactly the a
+priori spectral separation Corollary 3.7 provides — and it is **not implemented**.
 
 ## What R1b establishes, and why it is the one that matters
 
