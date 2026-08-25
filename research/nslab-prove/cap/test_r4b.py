@@ -18,6 +18,7 @@ Run:  python test_r4b.py     (about a minute; the quadrature is the slow part)
 import sys
 from mpmath import mp, mpf, pi as MPPI
 import problem_dg_profile as P
+import sici
 
 mp.dps = 20
 FAILS = []
@@ -111,10 +112,73 @@ for i in range(6):
           f'ours {mp.nstr(ev16[i], 9)} in [{mp.nstr(lo_, 6)}, {mp.nstr(hi_, 6)}]')
 
 
+print('\n[9] RIGOROUS enclosures of Si and Ci, by convergent series with a proved remainder')
+# The first of the two pieces the R4b certificate needs. Graded against mpmath's own si/ci, which share no
+# implementation with sici.py: mpmath uses asymptotic and continued-fraction machinery, this uses the Maclaurin
+# series with a Leibniz bound. Containment of an independently computed value is the check that matters.
+#
+# The comparison is made at 60 digits ON PURPOSE. These enclosures are ~1e-50 wide, which is NARROWER than this
+# suite's ambient 35-digit working precision, so at the ambient precision both endpoints and the reference round
+# to the same number and the containment test degenerates. A first version of this block did exactly that and
+# reported four failures that were entirely an artefact of comparing a tight interval at loose precision.
+def encloses(interval, ref_fn, x):
+    with mp.workdps(60):
+        ref = ref_fn(mpf(x))
+        return mpf(interval.a) <= ref <= mpf(interval.b)
+
+
+def iv_width(interval):
+    with mp.workdps(60):
+        return mpf(interval.b) - mpf(interval.a)
+
+
+for x in (1, 5, 20, 50):
+    e = sici.si(x)
+    check(f'Si({x}) enclosure contains mpmath, width {mp.nstr(iv_width(e), 3)}',
+          encloses(e, mp.si, x) and iv_width(e) < mpf('1e-40'))
+for x in (1, 5, 20, 50):
+    e = sici.ci(x)
+    check(f'Ci({x}) enclosure contains mpmath, width {mp.nstr(iv_width(e), 3)}',
+          encloses(e, mp.ci, x) and iv_width(e) < mpf('1e-40'))
+
+print('\n[10] at the points R4b actually needs them: x = 2n*pi')
+for n in (1, 2, 8, 24):
+    es, ec = sici.si_at_2npi(n), sici.ci_at_2npi(n)
+    with mp.workdps(60):
+        x = 2 * n * mp.pi
+        ok = (mpf(es.a) <= mp.si(x) <= mpf(es.b)) and (mpf(ec.a) <= mp.ci(x) <= mpf(ec.b))
+    check(f'Si and Ci at 2*{n}*pi both enclose mpmath', ok,
+          f'widths {mp.nstr(iv_width(es), 3)} / {mp.nstr(iv_width(ec), 3)}')
+
+print('\n[11] it must REFUSE where the Leibniz hypothesis has not been established')
+# The remainder bound is valid only once the terms are decreasing, which needs 2k+3 > x. Truncating earlier and
+# applying it anyway would not be a weaker bound, it would be a false one - so the module raises instead.
+refused = False
+try:
+    sici.si(50, terms=5)
+except ValueError:
+    refused = True
+check('si() refuses to bound a series truncated before the terms provably decrease', refused)
+ok_when_enough = True
+try:
+    sici.si(50, terms=200)
+except ValueError:
+    ok_when_enough = False
+check('si() returns a bound once enough terms are summed', ok_when_enough)
+
+print('\n[12] the matrix entries as certified intervals')
+for (n, m) in [(1, 1), (2, 2), (1, 2), (2, 3), (3, 7), (1, 12)]:
+    e = P.A_entry_enclosure(n, m)
+    v = P.A_entry(n, m)
+    check(f'A_{n},{m} enclosure contains the closed-form value',
+          mpf(e.a) <= v <= mpf(e.b), f'width {mp.nstr(mpf(e.b) - mpf(e.a), 3)}')
+
+
 print('\n' + ('R4b: ALL PASS' if not FAILS else f'R4b: {len(FAILS)} FAILURE(S) -> ' + ', '.join(FAILS)))
 print('\nSCOPE: the Galerkin numbers are ORDINARY numerics, not a certificate. What IS established here is that')
 print('       the operator is transcribed correctly and our discretisation reproduces the paper.')
-print('       The A_{nm} are now CLOSED FORMS in Si and Ci at multiples of 2*pi, not quadrature, so certifying')
-print('       lambda*f = M(f) no longer needs an improper oscillatory integral. Two pieces remain: rigorous')
-print('       enclosures of Si(2n*pi) and Ci(2n*pi), and a proven bound on the Galerkin truncation error.')
+print('       The A_{nm} are CLOSED FORMS in Si and Ci at multiples of 2*pi, and sici.py now encloses those')
+print('       RIGOROUSLY, so A_entry_enclosure returns a certified interval for each entry. What is still')
+print('       missing is the second piece: a proven bound on the GALERKIN TRUNCATION error. Certified entries')
+print('       of a finite section say nothing about the spectrum of the operator until that exists.')
 sys.exit(1 if FAILS else 0)

@@ -5,7 +5,7 @@ a DNS run is a measurement with error bars that shrink if you spend more, and a 
 list of inequalities that is either true or refused. No quantity of the first becomes the second.
 
 ```bash
-cd research/nslab-prove/cap && python run-all.py     # 8 suites, 223 checks, ~4.5 min, mpmath only
+cd research/nslab-prove/cap && python run-all.py     # 8 suites, 243 checks, ~4.5 min, mpmath only
 ```
 
 It prints `CAP SUITES: ALL PASS (8 suites)` or it fails loudly. There is no third answer and no tolerance to tune.
@@ -29,7 +29,7 @@ It prints `CAP SUITES: ALL PASS (8 suites)` or it fails loudly. There is no thir
 | **R2** De Gregorio steady state | certificate **for the Galerkin truncation only**; the PDE statement is not claimed |
 | **R3** preconditioning cure for derivative loss | certificate — and **the wrong door**, see the literature check |
 | **R4** compact-operator eigenpairs | certificate — the route the literature actually uses |
-| **R4b** the De Gregorio profile operator | **not a certificate** — transcription, deliberately; entries now closed forms in Si and Ci |
+| **R4b** the De Gregorio profile operator | **not a certificate** — but entries are closed forms in Si and Ci, and `sici.py` encloses those rigorously; only the Galerkin truncation bound is missing |
 | **R5** 2D Boussinesq / axisymmetric Euler | out of reach alone, and `cap/README.md` §R3 says *why* with a number |
 | **Machine C** the auditor | audits R0/R1a/R1b/R2/R3/**R4** in exact rationals — 44 tampered certificates rejected; **not R4b**, which is not a certificate to audit |
 
@@ -64,9 +64,14 @@ oscillatory integrals — plus a proven bound on the truncation. **Those integra
     A_{nn} = 2n·Si(2nπ)
     A_{nm} = −( 2nm(−1)^{n+m} / (π(m²−n²)) )·[ ln(m/n) − Ci(2mπ) + Ci(2nπ) ]      (n ≠ m)
 
-So the improper integral is gone, and two pieces remain: **rigorous enclosures of `Si(2nπ)` and `Ci(2nπ)`** —
-convergent series with classical remainder bounds, the same shape of problem `auditor_r01.py` already solves for
-π, sin and cos — and **a proven bound on the Galerkin truncation error**, which is the genuinely open one.
+The improper integral is gone, and of the two pieces that replaced it, **the first is done.** `sici.py` encloses
+Si and Ci rigorously by their convergent Maclaurin series with a proved Leibniz remainder — the hypothesis is the
+elementary `2k+3 > x`, and the module *refuses* rather than applying the bound where it is unmet — so
+`A_entry_enclosure(n, m)` returns a certified interval for every matrix entry, graded against mpmath's
+independently implemented `si`/`ci`.
+
+**What remains is one thing: a proven bound on the Galerkin truncation error.** Certified entries of a finite
+section say nothing about the operator's spectrum until that exists, and the suite prints that on every run.
 
 Finding the closed form also corrected the quadrature it replaced, which carried a relative error of order 1e-4
 from truncating its tail — the same order as the tolerance the published-eigenvalue check was using. With exact

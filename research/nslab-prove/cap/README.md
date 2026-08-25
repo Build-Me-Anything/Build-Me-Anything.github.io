@@ -7,7 +7,7 @@ tune and no third answer.
 
 ```bash
 cd research/nslab-prove/cap
-python run-all.py          # all eight suites, 223 checks, ~4.5 minutes (R1b is most of it)
+python run-all.py          # all eight suites, 243 checks, ~4.5 minutes (R1b is most of it)
 ```
 
 Requires `mpmath` only (already present with sympy). Pure Python, arbitrary precision, outward-rounding interval
@@ -33,9 +33,10 @@ arithmetic — slow, and deliberately so: at this scale a reader auditing every 
 | `auditor_r23.py` | **Machine C** | R2 and R3: exact rational **interval** arithmetic for the Krawczyk verdict, and the preconditioned Burgers bounds |
 | `auditor_r01.py` | **Machine C** | R0 enclosures and R1a's completeness check, with its own π, sin and cos from series with proved remainders |
 | `auditor_r4.py` | **Machine C** | R4 eigenpairs: rebuilds the operator from the parameters and recomputes Y₀ exactly — forms no matrix and inverts nothing |
+| `sici.py` | **R4b** | rigorous enclosures of Si and Ci by convergent series with a **proved** Leibniz remainder; refuses where the hypothesis is unmet |
 | `emit_certs.py` | contract | runs the provers and writes their certificates into `certs/` |
 | `run-all.py` | | one command, eight suites, and it fails loudly — the `build.js --verify` of this line |
-| `test_r0/r1/r1b/r2/r3/r4/r4b/audit.py` | | 11 / 25 / 22 / 18 / 17 / 18 / 43 / 69 checks — **223** in total |
+| `test_r0/r1/r1b/r2/r3/r4/r4b/audit.py` | | 11 / 25 / 22 / 18 / 17 / 18 / 63 / 69 checks — **243** in total |
 
 ## Status
 
@@ -56,11 +57,12 @@ a certificate, so there is nothing to audit yet. R4b is therefore still checked 
 and an implementation with the code it tests, and that is the correct description of its status rather than a
 defect to hide.
 
-**What that gap now costs has fallen sharply.** The R4b matrix entries were an improper oscillatory integral
-evaluated by quadrature, and "rigorous quadrature" was the named next task. That integral has a **closed form**
-(below), so what remains is rigorous enclosures of `Si(2nπ)` and `Ci(2nπ)` — convergent series with classical
-remainder bounds, the same shape of problem `auditor_r01.py` already solves for π, sin and cos — plus a proven
-bound on the Galerkin truncation error, which is the genuinely open piece.
+**What that gap now costs has fallen sharply, twice.** The R4b matrix entries were an improper oscillatory
+integral evaluated by quadrature. They have a **closed form** in Si and Ci (below), and `sici.py` now encloses
+those **rigorously**, so `A_entry_enclosure` returns a certified interval for every entry. Of the two pieces the
+certificate needed, the first is done and only the second remains: **a proven bound on the Galerkin truncation
+error.** Certified entries of a finite section say nothing about the operator's spectrum until that exists, and
+the suite prints that caveat on every run.
 
 ## What R1b establishes, and why it is the one that matters
 

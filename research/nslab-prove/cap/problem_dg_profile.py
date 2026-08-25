@@ -99,7 +99,9 @@ order 1e-4 in every entry — the same order as the tolerance the published-eige
 entries all six eigenvalues land inside the *rounding intervals* of the published four-figure values, which is a
 much stronger grading statement than the one this module could make before.
 """
-from mpmath import mp, mpf, pi as MPPI, sin as msin, sqrt as msqrt, quad, inf, si as msi, ci as mci
+from mpmath import mp, mpf, iv, pi as MPPI, sin as msin, sqrt as msqrt, quad, inf, si as msi, ci as mci
+
+import sici
 from ivutil import ival, lo, hi
 
 # Published eigenvalues, Huang-Tong-Wei Appendix A, Figure 1.
@@ -208,6 +210,28 @@ def A_entry(n, m):
     a, b = n * MPPI, m * MPPI
     inner = mp.log(mpf(m) / n) - mci(2 * b) + mci(2 * a)
     return -(2 * n * m * (mpf(-1) ** (n + m)) / (MPPI * (m * m - n * n))) * inner
+
+
+def A_entry_enclosure(n, m, target=30):
+    """A_{nm} as a rigorous **interval**, from the closed form and `sici`'s certified Si/Ci.
+
+    This is the certified counterpart of `A_entry`, and the first half of what R4b's certificate needs. Every
+    operation is interval arithmetic with outward rounding, so the returned bracket provably contains the true
+    entry — given mpmath's `iv.pi`, `iv.euler` and `iv.log`, which `sici` states as its trusted inputs.
+
+    **What this does not yet give.** A certified matrix is not a certified eigenvalue. Turning these entries into
+    an enclosure of λ needs the second piece: a proven bound on the Galerkin truncation error, i.e. on what the
+    modes above K contribute. Until that exists, these intervals bound the entries of a *finite section* and
+    nothing about the operator's spectrum. Saying so is the point of the sentence.
+    """
+    n, m = int(n), int(m)
+    if n == m:
+        return iv.mpf(2 * n) * sici.si_at_2npi(n, target)
+    lo_n, hi_m = sici.ci_at_2npi(n, target), sici.ci_at_2npi(m, target)
+    inner = iv.log(iv.mpf(m) / iv.mpf(n)) - hi_m + lo_n
+    sgn = iv.mpf(-1) ** ((n + m) % 2) if (n + m) % 2 else iv.mpf(1)
+    pref = iv.mpf(2 * n * m) * sgn / (iv.pi * iv.mpf(m * m - n * n))
+    return -(pref * inner)
 
 
 def A_entry_quadrature(n, m, breaks_per_side=None):
