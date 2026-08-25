@@ -1,0 +1,35 @@
+{
+  "contract": "1.0",
+  "problem": "burgers",
+  "params": {
+    "N": 12,
+    "mu": "2",
+    "nu": "1"
+  },
+  "ubar_sine": [
+    "1",
+    "1/32",
+    "0",
+    "0",
+    "0",
+    "0",
+    "0",
+    "0",
+    "0",
+    "0",
+    "0",
+    "0"
+  ],
+  "bounds": {
+    "Y0": "416971842447916666666666667667/10000000000000000000000000000000",
+    "Z1": "5156250000000000000000000001/10000000000000000000000000000",
+    "Z2": "5000000000000000000000000001/10000000000000000000000000000"
+  },
+  "r": "29843375428068384027528684759/312500000000000000000000000000",
+  "radii_polynomial": "p(r) = Z2*r^2 - (1 - Z1)*r + Y0 ;  CLOSED requires p(r) < 0 and Z1 < 1",
+  "claim": "A unique solution of the preconditioned steady Burgers fixed point exists within r of ubar in ell^1_nu. A statement about steady viscous Burgers with this forcing, only.",
+  "notes": {
+    "exact_solution": "u = sin x",
+    "preconditioner": "K = (mu d_xx)^-1 o d_x"
+  }
+}

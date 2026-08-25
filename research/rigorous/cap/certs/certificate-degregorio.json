@@ -1,0 +1,38 @@
+{
+  "contract": "1.0",
+  "problem": "degregorio_galerkin",
+  "params": {
+    "N": 7
+  },
+  "box": [
+    [
+      "-1/1000",
+      "1/1000"
+    ],
+    [
+      "-1/1000",
+      "1/1000"
+    ],
+    [
+      "-1/1000",
+      "1/1000"
+    ],
+    [
+      "-1/1000",
+      "1/1000"
+    ],
+    [
+      "-1/1000",
+      "1/1000"
+    ],
+    [
+      "-1/1000",
+      "1/1000"
+    ]
+  ],
+  "claims_contains_zero": true,
+  "claim": "The phase-fixed De Gregorio Galerkin system of size N has exactly one solution in this box, and it is the exact steady state omega = sin x. A theorem about the TRUNCATED system only - not about the De Gregorio PDE, which is blocked by derivative loss.",
+  "notes": {
+    "parity": "N must be odd; even N makes the Galerkin Jacobian singular"
+  }
+}

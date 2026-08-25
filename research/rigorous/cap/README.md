@@ -7,7 +7,7 @@ tune and no third answer.
 
 ```bash
 cd research/rigorous/cap
-python run-all.py          # all six suites, 102 checks, ~6 minutes
+python run-all.py          # all six suites, 116 checks, ~7 minutes
 ```
 
 Requires `mpmath` only (already present with sympy). Pure Python, arbitrary precision, outward-rounding interval
@@ -27,8 +27,10 @@ arithmetic — slow, and deliberately so: at this scale a reader auditing every 
 | `problem_degregorio.py` | **R2** | De Gregorio steady state, Galerkin certificate, and where the machinery stops |
 | `problem_burgers.py` | **R3** | the derivative-loss cure by analytic preconditioning, and the measured point where it fails |
 | `certificate.py` | contract | writes `certificate.json` with **exact rational** data, so the auditor recomputes rather than re-parses |
-| `auditor.py` | **Machine C** | independent re-check in exact rational arithmetic. Imports `fractions`, `json`, `math` — and nothing else |
-| `test_r0/r1/r1b/r2/r3/audit.py` | | 10 / 16 / 21 / 20 / 17 / 18 checks |
+| `auditor.py` | **Machine C** | independent re-check of the radii-polynomial certificates (R1b), exact rationals |
+| `auditor_r23.py` | **Machine C** | R2 and R3: exact rational **interval** arithmetic for the Krawczyk verdict, and the preconditioned Burgers bounds |
+| `emit_certs.py` | contract | runs all four provers and writes their certificates |
+| `test_r0/r1/r1b/r2/r3/audit.py` | | 10 / 16 / 21 / 20 / 17 / 32 checks |
 
 ## Status
 
@@ -39,7 +41,7 @@ arithmetic — slow, and deliberately so: at this scale a reader auditing every 
 | **R1b** | radii polynomials in ℓ¹_ν | **ALL PASS** — certified **T ≥ 2**, sharp; enclosure radius within 0.0001 % of the true distance |
 | **R2** | De Gregorio steady state | **ALL PASS** for the Galerkin truncation; the PDE statement is blocked, see below |
 | **R3** | the derivative-loss cure | **ALL PASS** — preconditioned Burgers certified against the exact u = sin x, and the failure boundary measured |
-| **Machine C** | independent audit | **ALL PASS** — accepts both real certificates, rejects all 11 tampered ones, agrees with the prover to 1e-21 |
+| **Machine C** | independent audit | **ALL PASS** — audits **all four** certificates, rejects all **21** tampered ones, agrees with the prover to 1e-21 |
 | R3 proper | 2D Boussinesq / axisymmetric Euler | out of reach alone, and §R3 now says *why* with a number |
 
 ## What R1b establishes, and why it is the one that matters
@@ -127,6 +129,33 @@ It checks three things, and only rejects in one direction:
    the truth is fatal, and only the second is refused;
 2. **p(r) < 0 at the claimed radius**, in exact arithmetic;
 3. **Z₁ < 1**.
+
+### R2 and R3 are audited too, and R2 needed a different instrument
+
+R2 is not a radii polynomial. It is a **Krawczyk verdict** — *K(X) lies strictly inside X* — so re-checking it
+means recomputing an interval operator, not evaluating a polynomial. `auditor_r23.py` therefore carries a small
+**exact rational interval arithmetic**: endpoints are `Fraction`s and every operation is exact, so unlike the
+prover there is no outward rounding at all.
+
+Two things make that audit genuinely independent rather than a re-run:
+
+* **The certificate carries no preconditioner.** A Krawczyk verdict is a statement about the box, and *any* valid
+  Y establishes it — Y affects whether the test closes, never whether its conclusion is true. So the auditor
+  builds its own by exact rational Gauss–Jordan. Confirming the same containment with a different Y is a
+  materially stronger check than re-running the prover's.
+* **The De Gregorio residual is re-derived from scratch** in real sine-coefficient form,
+  `F_n = -½ Σ b_j b_k (1 - k/j)([j+k=n] + [j-k=n] - [k-j=n])`, rather than through the prover's complex-Fourier
+  convolution. A shared algebra slip would otherwise pass through both.
+
+The R2 tamper cases: box widened 1000× until K(X) escapes, box moved off the solution, box given the wrong
+dimension, and N made even — the last with a correctly sized box, so the rejection comes from the genuinely
+singular Jacobian and not from a size check. (An earlier version of that test left the box at its N=7 length and
+was caught by the dimension check instead: a pass for the wrong reason, which is a failed test wearing a passing
+one's clothes.)
+
+R3's tamper set adds one the others cannot have: **μ reduced toward the inviscid limit**. The auditor recomputes
+the tail bound `‖ū‖/μ`, finds the certificate's Z₁ now below it, and rejects — the failure boundary of §R3
+showing up as an audit failure rather than as a claim.
 
 Most of its suite is tampering, because an auditor that accepts everything is worse than none — it converts an
 unchecked claim into an apparently checked one. Y₀ halved, Z₁ halved, Z₁ pushed above 1, Z₂ zeroed, r shrunk until

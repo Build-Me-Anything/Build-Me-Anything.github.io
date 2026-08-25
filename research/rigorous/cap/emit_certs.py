@@ -19,6 +19,9 @@ setprec(45)
 
 import problem_quadratic as PQ
 import problem_clm_fourier as CF
+import problem_degregorio as DG
+import problem_burgers as BG
+from krawczyk import UNIQUE
 from mpmath import mp, mpf
 
 MU = '0.125'      # 1/8
@@ -26,6 +29,11 @@ NU = '1.5'        # 3/2
 T = '1.0'         # q = 1/2
 QN = 30           # modes for the quadratic problem
 CN = 25           # modes for CLM
+DGN = 7           # De Gregorio Galerkin size - must be ODD (even N is structurally singular)
+DGR = Fraction(1, 1000)   # half-width of the verified box
+BMU = '2.0'       # Burgers viscosity; Z1 = ||ubar||/mu so this must exceed ||ubar|| ~ 1
+BPERT = '0.03125' # 1/32 - exact in binary AND rational, so prover and auditor denote the same number
+BN = 12
 
 
 def _up(x):
@@ -70,9 +78,61 @@ def emit_clm(outdir):
     return path, cert
 
 
+def emit_degregorio(outdir):
+    """R2: a Krawczyk certificate, so the file carries the BOX rather than a contraction radius.
+
+    The auditor recomputes K(X) with its own exact preconditioner and checks strict containment; it does not need
+    - and is not given - the prover's Y, because Y affects only whether the test closes, never the truth of what
+    it concludes.
+    """
+    v = DG.verify_galerkin(N=DGN, radius=str(DGR))
+    if v.status != UNIQUE:
+        raise SystemExit('degregorio prover did not close at N=%d: %s' % (DGN, v.status))
+    path = os.path.join(outdir, 'certificate-degregorio.json')
+    doc = {
+        'contract': C.CONTRACT_VERSION,
+        'problem': 'degregorio_galerkin',
+        'params': {'N': DGN},
+        'box': [[str(-DGR), str(DGR)] for _ in range(DGN - 1)],
+        'claims_contains_zero': True,
+        'claim': ('The phase-fixed De Gregorio Galerkin system of size N has exactly one solution in this box, '
+                  'and it is the exact steady state omega = sin x. A theorem about the TRUNCATED system only - '
+                  'not about the De Gregorio PDE, which is blocked by derivative loss.'),
+        'notes': {'parity': 'N must be odd; even N makes the Galerkin Jacobian singular'},
+    }
+    import json as _json
+    with open(path, 'w', encoding='utf-8') as f:
+        _json.dump(doc, f, indent=2)
+    return path, v
+
+
+def emit_burgers(outdir):
+    """R3: preconditioned steady Burgers, exact solution u = sin x."""
+    cert, ubar, nu_f = BG.prove(mu=BMU, nu='1.0', N=BN, perturb=['0', BPERT])
+    if not cert.proved:
+        raise SystemExit('burgers prover did not close: ' + cert.reason)
+    path = os.path.join(outdir, 'certificate-burgers.json')
+    doc = {
+        'contract': C.CONTRACT_VERSION,
+        'problem': 'burgers',
+        'params': {'N': BN, 'mu': str(Fraction(BMU)), 'nu': '1'},
+        'ubar_sine': [str(Fraction(1)), str(Fraction(BPERT))] + ['0'] * (BN - 2),
+        'bounds': {'Y0': str(_up(cert.Y0)), 'Z1': str(_up(cert.Z1)), 'Z2': str(_up(cert.Z2))},
+        'r': str(_up(cert.r)),
+        'radii_polynomial': 'p(r) = Z2*r^2 - (1 - Z1)*r + Y0 ;  CLOSED requires p(r) < 0 and Z1 < 1',
+        'claim': ('A unique solution of the preconditioned steady Burgers fixed point exists within r of ubar in '
+                  'ell^1_nu. A statement about steady viscous Burgers with this forcing, only.'),
+        'notes': {'exact_solution': 'u = sin x', 'preconditioner': 'K = (mu d_xx)^-1 o d_x'},
+    }
+    import json as _json
+    with open(path, 'w', encoding='utf-8') as f:
+        _json.dump(doc, f, indent=2)
+    return path, cert
+
+
 def main(outdir='.'):
     os.makedirs(outdir, exist_ok=True)
-    for fn in (emit_quadratic, emit_clm):
+    for fn in (emit_quadratic, emit_clm, emit_degregorio, emit_burgers):
         path, cert = fn(outdir)
         print('wrote %s   (%s)' % (os.path.basename(path), cert.status))
     return 0

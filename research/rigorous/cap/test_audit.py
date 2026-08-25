@@ -25,6 +25,7 @@ import sys
 from fractions import Fraction
 
 import auditor
+import auditor_r23
 from auditor import ACCEPT, REJECT
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -47,15 +48,16 @@ def load(which):
 print('\n[1] the auditor is independent: it imports nothing from the prover')
 PROVER_MODULES = {'ell1', 'ivutil', 'radiipoly', 'krawczyk', 'clm', 'problem_quadratic',
                   'problem_clm_fourier', 'problem_degregorio', 'problem_burgers', 'mpmath', 'certificate'}
-src = open(os.path.join(HERE, 'auditor.py'), encoding='utf-8').read()
-imported = set()
-for node in ast.walk(ast.parse(src)):
-    if isinstance(node, ast.Import):
-        imported.update(a.name.split('.')[0] for a in node.names)
-    elif isinstance(node, ast.ImportFrom) and node.module:
-        imported.add(node.module.split('.')[0])
-overlap = imported & PROVER_MODULES
-check('shares no module with the prover', not overlap, f'imports {sorted(imported)}')
+for mod in ('auditor.py', 'auditor_r23.py'):
+    src = open(os.path.join(HERE, mod), encoding='utf-8').read()
+    imported = set()
+    for node in ast.walk(ast.parse(src)):
+        if isinstance(node, ast.Import):
+            imported.update(a.name.split('.')[0] for a in node.names)
+        elif isinstance(node, ast.ImportFrom) and node.module:
+            imported.add(node.module.split('.')[0])
+    overlap = imported & PROVER_MODULES
+    check(f'{mod} shares no module with the prover', not overlap, f'imports {sorted(imported)}')
 
 # --------------------------------------------------------------------------------------------------------
 print('\n[2] genuine certificates are accepted')
@@ -125,6 +127,67 @@ for which in ('quadratic', 'clm'):
     rel = abs(claimed - hi_) / hi_ if hi_ > 0 else Fraction(0)
     check(f'{which}: Y0 agrees to better than 1e-6 relative', rel < Fraction(1, 10 ** 6),
           f'relative difference {float(rel):.3e}')
+
+
+# --------------------------------------------------------------------------------------------------------
+print('\n[6] R2 and R3 certificates are accepted')
+for which in ('degregorio', 'burgers'):
+    d = load(which)
+    v, notes = auditor_r23.audit(d)
+    check(f'{which}: ACCEPT', v == ACCEPT, '; '.join(n for n in notes if n.startswith('REJECT'))[:90])
+
+print('\n[7] R2 (Krawczyk) tampering must be rejected')
+
+
+def tampered23(which, mutate, label):
+    d = load(which)
+    mutate(d)
+    v, notes = auditor_r23.audit(d)
+    reason = next((n for n in notes if n.startswith('REJECT')), '')
+    check(label, v == REJECT, reason[8:105] if reason else 'ACCEPTED - the auditor missed it')
+
+
+def widen(d, factor):
+    d['box'] = [[str(Fraction(a) * factor), str(Fraction(b) * factor)] for a, b in d['box']]
+
+
+tampered23('degregorio', lambda d: widen(d, 1000), 'degregorio: box widened 1000x (K(X) escapes)')
+tampered23('degregorio',
+           lambda d: d.__setitem__('box', [[str(Fraction(1, 100)), str(Fraction(2, 100))] for _ in d['box']]),
+           'degregorio: box moved off the solution')
+def make_even(d):
+    """N=6 with a correctly sized box, so the rejection has to come from the SINGULAR JACOBIAN rather than
+    from a dimension mismatch. An earlier version of this test left the box at its N=7 length and was caught by
+    the size check instead - a pass for the wrong reason, which is a failed test dressed as a passing one."""
+    d['params']['N'] = 6
+    d['box'] = d['box'][:5]
+
+
+tampered23('degregorio', make_even, 'degregorio: N made even (Jacobian genuinely singular)')
+tampered23('degregorio', lambda d: d.__setitem__('box', d['box'][:-1]),
+           'degregorio: box has the wrong dimension')
+
+print('\n[8] R3 (preconditioned Burgers) tampering must be rejected')
+tampered23('burgers', lambda d: halve(d, 'Y0'), 'burgers: Y0 halved')
+tampered23('burgers', lambda d: halve(d, 'Z1'), 'burgers: Z1 halved (tail not covered)')
+tampered23('burgers', lambda d: halve(d, 'Z2'), 'burgers: Z2 halved')
+tampered23('burgers', lambda d: d.__setitem__('r', str(Fraction(d['r']) / 10000)),
+           'burgers: r shrunk so p(r) >= 0')
+tampered23('burgers',
+           lambda d: d['ubar_sine'].__setitem__(2, str(Fraction(1, 20))),
+           'burgers: ubar coefficient altered')
+tampered23('burgers', lambda d: d['params'].__setitem__('mu', str(Fraction(1, 4))),
+           'burgers: mu reduced toward the inviscid limit')
+
+print('\n[9] the R2 audit uses its OWN preconditioner, so it confirms rather than re-runs')
+# The certificate carries no Y at all - a Krawczyk verdict is a statement about the box, and any valid
+# preconditioner establishes it. The auditor builds one by exact rational Gauss-Jordan.
+d = load('degregorio')
+check('certificate carries no preconditioner', 'Y' not in d and 'preconditioner' not in d,
+      'the auditor must supply its own')
+v, notes = auditor_r23.audit(d)
+check('and still closes the containment', v == ACCEPT,
+      next((n for n in notes if 'K(X)' in n), '')[:90])
 
 print('\n' + ('AUDIT: ALL PASS' if not FAILS else f'AUDIT: {len(FAILS)} FAILURE(S) -> ' + ', '.join(FAILS)))
 sys.exit(1 if FAILS else 0)
