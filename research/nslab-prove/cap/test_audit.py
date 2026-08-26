@@ -603,5 +603,136 @@ check('changing ambient mpmath precision does not change the verdict', low3_v ==
 check('changing ambient mpmath precision does not change the findings', low3_f == high3_f == clean3_f)
 
 
+print('\n[33] RUNG 4: the assembled two-sided enclosures, re-derived independently')
+# Contract: ../R4-AUDIT-CONTRACT.md, frozen before implementation. The last rung: what is new is assembly, not
+# machinery - the per-j lower halves (Rung 3 audited only L_J, in its shift-window role), the tau_{J+1-j} <->
+# lambda_j pairing computed independently at this rung, the two-reading support check on the lower halves, and
+# the H6 envelope as an imported published sanity bracket. The auditor stands on the audited Rungs 1-3 and on
+# nothing else.
+import auditor_r4b_final as R4
+r4doc = load('r4b-final')
+r4clean_v, r4clean_f = R4.audit_doc(r4doc)
+check('the genuine final certificate is ACCEPTed', r4clean_v == ACCEPT,
+      '; '.join(x for x in r4clean_f if x.startswith('REJECT'))[:110])
+check('every per-j lower half was re-derived, not trusted',
+      sum(1 for x in r4clean_f if x.startswith('L_') and 'own' in x) == 3)
+check('the pairing produced the auditor\'s own two-sided enclosure per eigenvalue',
+      sum(1 for x in r4clean_f if x.startswith('lambda_') and 'own' in x) == 3)
+check('the H6 envelope was checked for claimed AND own enclosures',
+      sum(1 for x in r4clean_f if x.startswith('H6 envelope ok')) == 6)
+check('the shift window was re-derived at this rung too', any('shift window ok' in x for x in r4clean_f))
+
+print('\n[34] PILLAR 1 - algebraic validation: the single-vector prefix, and the pairing on a closed form')
+# j = 1 with the single trial vector e_1: G_A = [[A_11]], G_B = [[pi^2]], so both Gershgorin readings collapse
+# to the Rayleigh quotient of s_1 - conservative A_11.lo/pi^2.hi, generous A_11.hi/pi^2.lo - with no row sums
+# to widen them. The value 2 Si(2 pi)/pi^2 = 0.2874... is a genuine certified lower bound on lambda_1.
+R4.prepare(16)
+_e1 = [Fraction(1)] + [Fraction(0)] * 15
+_lc, _lg = R4.gershgorin_readings([_e1], 16)
+_a11 = R4.A_entry(1, 1)
+_pi2 = R4.pi_ri() * R4.pi_ri()
+check('conservative reading of the e_1 prefix is exactly A_11.lo/pi^2.hi', _lc == _a11.lo / _pi2.hi)
+check('generous reading of the e_1 prefix is exactly A_11.hi/pi^2.lo', _lg == _a11.hi / _pi2.lo)
+check('and it is a sane lower bound on lambda_1', Fraction(28, 100) < _lc < Fraction(2896, 10000),
+      '%.10g' % float(_lc))
+check('generous >= conservative always', _lg >= _lc)
+# The pairing on the closed-form diagonal pencil of [27]: exact tau brackets (-16, -16/3, -16/7) at
+# rho = -1/16 must give back exactly (1/2, 1/4, 1/8) in that order - lambda_1 from tau_3, not tau_1.
+_taus_exact = [(Fraction(-16), Fraction(-16)), (Fraction(-16, 3), Fraction(-16, 3)),
+               (Fraction(-16, 7), Fraction(-16, 7))]
+check('the pairing recovers the closed-form spectrum exactly, in the right order',
+      R4.own_upper_bounds(Fraction(-1, 16), _taus_exact, 3) == [Fraction(1, 2), Fraction(1, 4), Fraction(1, 8)])
+
+print('\n[35] PILLAR 2 - refusal stress: every undecided or unsupported step is a refusal, never a number')
+def _r4_refuses(fn):
+    try:
+        fn()
+    except R4.Refusal:
+        return True
+    return False
+check('a zero trial vector refuses (Gershgorin cannot certify a positive bound)',
+      _r4_refuses(lambda: R4.gershgorin_readings([[Fraction(0)] * 16], 16)))
+check('a bracket touching zero refuses through the pairing',
+      _r4_refuses(lambda: R4.own_upper_bounds(Fraction(-1, 16), [(Fraction(-1), Fraction(0))] * 3, 3)))
+check('the H6 envelope refuses an enclosure poking above 1/(j pi)',
+      _r4_refuses(lambda: R4._check_envelope(1, Fraction(29, 100), Fraction(35, 100), 'test', [])))
+check('the H6 envelope refuses an enclosure poking below (2/pi^2)(1/(j pi))',
+      _r4_refuses(lambda: R4._check_envelope(1, Fraction(1, 100), Fraction(29, 100), 'test', [])))
+
+print('\n[36] R4 tampering must be rejected - and a blunt-but-consistent certificate accepted')
+def r4_tamper(name, mutate, expect=REJECT):
+    doc = json.loads(json.dumps(r4doc))
+    mutate(doc)
+    v, f = R4.audit_doc(doc)
+    detail = next((x for x in f if x.startswith('REJECT')), '')
+    check(name, v == expect, detail[:112])
+
+r4_tamper('r4: the problem renamed', lambda d: d.__setitem__('problem', 'something_else'))
+def _swap_lower(d):
+    # the assembly corruption this rung exists to catch: L_2 and L_3 exchanged. Slot 3 becomes disordered
+    # (its lower half above its upper half), which no per-ingredient rung would ever see.
+    l2, l3 = d['enclosures'][1][0], d['enclosures'][2][0]
+    d['enclosures'][1][0], d['enclosures'][2][0] = l3, l2
+r4_tamper('r4: L_2 and L_3 swapped (assembly corruption)', _swap_lower)
+r4_tamper('r4: L_3 inflated beyond what its own trial data supports (still below U_3, so only the support '
+          'check can catch it)',
+          lambda d: d['enclosures'][2].__setitem__(0, '41/400'))
+r4_tamper('r4: U_1 understated below the sup its own bracket supports',
+          lambda d: d['enclosures'][0].__setitem__(1, str(Fraction(d['enclosures'][0][1]) - Fraction(1, 10 ** 12))))
+r4_tamper('r4: a pair disordered outright',
+          lambda d: d['enclosures'][1].__setitem__(1, str(Fraction(d['enclosures'][1][0]) - Fraction(1, 10 ** 9))))
+r4_tamper('r4: a lower-half trial vector perturbed (the auditor recomputes from the data)',
+          lambda d: d['V_lower'][0].__setitem__(0, str(Fraction(d['V_lower'][0][0]) * 2)))
+r4_tamper('r4: U_1 pushed above the H6 envelope (sound-looking, but violates the published bracket)',
+          lambda d: d['enclosures'][0].__setitem__(1, '7/20'))
+def _r4_blunt(d):
+    for j in range(3):
+        d['enclosures'][j][0] = str(Fraction(d['enclosures'][j][0]) - Fraction(1, 10 ** 6))
+        d['enclosures'][j][1] = str(Fraction(d['enclosures'][j][1]) + Fraction(1, 10 ** 6))
+r4_tamper('r4: both halves widened outward (blunt, not wrong)', _r4_blunt, expect=ACCEPT)
+
+print('\n[37] PILLAR 3 - static dependency audit for the Rung 4 auditor')
+for mod in ('auditor_r4b_final.py',):
+    src = open(os.path.join(HERE, mod), encoding='utf-8').read()
+    imported = set()
+    for node in ast.walk(ast.parse(src)):
+        if isinstance(node, ast.Import):
+            imported.update(a.name.split('.')[0] for a in node.names)
+        elif isinstance(node, ast.ImportFrom) and node.module:
+            imported.add(node.module.split('.')[0])
+    check(f'{mod} imports no prover module', not (imported & FORBIDDEN), f'imports {sorted(imported)}')
+
+print('\n[38] PILLAR 4 - dynamic independence: corrupt the prover AND the pencil module, output must not move')
+# the clean baseline is [33]'s run - the audit is deterministic, so re-running it would only re-measure that.
+_saved4 = {}
+for _m, _names in ((_prover, ('A_entry', 'A_entry_enclosure', 'A2_enclosure', 'A2_tail_bound',
+                              '_vector_tail_bound', 'lehmann_matrices', 'certified_bracket',
+                              'certified_upper_bounds', '_gershgorin_min', '_gershgorin_max')),
+                   (_lehmann, ('inertia_below', 'bracket_tau', 'upper_bounds'))):
+    for name in _names:
+        _saved4[(_m, name)] = getattr(_m, name, None)
+        setattr(_m, name, lambda *a, **k: (_ for _ in ()).throw(RuntimeError('prover artefact corrupted')))
+try:
+    dirty4_v, dirty4_f = R4.audit_doc(r4doc)
+finally:
+    for (_m, name), fn in _saved4.items():
+        if fn is not None:
+            setattr(_m, name, fn)
+check('the verdict is unchanged when prover and pencil routines are corrupted', r4clean_v == dirty4_v)
+check('the complete finding list is unchanged, not merely the verdict', r4clean_f == dirty4_f)
+
+print('\n[39] PILLAR 5 - AL-002/AL-004 regression: ambient state must not change the answer')
+_dps = _mp.dps
+try:
+    _mp.dps = 5
+    low4_v, low4_f = R4.audit_doc(r4doc)
+    _mp.dps = 200
+    high4_v, high4_f = R4.audit_doc(r4doc)
+finally:
+    _mp.dps = _dps
+check('changing ambient mpmath precision does not change the verdict', low4_v == high4_v == r4clean_v)
+check('changing ambient mpmath precision does not change the findings', low4_f == high4_f == r4clean_f)
+
+
 print('\n' + ('AUDIT: ALL PASS' if not FAILS else f'AUDIT: {len(FAILS)} FAILURE(S) -> ' + ', '.join(FAILS)))
 sys.exit(1 if FAILS else 0)

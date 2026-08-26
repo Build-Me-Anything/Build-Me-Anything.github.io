@@ -5,7 +5,7 @@ a DNS run is a measurement with error bars that shrink if you spend more, and a 
 list of inequalities that is either true or refused. No quantity of the first becomes the second.
 
 ```bash
-cd research/nslab-prove/cap && python run-all.py     # 9 suites, 406 checks, ~7 min, mpmath only
+cd research/nslab-prove/cap && python run-all.py     # 9 suites, 433 checks, ~12 min, mpmath only
 ```
 
 It prints `CAP SUITES: ALL PASS (9 suites)` or it fails loudly. There is no third answer and no tolerance to tune.
@@ -17,7 +17,7 @@ It prints `CAP SUITES: ALL PASS (9 suites)` or it fails loudly. There is no thir
 | [`LITERATURE-CHECK.md`](LITERATURE-CHECK.md) | **Start here.** Four claims of mine that the agent fleet refuted, and what each correction changed. Reading the code first means reading the corrections without knowing they were corrections. |
 | [`Certified Blow-Up — System Architecture.md`](Certified%20Blow-Up%20—%20System%20Architecture.md) | Why a CAP is the only architecture on which a computer contributes to a proof here; the five layers; the three machines and the **frozen contract** between them. |
 | [`Certified Spectral Enclosure … — Statement.md`](Certified%20Spectral%20Enclosure%20for%20the%20De%20Gregorio%20Profile%20Operator%20%E2%80%94%20Statement.md) | **The mathematics of R4b as one auditable object** — hypotheses imported from Huang–Tong–Wei, three lemmas that are ours, the theorem, and two sections that matter as much as the proofs: what is classical, and what is not claimed. Read this before assessing anything about novelty. |
-| [`AUDIT-LOG.md`](AUDIT-LOG.md) | The statement is **frozen** at tag `r4b-statement-v1`; audit findings go here, not into the document. Four rungs, **three audited** — the Gram matrix, `A₂` + tail, and the Lehmann pencil; the assembled enclosures (Rung 4) remain open. |
+| [`AUDIT-LOG.md`](AUDIT-LOG.md) | The statement is **frozen** at tag `r4b-statement-v1`; audit findings go here, not into the document. Four rungs, **all four audited** under contracts frozen before their implementations — Gram matrix, `A₂` + tail, Lehmann pencil, and the assembled enclosures. |
 | [`cap/README.md`](cap/README.md) | The working code, rung by rung, with the numbers each one is graded against and the four failures worth keeping. |
 | [`agents/README.md`](agents/README.md) | The verification fleet: three agents that emit artefacts, never verdicts. |
 
@@ -31,9 +31,9 @@ It prints `CAP SUITES: ALL PASS (9 suites)` or it fails loudly. There is no thir
 | **R2** De Gregorio steady state | certificate **for the Galerkin truncation only**; the PDE statement is not claimed |
 | **R3** preconditioning cure for derivative loss | certificate — and **the wrong door**, see the literature check |
 | **R4** compact-operator eigenpairs | certificate — the route the literature actually uses |
-| **R4b** the De Gregorio profile operator | **certified two-sided enclosure of the spectrum** — λ₁ ∈ [0.2895674, 0.2895979]; lower by Courant–Fischer, upper by Lehmann. **Not** a PDE statement; audited through Rung 3 (Gram, `A₂`, Lehmann pencil), the assembled enclosures not yet |
+| **R4b** the De Gregorio profile operator | **certified two-sided enclosure of the spectrum** — λ₁ ∈ [0.2895674, 0.2895979]; lower by Courant–Fischer, upper by Lehmann. **Not** a PDE statement; **audited on all four rungs** — Gram, `A₂`, Lehmann pencil, and the assembled enclosures |
 | **R5** 2D Boussinesq / axisymmetric Euler | out of reach alone, and `cap/README.md` §R3 says *why* with a number |
-| **Machine C** the auditor | audits R0/R1a/R1b/R2/R3/**R4** in exact rationals, and R4b's **Gram matrix**, **`A₂` + tail** (contract `R2-AUDIT-CONTRACT.md`) and **Lehmann pencil** (contract `R3-AUDIT-CONTRACT.md`) — every tampered certificate rejected, and at the pencil its own τ₁ bracket came out sharper than the prover's (AL-010) |
+| **Machine C** the auditor | audits R0/R1a/R1b/R2/R3/**R4** in exact rationals, and **all four R4b rungs** under frozen contracts — Gram matrix, **`A₂` + tail** (`R2-AUDIT-CONTRACT.md`), **Lehmann pencil** (`R3-AUDIT-CONTRACT.md`), **assembled enclosures** (`R4-AUDIT-CONTRACT.md`) — every tampered certificate rejected, and twice its own bound came out sharper than the prover's (AL-010, AL-012) |
 
 ## What is proved, and what is not
 
@@ -106,9 +106,12 @@ records a **rejected match** — Beattie–Greenlee has its own "Corollary 3.7",
 ### What is still not claimed
 
 None of this is a statement about the PDE. It bounds the **spectrum** of M. The self-similar profile statement
-needs the eigen*function* and the functional `c(f)`, and neither is enclosed here. Machine C now reaches three
-of R4b's four audit rungs — the Gram matrix, `A₂` with its tail, and the Lehmann pencil — under frozen contracts;
-the assembled two-sided enclosures themselves (Rung 4) still rest on a single implementation.
+needs the eigen*function* and the functional `c(f)`, and neither is enclosed here. Machine C now reaches **all
+four** of R4b's audit rungs — the Gram matrix, `A₂` with its tail, the Lehmann pencil, and the assembled
+enclosures — each under a contract frozen before its implementation. What that establishes, and all that it
+establishes, is that no part of the certified table rests on a single implementation any more. An
+*independently audited certificate* is still not an *independently proved theorem*: the proof is the statement
+document, and the ladder is computational evidence about the machinery, not a second proof.
 
 ---
 

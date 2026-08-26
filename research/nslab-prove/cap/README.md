@@ -7,7 +7,7 @@ tune and no third answer.
 
 ```bash
 cd research/nslab-prove/cap
-python run-all.py          # all nine suites, 406 checks, ~7 minutes (R1b and the audit are most of it)
+python run-all.py          # all nine suites, 433 checks, ~12 minutes (R1b and the audit are most of it)
 ```
 
 Requires `mpmath` only (already present with sympy). Pure Python, arbitrary precision, outward-rounding interval
@@ -35,12 +35,13 @@ arithmetic — slow, and deliberately so: at this scale a reader auditing every 
 | `auditor_r4b.py` | **Machine C** | R4b Rung 1 — the Gram matrix in exact rationals: evaluates the **Cin** form, so it needs neither γ nor a logarithm, and takes π from Machin rather than mpmath |
 | `auditor_r4b_a2.py` | **Machine C** | R4b Rung 2 — `A₂` and its tail via HTW's smoothing estimate `Σ A_ki² ≤ (iπ)²`, sharing **no step** with the prover's asymptotic route. Contract in `../R2-AUDIT-CONTRACT.md` |
 | `auditor_r4b_lehmann.py` | **Machine C** | R4b Rung 3 — the Lehmann pencil: vector form of the (R2-T) tail (no `Ksum ≥ 2K` hypothesis), inertia by **Jacobi's division-free minor rule** rather than LDLᵀ pivots, `R ≻ 0` checked by Sylvester's criterion, the τ→bound step redone in exact rationals. Contract in `../R3-AUDIT-CONTRACT.md` |
+| `auditor_r4b_final.py` | **Machine C** | R4b Rung 4 — the assembled enclosures `λ_j ∈ [L_j, U_j]`: per-`j` lower halves by its own prefix Gershgorin (two readings, conservative and generous, no tuned slack), the `τ_{J+1−j} ↔ λ_j` pairing computed at this rung, and the **H6 envelope** as an imported published sanity bracket. Contract in `../R4-AUDIT-CONTRACT.md` |
 | `auditor_r4.py` | **Machine C** | R4 eigenpairs: rebuilds the operator from the parameters and recomputes Y₀ exactly — forms no matrix and inverts nothing |
 | `lehmann.py` | **R4b** | Lehmann-Maehly upper bounds by Sylvester inertia counting - no eigensolver, and it refuses when a pivot cannot be signed |
 | `sici.py` | **R4b** | rigorous enclosures of Si and Ci by convergent series with a **proved** Leibniz remainder; refuses where the hypothesis is unmet |
 | `emit_certs.py` | contract | runs the provers and writes their certificates into `certs/` |
 | `run-all.py` | | one command, nine suites, and it fails loudly — the `build.js --verify` of this line |
-| `test_r0/r1/r1b/r2/r3/r4/r4b/audit/candidate.py` | | 11 / 25 / 22 / 18 / 17 / 18 / 143 / 123 / 29 checks — **406** in total |
+| `test_r0/r1/r1b/r2/r3/r4/r4b/audit/candidate.py` | | 11 / 25 / 22 / 18 / 17 / 18 / 143 / 150 / 29 checks — **433** in total |
 
 ## Status
 
@@ -53,18 +54,18 @@ arithmetic — slow, and deliberately so: at this scale a reader auditing every 
 | **R3** | the derivative-loss cure | **ALL PASS** — preconditioned Burgers certified against the exact u = sin x, and the failure boundary measured. **Sound, and aimed at the wrong door** |
 | **R4** | compact-operator eigenpairs | **ALL PASS** — certified against `λ = 1 + ρ` and `λ = (13 ± √73)/8`; a merely *bounded* operator is refused |
 | **R4b** | the De Gregorio profile operator | **ALL PASS** — the matrix entries are **closed forms in Si and Ci**, and the suite carries the line's headline: a **certified two-sided enclosure** of λ₁…λ₃ (Courant–Fischer below, Lehmann above), e.g. λ₁ ∈ [0.2895674, 0.2895979]. A statement about the **spectrum of M**, never about a profile or a PDE |
-| **Machine C** | independent audit | **ALL PASS** — audits certificates across R0/R1a/R1b/R2/R3/**R4** and R4b's Gram matrix, `A₂` and **Lehmann pencil**; rejects every tampered one; agrees with the prover to **6.4e-23** (quadratic) and 3.4e-21 (CLM); at the pencil its τ₁ bracket came out **sharper** than the prover's (AL-010) |
+| **Machine C** | independent audit | **ALL PASS** — audits certificates across R0/R1a/R1b/R2/R3/**R4** and **all four R4b rungs** — Gram matrix, `A₂`, **Lehmann pencil**, **assembled enclosures**; rejects every tampered one; agrees with the prover to **6.4e-23** (quadratic) and 3.4e-21 (CLM); twice its own bound came out **sharper** than the prover's (AL-010, AL-012) |
 | R5 | 2D Boussinesq / axisymmetric Euler | out of reach alone, and §R3 now says *why* with a number |
 
-**The gap that remains:** Machine C now climbs three of R4b's four audit rungs — the **Gram matrix**
-(`auditor_r4b.py`), **`A₂` and its tail** (`auditor_r4b_a2.py`, contract `../R2-AUDIT-CONTRACT.md`), and the
-**Lehmann pencil** (`auditor_r4b_lehmann.py`, contract `../R3-AUDIT-CONTRACT.md`). What it does **not** yet reach
-is Rung 4: the final two-sided enclosures `λ_j ∈ [L_j, U_j]` as assembled objects — the Courant–Fischer lower
-halves are audited only in `L_J`'s role inside the Lehmann shift window. Until Rung 4 closes, the *assembled*
-table in the statement document still rests on a single implementation, and that is the correct description of
-its status rather than a defect to hide.
+**The ladder is complete:** Machine C climbs all four of R4b's audit rungs — the **Gram matrix**
+(`auditor_r4b.py`), **`A₂` and its tail** (`auditor_r4b_a2.py`, contract `../R2-AUDIT-CONTRACT.md`), the
+**Lehmann pencil** (`auditor_r4b_lehmann.py`, contract `../R3-AUDIT-CONTRACT.md`), and the **assembled
+enclosures** (`auditor_r4b_final.py`, contract `../R4-AUDIT-CONTRACT.md`) — each contract frozen before its
+implementation. No part of the certified table rests on a single implementation any more. The boundary that
+survives completion: an *independently audited certificate* is still not an *independently proved theorem* —
+the proof is the statement document, and the ladder is computational evidence about the machinery.
 
-**What that gap now costs has fallen sharply.** The R4b matrix entries were an improper oscillatory integral
+**What the enclosure itself costs fell sharply along the way.** The R4b matrix entries were an improper oscillatory integral
 evaluated by quadrature. They have a **closed form** in Si and Ci (below), `sici.py` encloses those
 **rigorously**, and `certified_bracket` turns them into a genuine two-sided bracket on λ₁…λ₆ — for example
 `λ₁ ∈ [0.2895674, 0.3183099)`, whose lower end beats the published lower bound by ×1.43.

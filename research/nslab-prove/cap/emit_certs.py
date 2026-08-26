@@ -316,16 +316,18 @@ def emit_r4b_a2(outdir):
     return path, type('V', (), {'status': 'CERTIFIED', 'proved': True})()
 
 
-def emit_r4b_lehmann(outdir):
-    """R4b Rung 3: the Lehmann pencil — shift, matrices, tau brackets and upper bounds, for the auditor.
+_R4B_SHARED = {}
 
-    Two emission rules matter here. (i) Every endpoint is carried exactly (an mpf is a dyadic rational), as
-    everywhere in this directory. (ii) **The claimed upper bounds are the exact rational sup over the claimed
-    tau bracket**, `-rho - 1/b`, not the prover's rounded mpf: `lehmann.upper_bounds` computes `-(rho + 1/b)`
-    in round-to-nearest arithmetic, which can understate the certifiable sup by an ulp — the same reason `_up`
-    exists. The certificate must claim only what its own data supports, so the sup is recomputed exactly from
-    the emitted endpoints.
+
+def _r4b_lehmann_data():
+    """Build the Rung 3 pencil data once per process; `emit_r4b_lehmann` and `emit_r4b_final` share it.
+
+    Prover-side sharing only: the two certificates must embed the SAME pencil block, and recomputing it would
+    double the most expensive emission step for no independence gain — the auditor re-derives all of it from
+    the certificate data regardless of how the prover produced it.
     """
+    if _R4B_SHARED:
+        return _R4B_SHARED
     import problem_dg_profile as DGP
     import lehmann as LEH
     from mpmath import iv as _iv
@@ -358,7 +360,6 @@ def emit_r4b_lehmann(outdir):
     def mat(M):
         return [[[str(exact(lo(M[a][b]))), str(exact(hi(M[a][b])))] for b in range(J)] for a in range(J)]
 
-    path = os.path.join(outdir, 'certificate-r4b-lehmann.json')
     doc = {
         'contract': C.CONTRACT_VERSION,
         'problem': 'r4b_lehmann',
@@ -379,6 +380,122 @@ def emit_r4b_lehmann(outdir):
                   'auditor_route': 'MUST NOT reuse the above; see R3-AUDIT-CONTRACT.md section 3',
                   'upper_is_exact_sup': '-rho - 1/b over the claimed bracket, in exact rationals'},
     }
+    _R4B_SHARED.update(doc=doc, br=br, upper=upper, J=J, Kbr=Kbr, Vbr=Vbr, target=target)
+    return _R4B_SHARED
+
+
+def emit_r4b_lehmann(outdir):
+    """R4b Rung 3: the Lehmann pencil — shift, matrices, tau brackets and upper bounds, for the auditor.
+
+    Two emission rules matter here. (i) Every endpoint is carried exactly (an mpf is a dyadic rational), as
+    everywhere in this directory. (ii) **The claimed upper bounds are the exact rational sup over the claimed
+    tau bracket**, `-rho - 1/b`, not the prover's rounded mpf: `lehmann.upper_bounds` computes `-(rho + 1/b)`
+    in round-to-nearest arithmetic, which can understate the certifiable sup by an ulp — the same reason `_up`
+    exists. The certificate must claim only what its own data supports, so the sup is recomputed exactly from
+    the emitted endpoints.
+    """
+    d = _r4b_lehmann_data()
+    path = os.path.join(outdir, 'certificate-r4b-lehmann.json')
+    import json as _json
+    with open(path, 'w', encoding='utf-8') as f:
+        _json.dump(d['doc'], f, indent=2)
+    return path, type('V', (), {'status': 'CERTIFIED', 'proved': True})()
+
+
+def _exact_gersh_lower(GA, GB, j):
+    """Gershgorin lower bound `lambda_min(G_A)/lambda_max(G_B)` over the leading j-by-j blocks, with the SCAN
+    in exact rationals.
+
+    The interval matrices are built by directed mpmath iv arithmetic, so their endpoints are valid dyadic
+    bounds; the scan — row sums, min/max, the final quotient — is then done in Fractions with no rounding at
+    all, reading the endpoints via `exact(X.a)`/`exact(X.b)` (lossless) rather than `lo()`/`hi()`, whose
+    conversion to an ambient-precision mpf rounds to NEAREST and can overstate a lower bound by an ulp. Same
+    failure family as the tau -> bound step (AL-008): the certificate must claim only what its data supports.
+    """
+    gmin = None
+    for i in range(j):
+        row = exact(GA[i][i].a)
+        for k in range(j):
+            if k != i:
+                row -= max(abs(exact(GA[i][k].a)), abs(exact(GA[i][k].b)))
+        gmin = row if gmin is None else min(gmin, row)
+    gmax = None
+    for i in range(j):
+        row = exact(GB[i][i].b)
+        for k in range(j):
+            if k != i:
+                row += max(abs(exact(GB[i][k].a)), abs(exact(GB[i][k].b)))
+        gmax = row if gmax is None else max(gmax, row)
+    if not (gmin > 0 and gmax > 0):
+        raise SystemExit('r4b final: Gershgorin scan could not certify a positive lower bound at j = %d' % j)
+    return gmin / gmax
+
+
+def emit_r4b_final(outdir):
+    """R4b Rung 4: the assembled two-sided enclosures `lambda_j in [L_j, U_j]`, self-contained for the auditor.
+
+    The certificate carries the claimed enclosures, the lower-half trial vectors, and the complete pencil block
+    of the Rung 3 certificate — the auditor re-derives everything from this one document (R4-AUDIT-CONTRACT.md
+    section 1). The lower halves are re-evaluated here with the Gershgorin scan in exact rationals
+    (`_exact_gersh_lower`); `certified_bracket`'s own mpf value is kept only as a drift alarm.
+    """
+    import problem_dg_profile as DGP
+    from mpmath import iv as _iv
+    d = _r4b_lehmann_data()
+    J, Kbr, Vbr, target = d['J'], d['Kbr'], d['Vbr'], d['target']
+
+    dps_saved = _iv.dps
+    try:
+        _iv.dps = target + 15
+        Aiv = [[None] * Kbr for _ in range(Kbr)]
+        for n in range(Kbr):
+            for m in range(n, Kbr):
+                e = DGP.A_entry_enclosure(n + 1, m + 1, target)
+                Aiv[n][m] = e
+                Aiv[m][n] = e
+        Biv = [(_iv.mpf(n) * _iv.pi) ** 2 for n in range(1, Kbr + 1)]
+        Viv = [[_iv.mpf(c) for c in vec] for vec in Vbr]        # an mpf is dyadic, so this embedding is exact
+        GA = [[None] * J for _ in range(J)]
+        GB = [[None] * J for _ in range(J)]
+        for a in range(J):
+            for b in range(J):
+                sa = _iv.mpf(0)
+                sb = _iv.mpf(0)
+                for p in range(Kbr):
+                    for q in range(Kbr):
+                        sa = sa + Viv[a][p] * Aiv[p][q] * Viv[b][q]
+                    sb = sb + Viv[a][p] * Biv[p] * Viv[b][p]
+                GA[a][b] = sa
+                GB[a][b] = sb
+    finally:
+        _iv.dps = dps_saved
+
+    lower = [_exact_gersh_lower(GA, GB, j) for j in range(1, J + 1)]
+    for j in range(J):                                           # drift alarm against the prover's own scan
+        if abs(float(lower[j]) - float(d['br'][j][0])) > 1e-12:
+            raise SystemExit('r4b final: exact Gershgorin scan drifted from certified_bracket at j = %d' % (j + 1))
+        if not lower[j] < d['upper'][j]:
+            raise SystemExit('r4b final: assembled pair disordered at j = %d' % (j + 1))
+
+    leh = d['doc']
+    path = os.path.join(outdir, 'certificate-r4b-final.json')
+    doc = {
+        'contract': C.CONTRACT_VERSION,
+        'problem': 'r4b_final',
+        'params': {'J': J, 'K_lower': Kbr},
+        'enclosures': [[str(lower[j]), str(d['upper'][j])] for j in range(J)],
+        'V_lower': leh['V_bracket'],
+        'pencil': {k: leh[k] for k in ('params', 'audit_Ksum', 'rho', 'window', 'V', 'V_bracket',
+                                       'matrices', 'tau', 'upper')},
+        'claim': ('Certified two-sided enclosures lambda_j in [L_j, U_j] for the leading eigenvalues of the '
+                  'Huang-Tong-Wei profile operator: lower halves by Courant-Fischer/Gershgorin on nested trial '
+                  'prefixes, upper halves by Lehmann-Maehly. A statement about the spectrum of M only - not '
+                  'about an eigenfunction, and not about any PDE.'),
+        'notes': {'lower_halves': 'Gershgorin scan in exact rationals over directed-interval matrices; L_j '
+                                  'uses the first j rows of V_lower',
+                  'upper_halves': 'the exact rational sup -rho - 1/b over the embedded tau brackets',
+                  'auditor_route': 'must re-derive both halves and the pairing; see R4-AUDIT-CONTRACT.md'},
+    }
     import json as _json
     with open(path, 'w', encoding='utf-8') as f:
         _json.dump(doc, f, indent=2)
@@ -387,7 +504,7 @@ def emit_r4b_lehmann(outdir):
 
 def main(outdir='.'):
     os.makedirs(outdir, exist_ok=True)
-    for fn in (emit_quadratic, emit_clm, emit_degregorio, emit_burgers, emit_r0, emit_r1a, emit_eigen, emit_r4b, emit_r4b_a2, emit_r4b_lehmann):
+    for fn in (emit_quadratic, emit_clm, emit_degregorio, emit_burgers, emit_r0, emit_r1a, emit_eigen, emit_r4b, emit_r4b_a2, emit_r4b_lehmann, emit_r4b_final):
         path, cert = fn(outdir)
         print('wrote %s   (%s)' % (os.path.basename(path), cert.status))
     return 0

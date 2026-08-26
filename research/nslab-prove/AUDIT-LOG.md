@@ -23,7 +23,7 @@ mathematics may reopen the frozen document — which is itself recorded as an en
 | 1 | Gram matrix `A_{nm}` (Lemma 1′) | **audited** — `auditor_r4b.py` |
 | 2 | `A₂ = AᵀB⁻¹A` and its tail (Lemmas 2, 3) | **audited** — `auditor_r4b_a2.py`, contract `R2-AUDIT-CONTRACT.md` |
 | 3 | Lehmann pencil and Sylvester inertia counting (§5) | **audited** — `auditor_r4b_lehmann.py`, contract `R3-AUDIT-CONTRACT.md` |
-| 4 | the final enclosures `λ_j ∈ [L_j, U_j]` | not audited |
+| 4 | the final enclosures `λ_j ∈ [L_j, U_j]` | **audited** — `auditor_r4b_final.py`, contract `R4-AUDIT-CONTRACT.md` |
 
 Rung 2 must derive its own tail rather than importing the prover's, or the boundary is not independent. Rung 3
 must **refuse** where a pivot's sign cannot be certified, rather than converting an undecided sign into a
@@ -153,6 +153,30 @@ numerical decision — `uncertainty ⇒ no certificate`, never `uncertainty ⇒ 
 | **Changes the certificate?** | No. |
 | **Resolution** | Four separations, per the frozen contract. (a) The `A₂` tail is the **vector form of (R2-T)**: `Σ_k p_a[k]² = ‖M w_a‖²_{Ḣ²} ≤ ‖w_a‖²_{Ḣ¹}`, so the auditor's tail carries *no* `Ksum ≥ 2K` hypothesis where the prover's entry-asymptotics tail must refuse below `2K`. (b) Inertia by **Jacobi's division-free minor rule** (sign changes in `1, D₁, …, D_n`), not LDLᵀ pivots, with `R ≻ 0` *checked* by Sylvester's criterion rather than asserted from the Gram form. (c) **Resolution-limited bisection** that stops where the interval widths stop certifying a count. (d) The τ→bound arithmetic redone **exactly** (`1/b` is exact for dyadic `b`), and the shift window re-derived from the auditor's own Machin π and its own Gershgorin bound. |
 | **The unforeseen result** | The auditor's τ₁ bracket `[−86, −85]` is **sharper** than the prover's `[−87.31, −83.67]` — the division-free minors keep deciding where the prover's LDLᵀ pivot quotient goes undecidable and its bisection stops early. So for `λ₃` the independent check produced the better bound (`0.10265` vs the claimed `0.10284`). Sharper was not required and is not the criterion; it is recorded because an auditor *expected* to be blunter coming out sharper is exactly the kind of asymmetry worth remembering: the two routes fail in different places, which is what independence is for. Deeper rungs `Ksum_aud = 200 / 400` tighten the auditor's τ₁ to width `0.14 / 0.035`, all contained in overlap — the standing suite runs at 80 (9.6 s), per the contract's calibration table. |
+| **Resulting commit** | (this commit) |
+
+### AL-011 — the naive lower-half emission path can overstate a certified bound by an ulp
+
+| | |
+|---|---|
+| **Commit** | (this commit) |
+| **Rung / test** | 4 — `emit_certs._exact_gersh_lower`; found while implementing the Rung 4 certificate, before it was ever emitted |
+| **Observation** | `certified_bracket`'s Gershgorin scan runs through `lo()`/`hi()`, whose conversion to an ambient-precision mpf rounds to **nearest**, and through round-to-nearest subtraction and division — so the value a naive emitter would claim as `L_j` can exceed the largest value the certified interval matrices actually support. Measured at `j = 1`: the naive value sits **5.4e-45 above** the exact-rational scan of the same data. |
+| **Changes the theorem?** | No. |
+| **Changes the certificate?** | **No existing certificate** — the Rung 4 certificate did not yet exist, and the Rung 3 certificate never carried a Gershgorin value. In this instance the overstatement is also masked by the prover's outward entry-rounding (~1e-30), so even the naive claim would have survived the auditor's support check — but the masking is an accident of magnitudes, not a guarantee. |
+| **Resolution** | AL-008's failure family, third occurrence (after `lehmann.upper_bounds` and the reason `_up` exists): **round-to-nearest anywhere on the emission path can convert a certified quantity into an uncertified claim.** The final certificate therefore carries a Gershgorin scan done **entirely in exact rationals** over the directed-interval matrices' endpoints, read losslessly via `exact(X.a)` rather than through `lo()`; `certified_bracket`'s own value is kept only as a drift alarm. The shift-window comparison `U_next < L_J` inside the prover has the same theoretical exposure with ~1e-2 of margin; recorded, not repaired — the auditor re-derives that window independently in exact arithmetic, which is the check that counts. |
+| **Resulting commit** | (this commit) |
+
+### AL-012 — Rung 4 audited: the assembled enclosures, and the ladder is complete
+
+| | |
+|---|---|
+| **Commit** | (this commit) |
+| **Rung / test** | 4 — `auditor_r4b_final.py`; `test_audit.py` §§33–39; contract `R4-AUDIT-CONTRACT.md` frozen at `aff2a71` |
+| **Observation** | The auditor re-derives the final table `λ_j ∈ [L_j, U_j]` from the self-contained certificate and its own primitives — per-`j` lower halves by its own prefix Gershgorin (two readings, conservative and generous, no tuned slack), upper halves through the audited Rung 3 pencil machinery with the `τ_{J+1−j} ↔ λ_j` pairing computed at this rung, the H6 envelope checked with its own π — and the certificate is `ACCEPT`ed: every claimed pair overlaps the auditor's own two-sided enclosure, every claimed half survives its support check, and the assembly-corruption tamper (`L_2`/`L_3` swapped) is rejected. |
+| **Changes the theorem?** | No. |
+| **Changes the certificate?** | No. |
+| **Resolution** | With this entry **all four rungs are audited under contracts frozen before their implementations** — Gram matrix (`d453595`), `A₂` + tail (AL-005), Lehmann pencil (AL-010), assembled enclosures (this entry). Two boundaries survive completion, fixed in the contract's §7 before the implementation ran: the frozen statement does not change because the audit finished, and an **independently audited certificate is still not an independently proved theorem** — the proof is the statement document; the ladder is independent computational evidence that the machinery was implemented correctly. AL-010's asymmetry recurs through the assembly: the auditor's own `U₃ = 0.10265` is again sharper than the claimed `0.10284`, and again that is a finding, not a revision — the statement's table stands as frozen. |
 | **Resulting commit** | (this commit) |
 
 ---
