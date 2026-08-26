@@ -17,6 +17,7 @@ It prints `CAP SUITES: ALL PASS (9 suites)` or it fails loudly. There is no thir
 | [`LITERATURE-CHECK.md`](LITERATURE-CHECK.md) | **Start here.** Four claims of mine that the agent fleet refuted, and what each correction changed. Reading the code first means reading the corrections without knowing they were corrections. |
 | [`Certified Blow-Up — System Architecture.md`](Certified%20Blow-Up%20—%20System%20Architecture.md) | Why a CAP is the only architecture on which a computer contributes to a proof here; the five layers; the three machines and the **frozen contract** between them. |
 | [`Certified Spectral Enclosure … — Statement.md`](Certified%20Spectral%20Enclosure%20for%20the%20De%20Gregorio%20Profile%20Operator%20%E2%80%94%20Statement.md) | **The mathematics of R4b as one auditable object** — hypotheses imported from Huang–Tong–Wei, three lemmas that are ours, the theorem, and two sections that matter as much as the proofs: what is classical, and what is not claimed. Read this before assessing anything about novelty. |
+| [`AUDIT-LOG.md`](AUDIT-LOG.md) | The statement is **frozen** at tag `r4b-statement-v1`; audit findings go here, not into the document. Four rungs, one audited. |
 | [`cap/README.md`](cap/README.md) | The working code, rung by rung, with the numbers each one is graded against and the four failures worth keeping. |
 | [`agents/README.md`](agents/README.md) | The verification fleet: three agents that emit artefacts, never verdicts. |
 

@@ -315,6 +315,11 @@ Lemma 1′ in rational arithmetic rounded outward. It is an audit rather than a 
 different *constant* (Machin's π, not `iv.pi`). It accepts the emitted certificate, rejects six tampered variants,
 and accepts a blunt one — only disjointness is fatal.
 
+**Terminology, because the two are easy to conflate.** An *independently audited certificate* is not an
+*independently proved theorem*. The mathematical proof is this document. A second implementation provides
+independent computational evidence that the certificate machinery was implemented correctly — which is a
+different and weaker claim, and the one being made.
+
 **It stops at the Gram matrix.** `A₂` (Lemma 2), the tail (Lemma 3), the Lehmann step and the enclosures of §5 are
 **not** independently re-derived. So the certified numbers in the table above still rest on a single
 implementation. That should weigh against the claim rather than for it, and the honest reading is that the audit
