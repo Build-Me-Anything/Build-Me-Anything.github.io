@@ -136,8 +136,11 @@ def upper_bounds(A0, A1, A2, rho, J, n, span=None):
             continue
         a, b = br
         # tau in [a, b], both negative. rho + 1/tau is a LOWER bound on an eigenvalue of T = -M, so -(rho + 1/tau)
-        # is an UPPER bound on the corresponding lambda. 1/tau is increasing in tau over the negatives, so the
-        # weakest (largest) value of -(rho + 1/tau) comes from the endpoint giving the smallest rho + 1/tau.
+        # is an UPPER bound on the corresponding lambda. -(rho + 1/tau) is increasing in tau (derivative 1/tau^2),
+        # so the sup over the bracket sits at the b endpoint; max over both endpoints implements it with slack.
+        # (An earlier version of this comment justified the max by "1/tau is increasing over the negatives", which
+        # is false - 1/tau is decreasing there. The CODE was always sound because it takes the max of both
+        # endpoints regardless. Found by the Rung 3 audit; AUDIT-LOG AL-008.)
         cand = [-(rho + 1 / a), -(rho + 1 / b)]
         out.append(max(cand))
     out.reverse()          # tau_1 (most negative) bounds the SMALLEST lambda below rho; reverse to index by j

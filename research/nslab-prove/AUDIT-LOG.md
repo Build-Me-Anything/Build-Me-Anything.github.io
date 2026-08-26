@@ -22,7 +22,7 @@ mathematics may reopen the frozen document — which is itself recorded as an en
 |---|---|---|
 | 1 | Gram matrix `A_{nm}` (Lemma 1′) | **audited** — `auditor_r4b.py` |
 | 2 | `A₂ = AᵀB⁻¹A` and its tail (Lemmas 2, 3) | **audited** — `auditor_r4b_a2.py`, contract `R2-AUDIT-CONTRACT.md` |
-| 3 | Lehmann pencil and Sylvester inertia counting (§5) | not audited |
+| 3 | Lehmann pencil and Sylvester inertia counting (§5) | **audited** — `auditor_r4b_lehmann.py`, contract `R3-AUDIT-CONTRACT.md` |
 | 4 | the final enclosures `λ_j ∈ [L_j, U_j]` | not audited |
 
 Rung 2 must derive its own tail rather than importing the prover's, or the boundary is not independent. Rung 3
@@ -116,6 +116,43 @@ numerical decision — `uncertainty ⇒ no certificate`, never `uncertainty ⇒ 
 | **Changes the theorem?** | No. |
 | **Changes the certificate?** | No. |
 | **Resolution** | **The frozen document is deliberately not edited.** A snapshot that keeps being corrected is not a snapshot. Audit status is live information and lives here; the statement's row should be read as accurate *as at the tag*. Current status: **Rungs 1 and 2 audited; Rungs 3 and 4 open.** |
+| **Resulting commit** | (this commit) |
+
+### AL-008 — a wrong justification on the prover's endpoint selection; the code was sound
+
+| | |
+|---|---|
+| **Commit** | (this commit) |
+| **Rung / test** | 3 — `lehmann.py`, `upper_bounds` |
+| **Observation** | The comment justifying the endpoint choice read *"1/tau is increasing in tau over the negatives"*. That is false — `1/τ` is **decreasing** there (τ = −2 → −0.5, τ = −1 → −1). The quantity that is increasing is the bound itself, `−(ρ + 1/τ)`, whose derivative is `1/τ² > 0`, putting the sup at the `b` endpoint. |
+| **Changes the theorem?** | No. |
+| **Changes the certificate?** | **No.** The code takes `max` over both endpoints, which implements the correct sup (with slack from the `a` endpoint) regardless of which justification is believed. Every emitted bound is unchanged. |
+| **Resolution** | Comment corrected in place with a pointer here. Found while writing the R3 contract's §3(d), *before* the auditor ran — the audit's first yield was reading the prover closely enough to derive the step independently. The Rung 3 emitter additionally writes the claimed bound as the **exact rational sup** `−ρ − 1/b` over the claimed bracket rather than the prover's round-to-nearest mpf, which can understate the certifiable sup by an ulp — the same reason `emit_certs._up` exists. |
+| **Resulting commit** | (this commit) |
+
+### AL-009 — the Rung 1 auditor's precision-sizing made idempotent; no output changes
+
+| | |
+|---|---|
+| **Commit** | (this commit) |
+| **Rung / test** | 1 (module), 3 (motivation) — `auditor_r4b.set_precision_for` |
+| **Observation** | `set_precision_for` cleared the series cache and π unconditionally, even when the computed grid equalled the current one. Rung 3's tamper battery re-runs the audit many times at the same grid; each run would have re-derived every `Si`/`Cin` series from scratch. |
+| **Changes the theorem?** | No. |
+| **Changes the certificate?** | No. |
+| **Resolution** | An early return when the computed bit count equals the current one and π exists. The sizing is a deterministic function of `x_hi`, so skipping a resize to the *same* grid cannot alter any emitted value — the cache holds results the same call would recompute identically. Recorded here because it touches an **audited module**: Rungs 1 and 2 were re-run afterwards and still pass, which the ladder (`run-all.py`) asserts on every run. |
+| **Resulting commit** | (this commit) |
+
+### AL-010 — Rung 3 audited: the Lehmann pencil, by routes sharing nothing with the prover
+
+| | |
+|---|---|
+| **Commit** | (this commit) |
+| **Rung / test** | 3 — `auditor_r4b_lehmann.py`; `test_audit.py` §§26–32; contract `R3-AUDIT-CONTRACT.md` frozen at `a716189` |
+| **Observation** | The auditor re-derives the **entire** §5 step from the certificate's trial vectors and its own primitives — shift window, the three matrices, `R ≻ 0`, the τ brackets, and the final bounds — and the prover's certificate is `ACCEPT`ed: every claimed interval overlaps the auditor's, and every claimed `U_j` survives an exact-rational recheck against the certificate's own bracket. |
+| **Changes the theorem?** | No. |
+| **Changes the certificate?** | No. |
+| **Resolution** | Four separations, per the frozen contract. (a) The `A₂` tail is the **vector form of (R2-T)**: `Σ_k p_a[k]² = ‖M w_a‖²_{Ḣ²} ≤ ‖w_a‖²_{Ḣ¹}`, so the auditor's tail carries *no* `Ksum ≥ 2K` hypothesis where the prover's entry-asymptotics tail must refuse below `2K`. (b) Inertia by **Jacobi's division-free minor rule** (sign changes in `1, D₁, …, D_n`), not LDLᵀ pivots, with `R ≻ 0` *checked* by Sylvester's criterion rather than asserted from the Gram form. (c) **Resolution-limited bisection** that stops where the interval widths stop certifying a count. (d) The τ→bound arithmetic redone **exactly** (`1/b` is exact for dyadic `b`), and the shift window re-derived from the auditor's own Machin π and its own Gershgorin bound. |
+| **The unforeseen result** | The auditor's τ₁ bracket `[−86, −85]` is **sharper** than the prover's `[−87.31, −83.67]` — the division-free minors keep deciding where the prover's LDLᵀ pivot quotient goes undecidable and its bisection stops early. So for `λ₃` the independent check produced the better bound (`0.10265` vs the claimed `0.10284`). Sharper was not required and is not the criterion; it is recorded because an auditor *expected* to be blunter coming out sharper is exactly the kind of asymmetry worth remembering: the two routes fail in different places, which is what independence is for. Deeper rungs `Ksum_aud = 200 / 400` tighten the auditor's τ₁ to width `0.14 / 0.035`, all contained in overlap — the standing suite runs at 80 (9.6 s), per the contract's calibration table. |
 | **Resulting commit** | (this commit) |
 
 ---

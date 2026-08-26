@@ -63,15 +63,17 @@ def set_precision_for(x_hi, target_digits=45, margin_bits=96):
     e^x needs x/ln 2 bits before any target digits survive; the rest is the target and an allowance for
     accumulation over the ~2x terms the series takes. Deterministic in `x_hi`, so a run is reproducible.
     """
-    global PREC_BITS, _SCALE
+    global PREC_BITS, _SCALE, _PI
     need = int(float(x_hi) / math.log(2)) + int(target_digits * 3.33) + margin_bits
-    PREC_BITS = max(512, need)
+    need = max(512, need)
+    if need == PREC_BITS and _PI is not None:
+        return PREC_BITS          # idempotent: same grid, keep the deterministic cache (repeat audits reuse it)
+    PREC_BITS = need
     _SCALE = 1 << PREC_BITS
     _CACHE.clear()
     # pi must be recomputed too, and with enough Machin terms. Leaving the cached pi in place was half of AL-004:
     # the grid grew while pi stayed at its original ~170 digits, so pi silently became the limiting factor and the
     # symptom looked like a tail-bound failure rather than a constant that had not been re-derived.
-    global _PI
     _PI = None
     return PREC_BITS
 

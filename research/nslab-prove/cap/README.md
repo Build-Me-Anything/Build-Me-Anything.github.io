@@ -7,7 +7,7 @@ tune and no third answer.
 
 ```bash
 cd research/nslab-prove/cap
-python run-all.py          # all nine suites, 376 checks, ~4.5 minutes (R1b is most of it)
+python run-all.py          # all nine suites, 406 checks, ~7 minutes (R1b and the audit are most of it)
 ```
 
 Requires `mpmath` only (already present with sympy). Pure Python, arbitrary precision, outward-rounding interval
@@ -34,12 +34,13 @@ arithmetic — slow, and deliberately so: at this scale a reader auditing every 
 | `auditor_r01.py` | **Machine C** | R0 enclosures and R1a's completeness check, with its own π, sin and cos from series with proved remainders |
 | `auditor_r4b.py` | **Machine C** | R4b Rung 1 — the Gram matrix in exact rationals: evaluates the **Cin** form, so it needs neither γ nor a logarithm, and takes π from Machin rather than mpmath |
 | `auditor_r4b_a2.py` | **Machine C** | R4b Rung 2 — `A₂` and its tail via HTW's smoothing estimate `Σ A_ki² ≤ (iπ)²`, sharing **no step** with the prover's asymptotic route. Contract in `../R2-AUDIT-CONTRACT.md` |
+| `auditor_r4b_lehmann.py` | **Machine C** | R4b Rung 3 — the Lehmann pencil: vector form of the (R2-T) tail (no `Ksum ≥ 2K` hypothesis), inertia by **Jacobi's division-free minor rule** rather than LDLᵀ pivots, `R ≻ 0` checked by Sylvester's criterion, the τ→bound step redone in exact rationals. Contract in `../R3-AUDIT-CONTRACT.md` |
 | `auditor_r4.py` | **Machine C** | R4 eigenpairs: rebuilds the operator from the parameters and recomputes Y₀ exactly — forms no matrix and inverts nothing |
 | `lehmann.py` | **R4b** | Lehmann-Maehly upper bounds by Sylvester inertia counting - no eigensolver, and it refuses when a pivot cannot be signed |
 | `sici.py` | **R4b** | rigorous enclosures of Si and Ci by convergent series with a **proved** Leibniz remainder; refuses where the hypothesis is unmet |
 | `emit_certs.py` | contract | runs the provers and writes their certificates into `certs/` |
-| `run-all.py` | | one command, eight suites, and it fails loudly — the `build.js --verify` of this line |
-| `test_r0/r1/r1b/r2/r3/r4/r4b/audit.py` | | 11 / 25 / 22 / 18 / 17 / 18 / 143 / 93 / 29 checks — **376** in total |
+| `run-all.py` | | one command, nine suites, and it fails loudly — the `build.js --verify` of this line |
+| `test_r0/r1/r1b/r2/r3/r4/r4b/audit/candidate.py` | | 11 / 25 / 22 / 18 / 17 / 18 / 143 / 123 / 29 checks — **406** in total |
 
 ## Status
 
@@ -51,27 +52,31 @@ arithmetic — slow, and deliberately so: at this scale a reader auditing every 
 | **R2** | De Gregorio steady state | **ALL PASS** for the Galerkin truncation; the PDE statement is not claimed, see below |
 | **R3** | the derivative-loss cure | **ALL PASS** — preconditioned Burgers certified against the exact u = sin x, and the failure boundary measured. **Sound, and aimed at the wrong door** |
 | **R4** | compact-operator eigenpairs | **ALL PASS** — certified against `λ = 1 + ρ` and `λ = (13 ± √73)/8`; a merely *bounded* operator is refused |
-| **R4b** | the De Gregorio profile operator | **ALL PASS**, and **not a certificate** — but the matrix entries are now **closed forms in Si and Ci**, and all six eigenvalues land inside the published values' rounding intervals |
-| **Machine C** | independent audit | **ALL PASS** — audits **nine** certificates across R0/R1a/R1b/R2/R3/**R4**, rejects all **44** tampered ones, agrees with the prover to **6.4e-23** (quadratic) and 3.4e-21 (CLM) |
+| **R4b** | the De Gregorio profile operator | **ALL PASS** — the matrix entries are **closed forms in Si and Ci**, and the suite carries the line's headline: a **certified two-sided enclosure** of λ₁…λ₃ (Courant–Fischer below, Lehmann above), e.g. λ₁ ∈ [0.2895674, 0.2895979]. A statement about the **spectrum of M**, never about a profile or a PDE |
+| **Machine C** | independent audit | **ALL PASS** — audits certificates across R0/R1a/R1b/R2/R3/**R4** and R4b's Gram matrix, `A₂` and **Lehmann pencil**; rejects every tampered one; agrees with the prover to **6.4e-23** (quadratic) and 3.4e-21 (CLM); at the pencil its τ₁ bracket came out **sharper** than the prover's (AL-010) |
 | R5 | 2D Boussinesq / axisymmetric Euler | out of reach alone, and §R3 now says *why* with a number |
 
-**The gap that remains:** Machine C reaches R4 but **not R4b**. That is not an oversight — R4b is deliberately not
-a certificate, so there is nothing to audit yet. R4b is therefore still checked only by a suite sharing an author
-and an implementation with the code it tests, and that is the correct description of its status rather than a
-defect to hide.
+**The gap that remains:** Machine C now climbs three of R4b's four audit rungs — the **Gram matrix**
+(`auditor_r4b.py`), **`A₂` and its tail** (`auditor_r4b_a2.py`, contract `../R2-AUDIT-CONTRACT.md`), and the
+**Lehmann pencil** (`auditor_r4b_lehmann.py`, contract `../R3-AUDIT-CONTRACT.md`). What it does **not** yet reach
+is Rung 4: the final two-sided enclosures `λ_j ∈ [L_j, U_j]` as assembled objects — the Courant–Fischer lower
+halves are audited only in `L_J`'s role inside the Lehmann shift window. Until Rung 4 closes, the *assembled*
+table in the statement document still rests on a single implementation, and that is the correct description of
+its status rather than a defect to hide.
 
 **What that gap now costs has fallen sharply.** The R4b matrix entries were an improper oscillatory integral
 evaluated by quadrature. They have a **closed form** in Si and Ci (below), `sici.py` encloses those
 **rigorously**, and `certified_bracket` turns them into a genuine two-sided bracket on λ₁…λ₆ — for example
 `λ₁ ∈ [0.2895674, 0.3183099)`, whose lower end beats the published lower bound by ×1.43.
 
-**But the two halves of that bracket are not the same kind of thing, and the difference is the whole point.** The
+**The two halves of that bracket are not the same kind of thing, and the difference is the whole point.** The
 lower half is ours and needs **no truncation estimate at all**: Courant–Fischer says any j-dimensional trial
 subspace of V bounds λ_j from below, so certified entries plus Gershgorin deliver it — that is exactly why
-Rayleigh–Ritz converges from below. The upper half is **Corollary 3.7 of the source, used as a citation**.
-Nothing here derives an upper bound, so the Galerkin truncation error is bounded by the bracket width without an
-argument of ours. **Lehmann–Maehly–Goerisch** is the route to a self-derived one — it consumes exactly the a
-priori spectral separation Corollary 3.7 provides — and it is **not implemented**.
+Rayleigh–Ritz converges from below. The upper half of *that* bracket is **Corollary 3.7 of the source, used as a
+citation** — and the **Lehmann–Maehly** route to a self-derived upper bound (which consumes exactly the a priori
+separation Corollary 3.7 provides, as an input rather than as the answer) is now implemented in `lehmann.py` and
+`certified_upper_bounds`, giving the far tighter enclosures in the frozen statement document — for example
+`λ₁ ∈ [0.2895674, 0.2895979]`. See the statement document and `../AUDIT-LOG.md` for what is and is not audited.
 
 ## What R1b establishes, and why it is the one that matters
 

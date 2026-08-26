@@ -316,9 +316,78 @@ def emit_r4b_a2(outdir):
     return path, type('V', (), {'status': 'CERTIFIED', 'proved': True})()
 
 
+def emit_r4b_lehmann(outdir):
+    """R4b Rung 3: the Lehmann pencil — shift, matrices, tau brackets and upper bounds, for the auditor.
+
+    Two emission rules matter here. (i) Every endpoint is carried exactly (an mpf is a dyadic rational), as
+    everywhere in this directory. (ii) **The claimed upper bounds are the exact rational sup over the claimed
+    tau bracket**, `-rho - 1/b`, not the prover's rounded mpf: `lehmann.upper_bounds` computes `-(rho + 1/b)`
+    in round-to-nearest arithmetic, which can understate the certifiable sup by an ulp — the same reason `_up`
+    exists. The certificate must claim only what its own data supports, so the sup is recomputed exactly from
+    the emitted endpoints.
+    """
+    import problem_dg_profile as DGP
+    import lehmann as LEH
+    from mpmath import iv as _iv
+    K, J, Ksum, target, Kbr = 8, 3, 80, 30, 16
+    V = DGP._approx_eigenvectors(K, J)
+    A0, A1, A2 = DGP.lehmann_matrices(V, K, Ksum, target)
+    Vbr = DGP._approx_eigenvectors(Kbr, J)
+    br = DGP.certified_bracket(K=Kbr, J=J)
+    L_J = br[J - 1][0]
+    U_next = 1 / ((J + 1) * DGP.MPPI)
+    if not (U_next < L_J):
+        raise SystemExit('r4b lehmann: empty shift window')
+    rho = -(U_next + L_J) / 2
+    Lm = [[A1[i][j] - _iv.mpf(rho) * A0[i][j] for j in range(J)] for i in range(J)]
+    Rm = [[A2[i][j] - _iv.mpf(2 * rho) * A1[i][j] + _iv.mpf(rho ** 2) * A0[i][j] for j in range(J)] for i in range(J)]
+    taus = []
+    for k in range(1, J + 1):
+        b = LEH.bracket_tau(Lm, Rm, J, k, mpf('-1e12'), mpf('-1e-12'))
+        if b is None:
+            raise SystemExit('r4b lehmann: tau_%d could not be isolated' % k)
+        taus.append((exact(b[0]), exact(b[1])))
+    rho_x = exact(rho)
+    upper = []
+    for j in range(1, J + 1):
+        a_x, b_x = taus[J - j]                       # tau_{J+1-j} bounds lambda_j
+        if not b_x < 0:
+            raise SystemExit('r4b lehmann: tau bracket endpoint not negative')
+        upper.append(-rho_x - Fraction(1) / b_x)     # the exact sup over the claimed bracket
+
+    def mat(M):
+        return [[[str(exact(lo(M[a][b]))), str(exact(hi(M[a][b])))] for b in range(J)] for a in range(J)]
+
+    path = os.path.join(outdir, 'certificate-r4b-lehmann.json')
+    doc = {
+        'contract': C.CONTRACT_VERSION,
+        'problem': 'r4b_lehmann',
+        'params': {'K': K, 'J': J, 'Ksum': Ksum, 'K_bracket': Kbr},
+        'audit_Ksum': 80,
+        'rho': str(rho_x),
+        'window': [str(exact(U_next)), str(exact(L_J))],
+        'V': [[str(exact(c)) for c in row] for row in V],
+        'V_bracket': [[str(exact(c)) for c in row] for row in Vbr],
+        'matrices': {'A0': mat(A0), 'A1': mat(A1), 'A2': mat(A2)},
+        'tau': [[str(a), str(b)] for (a, b) in taus],
+        'upper': [str(u) for u in upper],
+        'claim': ('Certified Lehmann-Maehly upper bounds on the leading eigenvalues of the Huang-Tong-Wei '
+                  'profile operator, via Sylvester inertia counting on the pencil (A1 - rho A0, A2 - 2 rho A1 '
+                  '+ rho^2 A0). A statement about the spectrum of M only - not about an eigenfunction, and not '
+                  'about any PDE.'),
+        'notes': {'prover_route': 'LDL^T pivot counting; vector tail by entry asymptotics (needs Ksum >= 2K)',
+                  'auditor_route': 'MUST NOT reuse the above; see R3-AUDIT-CONTRACT.md section 3',
+                  'upper_is_exact_sup': '-rho - 1/b over the claimed bracket, in exact rationals'},
+    }
+    import json as _json
+    with open(path, 'w', encoding='utf-8') as f:
+        _json.dump(doc, f, indent=2)
+    return path, type('V', (), {'status': 'CERTIFIED', 'proved': True})()
+
+
 def main(outdir='.'):
     os.makedirs(outdir, exist_ok=True)
-    for fn in (emit_quadratic, emit_clm, emit_degregorio, emit_burgers, emit_r0, emit_r1a, emit_eigen, emit_r4b, emit_r4b_a2):
+    for fn in (emit_quadratic, emit_clm, emit_degregorio, emit_burgers, emit_r0, emit_r1a, emit_eigen, emit_r4b, emit_r4b_a2, emit_r4b_lehmann):
         path, cert = fn(outdir)
         print('wrote %s   (%s)' % (os.path.basename(path), cert.status))
     return 0

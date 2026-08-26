@@ -453,5 +453,155 @@ check('changing ambient mpmath precision does not change the verdict', low_v == 
 check('changing ambient mpmath precision does not change the findings', low_f == high_f == clean_f)
 
 
+# --------------------------------------------------------------------------------------------------------
+print('\n[26] RUNG 3: the Lehmann pencil re-derived by routes that share nothing with the prover')
+# Contract: ../R3-AUDIT-CONTRACT.md, frozen before implementation. Four separations: (a) the A2 tail is the
+# vector form of (R2-T) - no Ksum >= 2K hypothesis at all, where the prover's entry-asymptotics tail must
+# refuse below 2K; (b) inertia by Jacobi's division-free minor rule, not LDL^T pivots, with R > 0 CHECKED by
+# Sylvester's criterion rather than asserted from the Gram form; (c) resolution-limited bisection that stops
+# where the widths stop certifying; (d) the tau -> bound step redone in exact rationals (the certificate's
+# endpoints are dyadic, so 1/b is exact), and the shift window re-derived from the auditor's own Machin pi
+# and its own Gershgorin bound.
+import auditor_r4b_lehmann as R3
+r3doc = load('r4b-lehmann')
+v, f = R3.audit_doc(r3doc)
+check('the genuine Lehmann certificate is ACCEPTed', v == ACCEPT,
+      '; '.join(x for x in f if x.startswith('REJECT'))[:110])
+check('the auditor produced its own tau brackets', any('own bracket' in x for x in f))
+check('the shift window was re-derived, not trusted', any('shift window ok' in x for x in f))
+check('R was certified positive definite, not asserted', any('Sylvester' in x for x in f))
+check('every claimed bound survived the exact-rational recheck', any('exact recheck ok' in x for x in f))
+
+print('\n[27] PILLAR 1 - algebraic validation: the diagonal pencil with a closed form')
+# T diagonal with eigenvalues t_i, trial space the eigenvectors themselves: A0 = I, A1 = diag(t_i),
+# A2 = diag(t_i^2), so L = diag(t_i - rho), R = diag((t_i - rho)^2) and the pencil eigenvalues are exactly
+# tau_i = 1/(t_i - rho). With t = (-1/2, -1/4, -1/8) and rho = -1/16 (all dyadic): tau = -16/7, -16/3, -16,
+# and the recovered bounds must be exactly -t = 1/2, 1/4, 1/8.
+from fractions import Fraction as _F3
+R3.prepare(2)          # tiny grid; nothing here needs the series
+_t = [_F3(-1, 2), _F3(-1, 4), _F3(-1, 8)]
+_rho3 = _F3(-1, 16)
+_I3 = [[R3.RI(1 if i == j else 0) for j in range(3)] for i in range(3)]
+_D1 = [[R3.RI(_t[i] if i == j else 0) for j in range(3)] for i in range(3)]
+_D2 = [[R3.RI(_t[i] * _t[i] if i == j else 0) for j in range(3)] for i in range(3)]
+_rr = R3.RI(_rho3, raw=True)
+_L3 = [[_D1[i][j] - _rr * _I3[i][j] for j in range(3)] for i in range(3)]
+_R3m = [[_D2[i][j] - R3.RI(2) * _rr * _D1[i][j] + _rr * _rr * _I3[i][j] for j in range(3)] for i in range(3)]
+_exact_tau = sorted(_F3(1, 1) / (ti - _rho3) for ti in _t)          # -16, -16/3, -16/7
+R3.certify_posdef(_R3m, 3)
+check('R > 0 certified on the closed-form pencil', True)
+check('inertia counts step 0/1/2/3 across the exact taus',
+      [R3.inertia_below(_L3, _R3m, _F3(x), 3) for x in (-20, -10, -4, -1)] == [0, 1, 2, 3])
+ok = True
+for k in range(1, 4):
+    a, b = R3.bracket_tau(_L3, _R3m, 3, k)
+    ok = ok and (a <= _exact_tau[k - 1] <= b)
+check('bracket_tau encloses each exact pencil eigenvalue', ok)
+_a3, _b3 = R3.bracket_tau(_L3, _R3m, 3, 3)                          # encloses -16/7; bounds lambda_1 = 1/2
+check('the recovered upper bound is exact where the bracket is a point',
+      R3.upper_bound_from_bracket(_rho3, _F3(-16, 7), _F3(-16, 7)) == _F3(1, 2))
+check('and >= 1/2 on the certified bracket (sup at the right endpoint)',
+      R3.upper_bound_from_bracket(_rho3, _a3, _b3) >= _F3(1, 2))
+# a non-diagonal 2x2: L = [[0,1],[1,0]], R = I, pencil eigenvalues -1 and +1
+_L2 = [[R3.RI(0), R3.RI(1)], [R3.RI(1), R3.RI(0)]]
+_I2 = [[R3.RI(1), R3.RI(0)], [R3.RI(0), R3.RI(1)]]
+check('off-diagonal case: count below -3/2, -1/2, 3/2 is 0, 1, 2',
+      [R3.inertia_below(_L2, _I2, _F3(x, 2), 2) for x in (-3, -1, 3)] == [0, 1, 2])
+check('a minor that is exactly zero refuses rather than guessing (t = 0: D1 = 0)',
+      R3.inertia_below(_L2, _I2, _F3(0), 2) is None)
+
+print('\n[28] PILLAR 2 - refusal stress: every undecided sign is a refusal, never a number')
+def _refuses(fn):
+    try:
+        fn()
+    except R3.Refusal:
+        return True
+    return False
+check('(R3-T) falsified by its parts refuses rather than clamping',
+      _refuses(lambda: R3.vector_tail_from_parts(R3.RI(1), R3.RI(2), 40)))
+check('a zero R fails Sylvester certification',
+      _refuses(lambda: R3.certify_posdef([[R3.RI(0)]], 1)))
+check('an indefinite R fails Sylvester certification',
+      _refuses(lambda: R3.certify_posdef([[R3.RI(1), R3.RI(2)], [R3.RI(2), R3.RI(1)]], 2)))
+check('a bracket whose upper endpoint is not negative refuses',
+      _refuses(lambda: R3.upper_bound_from_bracket(_rho3, _F3(-1), _F3(1))))
+check('endpoints out of order refuse',
+      _refuses(lambda: R3.upper_bound_from_bracket(_rho3, _F3(-1), _F3(-2))))
+check('a sound-but-vacuous bound (above 1 = above every eigenvalue) refuses',
+      _refuses(lambda: R3.upper_bound_from_bracket(_rho3, _F3(-10 ** 6), _F3(-1, 10 ** 6))))
+
+print('\n[29] R3 tampering must be rejected - and a blunt-but-consistent certificate accepted')
+def r3_tamper(name, mutate, expect=REJECT):
+    doc = json.loads(json.dumps(r3doc))
+    mutate(doc)
+    v, f = R3.audit_doc(doc)
+    detail = next((x for x in f if x.startswith('REJECT')), '')
+    check(name, v == expect, detail[:112])
+
+r3_tamper('r3: the problem renamed', lambda d: d.__setitem__('problem', 'something_else'))
+r3_tamper('r3: U_1 understated below the sup its own bracket supports',
+          lambda d: d['upper'].__setitem__(0, str(Fraction(d['upper'][0]) - Fraction(1, 10 ** 12))))
+r3_tamper('r3: the shift moved outside its window (-rho below 1/((J+1)pi))',
+          lambda d: d.__setitem__('rho', '-1/20'))
+r3_tamper('r3: tau_2 bracket shifted to a disjoint range',
+          lambda d: (d['tau'].__setitem__(1, ['-200', '-150']),
+                     d['upper'].__setitem__(1, str(-Fraction(d['rho']) + Fraction(1, 150)))))
+r3_tamper('r3: A2_0,0 shifted off the true value',
+          lambda d: d['matrices']['A2'][0].__setitem__(0, [str(Fraction(d['matrices']['A2'][0][0][0]) + Fraction(1, 1000)),
+                                                           str(Fraction(d['matrices']['A2'][0][0][1]) + Fraction(1, 1000))]))
+r3_tamper('r3: a trial vector doubled (the auditor recomputes from the data, so everything moves)',
+          lambda d: d['V'][0].__setitem__(0, str(Fraction(d['V'][0][0]) * 2)))
+def _blunt(d):
+    for k in range(3):
+        a, b = Fraction(d['tau'][k][0]), Fraction(d['tau'][k][1])
+        w = (b - a) + Fraction(1, 100)
+        d['tau'][k] = [str(a - w), str(b + w)]
+        d['upper'][2 - k] = str(-Fraction(d['rho']) - Fraction(1, 1) / (b + w))
+r3_tamper('r3: brackets widened and bounds recomputed from them (blunt, not wrong)', _blunt, expect=ACCEPT)
+
+print('\n[30] PILLAR 3 - static dependency audit for the Rung 3 auditor')
+for mod in ('auditor_r4b_lehmann.py',):
+    src = open(os.path.join(HERE, mod), encoding='utf-8').read()
+    imported = set()
+    for node in ast.walk(ast.parse(src)):
+        if isinstance(node, ast.Import):
+            imported.update(a.name.split('.')[0] for a in node.names)
+        elif isinstance(node, ast.ImportFrom) and node.module:
+            imported.add(node.module.split('.')[0])
+    check(f'{mod} imports no prover module', not (imported & FORBIDDEN), f'imports {sorted(imported)}')
+
+print('\n[31] PILLAR 4 - dynamic independence: corrupt the prover AND the pencil module, output must not move')
+clean3_v, clean3_f = R3.audit_doc(r3doc)
+import lehmann as _lehmann
+_saved3 = {}
+for _m, _names in ((_prover, ('A_entry', 'A_entry_enclosure', 'A2_enclosure', 'A2_tail_bound',
+                              '_vector_tail_bound', 'lehmann_matrices', 'certified_bracket',
+                              'certified_upper_bounds')),
+                   (_lehmann, ('inertia_below', 'bracket_tau', 'upper_bounds'))):
+    for name in _names:
+        _saved3[(_m, name)] = getattr(_m, name, None)
+        setattr(_m, name, lambda *a, **k: (_ for _ in ()).throw(RuntimeError('prover artefact corrupted')))
+try:
+    dirty3_v, dirty3_f = R3.audit_doc(r3doc)
+finally:
+    for (_m, name), fn in _saved3.items():
+        if fn is not None:
+            setattr(_m, name, fn)
+check('the verdict is unchanged when prover and pencil routines are corrupted', clean3_v == dirty3_v)
+check('the complete finding list is unchanged, not merely the verdict', clean3_f == dirty3_f)
+
+print('\n[32] PILLAR 5 - AL-002/AL-004 regression: ambient state must not change the answer')
+_dps = _mp.dps
+try:
+    _mp.dps = 5
+    low3_v, low3_f = R3.audit_doc(r3doc)
+    _mp.dps = 200
+    high3_v, high3_f = R3.audit_doc(r3doc)
+finally:
+    _mp.dps = _dps
+check('changing ambient mpmath precision does not change the verdict', low3_v == high3_v == clean3_v)
+check('changing ambient mpmath precision does not change the findings', low3_f == high3_f == clean3_f)
+
+
 print('\n' + ('AUDIT: ALL PASS' if not FAILS else f'AUDIT: {len(FAILS)} FAILURE(S) -> ' + ', '.join(FAILS)))
 sys.exit(1 if FAILS else 0)
