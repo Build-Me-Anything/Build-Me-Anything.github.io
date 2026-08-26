@@ -5,7 +5,7 @@ a DNS run is a measurement with error bars that shrink if you spend more, and a 
 list of inequalities that is either true or refused. No quantity of the first becomes the second.
 
 ```bash
-cd research/nslab-prove/cap && python run-all.py     # 9 suites, 362 checks, ~4.5 min, mpmath only
+cd research/nslab-prove/cap && python run-all.py     # 9 suites, 376 checks, ~4.5 min, mpmath only
 ```
 
 It prints `CAP SUITES: ALL PASS (9 suites)` or it fails loudly. There is no third answer and no tolerance to tune.

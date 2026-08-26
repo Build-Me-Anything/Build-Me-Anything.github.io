@@ -361,5 +361,97 @@ r4b_tamper('r4b: every entry widened a thousandfold (blunt, not wrong)',
                       for k, (a, b) in list(d['gram'].items())], expect=ACCEPT)
 
 
+
+# --------------------------------------------------------------------------------------------------------
+print('\n[20] RUNG 2: A2 re-derived by a tail argument that shares nothing with the prover')
+# Contract: ../R2-AUDIT-CONTRACT.md, frozen before implementation. The prover bounds the tail through the
+# ASYMPTOTICS OF THE ENTRIES (|Ci|<=2/x, then |A_km| <= (8m/3 pi k)(ln(k/m)+D_m), then three log-moment
+# integrals). The auditor uses none of it: it goes through HTW's own smoothing estimate,
+#     sum_k A_ki^2 = ||M s_i||^2_{Hdot2} <= ||s_i||^2_{Hdot1} = (i pi)^2                    (R2-T)
+# so convergence follows from a FINITE analytic bound rather than a decay rate.
+import auditor_r4b_a2 as R2
+r2doc = load('r4b-a2')
+v, f = R2.audit_doc(r2doc)
+check('the genuine A2 certificate is ACCEPTed by the independent tail route', v == ACCEPT,
+      '; '.join(x for x in f if x.startswith('REJECT'))[:110])
+check('the auditor recomputed and reports its own tail', any('tail' in x for x in f))
+
+print('\n[21] PILLAR 1 - algebraic validation: (R2-T) and symmetry')
+K_T = 60
+R2.prepare(K_T)
+for i in (1, 2, 3):
+    S = R2.partial_sum_sq(i, K_T)
+    bound = (R2.RI(i * i) * (R2.pi_ri() * R2.pi_ri())).hi
+    check(f'(R2-T) holds at i={i}: sum_k A_ki^2 <= (i pi)^2', S.hi <= bound,
+          f'{float(S.hi):.6f} <= {float(bound):.6f}')
+aij, _, _ = R2.a2_enclosure(1, 2, K_T)
+aji, _, _ = R2.a2_enclosure(2, 1, K_T)
+check('A2 is symmetric', aij.overlaps(aji))
+
+print('\n[22] PILLAR 2 - tail stress and refusal')
+refused = False
+try:
+    R2.sqrt_upper(Fraction(-1))
+except R2.Refusal:
+    refused = True
+check('sqrt_upper refuses a negative argument rather than returning a complex or clamped value', refused)
+# A grid too coarse for the cancellation must REFUSE, not return a sound-but-vacuous interval. This is AL-004:
+# a width of 1e7 around a value of 0.04 was initially misread as a tail-bound failure.
+import auditor_r4b as R1
+R1.set_precision_for(1)          # deliberately far too coarse for k = 60
+vacuous_refused = False
+try:
+    R1.A_entry(60, 1)
+except ValueError as e:
+    vacuous_refused = 'vacuous' in str(e)
+check('a grid too coarse for the cancellation REFUSES rather than returning a vacuous enclosure',
+      vacuous_refused)
+R2.prepare(K_T)                  # restore
+
+print('\n[23] PILLAR 3 - static dependency audit')
+FORBIDDEN = {'mpmath', 'ivutil', 'sici', 'problem_dg_profile', 'problem_eigen', 'lehmann', 'ell1', 'radiipoly'}
+for mod in ('auditor_r4b.py', 'auditor_r4b_a2.py'):
+    src = open(os.path.join(HERE, mod), encoding='utf-8').read()
+    imported = set()
+    for node in ast.walk(ast.parse(src)):
+        if isinstance(node, ast.Import):
+            imported.update(a.name.split('.')[0] for a in node.names)
+        elif isinstance(node, ast.ImportFrom) and node.module:
+            imported.add(node.module.split('.')[0])
+    check(f'{mod} imports no prover module', not (imported & FORBIDDEN), f'imports {sorted(imported)}')
+
+print('\n[24] PILLAR 4 - dynamic independence: corrupt the prover, output must not move')
+clean_v, clean_f = R2.audit_doc(r2doc)
+import problem_dg_profile as _prover
+_saved = {}
+for name in ('A_entry', 'A_entry_enclosure', 'A2_enclosure', 'A2_tail_bound', '_log_moment_integrals',
+             'A_entry_abs_bound'):
+    _saved[name] = getattr(_prover, name, None)
+    setattr(_prover, name, lambda *a, **k: (_ for _ in ()).throw(RuntimeError('prover artefact corrupted')))
+try:
+    dirty_v, dirty_f = R2.audit_doc(r2doc)
+finally:
+    for name, fn in _saved.items():
+        if fn is not None:
+            setattr(_prover, name, fn)
+check('the verdict is unchanged when every prover routine is corrupted', clean_v == dirty_v)
+check('the complete finding list is unchanged, not merely the verdict', clean_f == dirty_f)
+
+print('\n[25] PILLAR 5 - AL-002 regression: ambient state must not change the answer')
+# AL-002 was an apparent 25-orders-of-magnitude discrepancy caused by an ambient precision setting, not by the
+# mathematics. The auditor's grid is sized deterministically from K, so ambient state cannot move its output.
+from mpmath import mp as _mp
+_dps = _mp.dps
+try:
+    _mp.dps = 5
+    low_v, low_f = R2.audit_doc(r2doc)
+    _mp.dps = 200
+    high_v, high_f = R2.audit_doc(r2doc)
+finally:
+    _mp.dps = _dps
+check('changing ambient mpmath precision does not change the verdict', low_v == high_v == clean_v)
+check('changing ambient mpmath precision does not change the findings', low_f == high_f == clean_f)
+
+
 print('\n' + ('AUDIT: ALL PASS' if not FAILS else f'AUDIT: {len(FAILS)} FAILURE(S) -> ' + ', '.join(FAILS)))
 sys.exit(1 if FAILS else 0)

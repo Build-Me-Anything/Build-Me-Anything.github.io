@@ -291,9 +291,34 @@ def emit_r4b(outdir):
     return path, type('V', (), {'status': 'CERTIFIED', 'proved': True})()
 
 
+def emit_r4b_a2(outdir):
+    """R4b Rung 2: A2 = A^T B^-1 A as certified intervals, for the independent auditor."""
+    import problem_dg_profile as DGP
+    pairs = [(1, 1), (1, 2), (2, 2), (2, 3)]
+    a2 = {}
+    for (i, j) in pairs:
+        e = DGP.A2_enclosure(i, j)
+        a2['%d,%d' % (i, j)] = [str(exact(lo(e))), str(exact(hi(e)))]
+    path = os.path.join(outdir, 'certificate-r4b-a2.json')
+    doc = {
+        'contract': C.CONTRACT_VERSION,
+        'problem': 'r4b_a2',
+        'audit_K': 80,
+        'a2': a2,
+        'claim': ('Certified enclosures of A2_ij = <M s_i, M s_j>_{Hdot1} = sum_k A_ki A_kj/(k pi)^2. A statement '
+                  'about this matrix only - not about the spectrum, and not about any PDE.'),
+        'notes': {'prover_tail': 'entry asymptotics: |Ci|<=2/x, |A_km| bound, three log-moment integrals',
+                  'auditor_tail': 'MUST NOT reuse the above; see R2-AUDIT-CONTRACT.md section 3'},
+    }
+    import json as _json
+    with open(path, 'w', encoding='utf-8') as f:
+        _json.dump(doc, f, indent=2)
+    return path, type('V', (), {'status': 'CERTIFIED', 'proved': True})()
+
+
 def main(outdir='.'):
     os.makedirs(outdir, exist_ok=True)
-    for fn in (emit_quadratic, emit_clm, emit_degregorio, emit_burgers, emit_r0, emit_r1a, emit_eigen, emit_r4b):
+    for fn in (emit_quadratic, emit_clm, emit_degregorio, emit_burgers, emit_r0, emit_r1a, emit_eigen, emit_r4b, emit_r4b_a2):
         path, cert = fn(outdir)
         print('wrote %s   (%s)' % (os.path.basename(path), cert.status))
     return 0

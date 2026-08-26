@@ -40,11 +40,40 @@ from auditor_r01 import pi_interval
 ACCEPT = 'ACCEPT'
 REJECT = 'REJECT'
 
-# Endpoints are rounded outward to a multiple of 2^-PREC_BITS after every operation. The series for Si(2nπ) has
-# terms peaking near e^x/√(2πx) — about 3e20 at n = 8 — so roughly 70 digits vanish to cancellation before the
-# answer appears. 512 bits ≈ 154 digits leaves ample margin, and keeps every integer small enough to be fast.
+# Endpoints are rounded outward to a multiple of 2^-PREC_BITS after every operation.
+#
+# THE PRECISION MUST SCALE WITH x, AND A FIXED VALUE IS WRONG. This was found the hard way (AUDIT-LOG AL-004).
+# With PREC_BITS fixed at 512, entries were exact to 5e-41 up to k ≈ 40, degraded at k = 50, and at k = 60
+# returned an interval of width 1e7 around a true value of 0.043 — a vacuous enclosure, not a wrong one, but
+# useless and initially mistaken for a tail-bound failure.
+#
+# The mechanism: the Si/Cin series for x = 2kπ has terms peaking near e^x, about 1e163 at k = 60. In
+# `term = term * ratio(k)` the *absolute* rounding error of `ratio` (about 2^-PREC) is multiplied by the term's
+# magnitude, so the accumulated width is roughly (max term) x 2^-PREC. Fixed absolute rounding is therefore
+# catastrophic precisely where the cancellation is largest.
+#
+# So the grid is sized from x: enough bits to cover e^x, plus the target digits, plus margin for accumulation.
 PREC_BITS = 512
 _SCALE = 1 << PREC_BITS
+
+
+def set_precision_for(x_hi, target_digits=45, margin_bits=96):
+    """Size the rounding grid for a series argument up to `x_hi`. Returns the bits chosen.
+
+    e^x needs x/ln 2 bits before any target digits survive; the rest is the target and an allowance for
+    accumulation over the ~2x terms the series takes. Deterministic in `x_hi`, so a run is reproducible.
+    """
+    global PREC_BITS, _SCALE
+    need = int(float(x_hi) / math.log(2)) + int(target_digits * 3.33) + margin_bits
+    PREC_BITS = max(512, need)
+    _SCALE = 1 << PREC_BITS
+    _CACHE.clear()
+    # pi must be recomputed too, and with enough Machin terms. Leaving the cached pi in place was half of AL-004:
+    # the grid grew while pi stayed at its original ~170 digits, so pi silently became the limiting factor and the
+    # symptom looked like a tail-bound failure rather than a constant that had not been re-derived.
+    global _PI
+    _PI = None
+    return PREC_BITS
 
 
 def _floor_q(x):
@@ -162,9 +191,14 @@ _CACHE = {}
 
 
 def pi_ri():
+    """pi as a rational interval, with the Machin term count sized to the current grid.
+
+    arctan(1/5) gains about 2*log10(5) = 1.4 digits per term, so D digits needs ~D/1.4 terms; PREC_BITS/3 + 60 is
+    comfortably above that at every precision used here.
+    """
     global _PI
     if _PI is None:
-        p = pi_interval(120)
+        p = pi_interval(PREC_BITS // 3 + 60)
         _PI = RI(p.lo, p.hi)
     return _PI
 
@@ -178,14 +212,27 @@ def _at_2npi(n, which, tol):
     return _CACHE[key]
 
 
+VACUOUS_WIDTH = Fraction(1, 1000)
+
+
 def A_entry(n, m, tol=Fraction(1, 10 ** 40)):
-    """A_{nm} by Lemma 1′ — the Cin form, so no γ and no logarithm are needed anywhere."""
+    """A_{nm} by Lemma 1′ — the Cin form, so no γ and no logarithm are needed anywhere.
+
+    REFUSES a vacuous enclosure. An interval of width 1e7 around a value of 0.04 is sound and useless, and
+    returning it silently is how AL-004 was nearly read as a tail-bound failure instead of a precision failure.
+    """
     n, m = int(n), int(m)
     if n == m:
-        return RI(2 * n) * _at_2npi(n, 'si', tol)
-    inner = _at_2npi(m, 'cin', tol) - _at_2npi(n, 'cin', tol)
-    sgn = -1 if (n + m) % 2 else 1
-    return -(RI(2 * n * m * sgn) / (pi_ri() * RI(m * m - n * n)) * inner)
+        out = RI(2 * n) * _at_2npi(n, 'si', tol)
+    else:
+        inner = _at_2npi(m, 'cin', tol) - _at_2npi(n, 'cin', tol)
+        sgn = -1 if (n + m) % 2 else 1
+        out = -(RI(2 * n * m * sgn) / (pi_ri() * RI(m * m - n * n)) * inner)
+    if out.width() > VACUOUS_WIDTH:
+        raise ValueError('A_%d,%d enclosure has width %.3g at PREC_BITS=%d — sound but vacuous; raise the '
+                         'precision with set_precision_for() rather than accepting it'
+                         % (n, m, float(out.width()), PREC_BITS))
+    return out
 
 
 # ------------------------------------------------------------------------------------------------------------
