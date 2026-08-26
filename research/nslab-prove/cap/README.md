@@ -32,7 +32,8 @@ arithmetic — slow, and deliberately so: at this scale a reader auditing every 
 | `auditor.py` | **Machine C** | independent re-check of the radii-polynomial certificates (R1b), exact rationals |
 | `auditor_r23.py` | **Machine C** | R2 and R3: exact rational **interval** arithmetic for the Krawczyk verdict, and the preconditioned Burgers bounds |
 | `auditor_r01.py` | **Machine C** | R0 enclosures and R1a's completeness check, with its own π, sin and cos from series with proved remainders |
-| `auditor_r4b.py` | **Machine C** | the R4b Gram matrix in exact rationals: evaluates the **Cin** form, so it needs neither γ nor a logarithm, and takes π from Machin rather than mpmath |
+| `auditor_r4b.py` | **Machine C** | R4b Rung 1 — the Gram matrix in exact rationals: evaluates the **Cin** form, so it needs neither γ nor a logarithm, and takes π from Machin rather than mpmath |
+| `auditor_r4b_a2.py` | **Machine C** | R4b Rung 2 — `A₂` and its tail via HTW's smoothing estimate `Σ A_ki² ≤ (iπ)²`, sharing **no step** with the prover's asymptotic route. Contract in `../R2-AUDIT-CONTRACT.md` |
 | `auditor_r4.py` | **Machine C** | R4 eigenpairs: rebuilds the operator from the parameters and recomputes Y₀ exactly — forms no matrix and inverts nothing |
 | `lehmann.py` | **R4b** | Lehmann-Maehly upper bounds by Sylvester inertia counting - no eigensolver, and it refuses when a pivot cannot be signed |
 | `sici.py` | **R4b** | rigorous enclosures of Si and Ci by convergent series with a **proved** Leibniz remainder; refuses where the hypothesis is unmet |
