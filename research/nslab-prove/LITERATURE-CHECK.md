@@ -301,3 +301,69 @@ Problem 3 (a *proof-emitting* eigenvalue enclosure, for a *structured* operator)
 
 **Unverified, recorded so it is not silently inherited:** a 2026 survey, *Singularity Formation: Synergy in
 Theoretical, Numerical and Machine Learning Approaches*, arXiv:2604.16842 — cited to us, not checked.
+
+
+---
+
+# Fourth check: prior art for the Lehmann line (2026-08-26)
+
+## A REJECTED MATCH, kept as audit history rather than deleted
+
+A prior-art search identified **Beattie & Greenlee, *Convergence theorems for intermediate problems. II* (2002),
+Corollary 3.7** as a direct match for "our Corollary 3.7". **It is not a match.**
+
+* **Ours** is Huang–Tong–Wei, arXiv:2209.08232, Corollary 3.7 — a *numeric two-sided bracket* on the profile
+  operator's spectrum, `(2/π²)·λ̃_n ≤ λ_n < λ̃_n = 1/(nπ)`.
+* **Theirs** states that if `span{s_i}` is a core for the operator, the right-definite Temple–Lehmann method
+  produces convergent lower bounds to every eigenvalue below the spectral cutoff.
+
+Same number, unrelated theorems. The match was made on the **label**, not on the load-bearing statement — which is
+precisely what `oracle-hunter`'s rule 3 exists to prevent ("quote, don't paraphrase, the load-bearing statement").
+It is recorded here rather than deleted because a rejected match is audit history: the next search will hit the
+same collision.
+
+Note also that the correction lands on a claim this project never made. `problem_dg_profile.py` has always
+labelled the bracket **"theirs, not ours … a published theorem, used here as a citation."**
+
+## CONFIRMED prior art — the lineage `lehmann.py` now cites
+
+**Bazley & Fox, *Truncations in the Method of Intermediate Problems for Lower Bounds to Eigenvalues*, J. Res.
+National Bureau of Standards **65B**(2) (1961) 105–111.** Develops procedures for lower bounds of semibounded
+self-adjoint operators and explicitly reduces the computation to matrix problems.
+
+So **"truncation in intermediate problems" has been a named subject since 1961**, and none of that framework is
+ours. The lineage is Weinstein → Aronszajn → **Bazley–Fox** → Temple–Lehmann → Goerisch → **Beattie–Greenlee**
+(the last supplying convergence theory for the abstract methods). Beattie & Greenlee is genuine prior art for the
+machinery — just not for Huang–Tong–Wei's Corollary 3.7.
+
+## What this leaves, stated narrowly
+
+**Not** a new eigenvalue-bound theory. Nothing in `lehmann.py` is a new theorem, and the general idea that a
+Lehmann truncation can be bounded by a tail estimate is sixty-five years old.
+
+The claim that survives is operator-specific: *for Huang–Tong–Wei's `M`, on `V = {f odd, f ∈ H¹₀([−1,1])}` with
+`s_n = χ sin(nπx)`, the `A₂` term reduces to `AᵀB⁻¹A`, and the rigorous tail needed to certify that object
+simultaneously supplies the previously separate Galerkin truncation enclosure — removing the Hilbert-transform
+route entirely.* No prior publication of that specific reduction was found. **A failure to find, not novelty.**
+
+The proof architecture should be written in that shape: known abstract theorem → prove this `M` and this basis
+satisfy its hypotheses → certify the problem-specific matrices and tails → instantiate.
+
+## A wording rule that came out of this, and it is easy to get wrong
+
+There are **two different "published values"** and they are not the same kind of object:
+
+| | what it is |
+|---|---|
+| `λ̃_n = 1/(nπ)` | an a priori **upper bound** from Corollary 3.7 — *not* an estimate of `λ_n` |
+| `0.2896, 0.1509, …` | Appendix-A **estimates** of the eigenvalues, printed to four decimals |
+
+Our certified width of `3.0e-5` on `λ₁` is narrower than the `±5e-5` implied by the printed `0.2896`. That is a
+statement about the **precision at which their value is displayed**. It is **not** a claim about `1/π`, and **not**
+a claim that their underlying mathematics is accurate only to four decimals. The safe phrasing: *an independent,
+substantially tighter certified enclosure of the eigenvalue than the broad a priori bound the published theorem
+supplies.*
+
+And the epistemic role of Corollary 3.7 in the certification is worth stating explicitly, because it is unusual:
+it is **not** used as the answer. It supplies `λ_{J+1} < 1/((J+1)π)`, which together with our own certified lower
+bound on `λ_J` establishes the Lehmann shift hypothesis. A published theorem used as an **input certificate**.

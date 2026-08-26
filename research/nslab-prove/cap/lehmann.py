@@ -4,6 +4,20 @@ The complement to Rayleigh–Ritz. On `V`, Courant–Fischer gives `λ_j ≥ min
 j-dimensional trial subspace — a **lower** bound needing no truncation estimate at all, which is what
 `problem_dg_profile.certified_bracket` already uses. Nothing so cheap gives the other side. Lehmann does.
 
+Prior art — none of this framework is new, and the file says so
+---------------------------------------------------------------
+Lower bounds by intermediate problems run Weinstein → Aronszajn → **Bazley–Fox** → Temple–Lehmann → Goerisch →
+**Beattie–Greenlee**. In particular **truncation** of these constructions — which is what this module does — has
+been a named subject since Bazley & Fox, *Truncations in the Method of Intermediate Problems for Lower Bounds to
+Eigenvalues*, J. Res. NBS **65B**(2) (1961) 105–111, which already reduces the computation to matrix problems.
+Beattie & Greenlee, *Convergence theorems for intermediate problems. II* (2002) supplies convergence theory for
+the abstract methods.
+
+Nothing here is a new theorem. What is problem-specific is the *instantiation* in `problem_dg_profile.py` — the
+reduction of `A₂` to `AᵀB⁻¹A` for this operator and basis, and the explicit certified tail. See
+`../LITERATURE-CHECK.md` for the search, including one rejected match worth knowing about: Beattie–Greenlee also
+has a "Corollary 3.7", and it is **not** the Huang–Tong–Wei Corollary 3.7 this line cites.
+
 The setting, and the sign that matters
 --------------------------------------
 Put `T = −M`. Since M is compact, self-adjoint and positive with `λ₁ ≥ λ₂ ≥ … → 0`, T is **bounded below** with
@@ -34,14 +48,15 @@ negative eigenvalues `τ₁ ≤ … ≤ τ_p < 0` give `ρ + 1/τ_k` as lower bo
 signs: **negate and reverse**, and the result bounds `λ₁, λ₂, …` from above. The indexing was fixed by
 experiment on an operator with a known spectrum before any of it was written down here.
 
-**A₂ is the price.** `A₀` and `A₁` are what `certified_bracket` already builds (`A₁` is minus the certified
-`A_entry` matrix). `A₂ = ⟨M w_i, M w_j⟩_{Ḣ¹}` is not available: it needs M applied to a trial function, not just
-tested against one. By the source's identity `∂_x M(f) = −χ(H(f) + c(f))` it equals
-`∫₋₁¹ (H w_i + c(w_i))(H w_j + c(w_j)) dx`, which requires a closed form for the Hilbert transform of a truncated
-sine and then an integral of a product of two of them. **That derivation is not done here**, so this module is
-graded on the *comparison* operator — where `M̃ s_n = λ̃_n s_n` makes all three matrices exact — and is not yet
-instantiated for M. Goerisch's extension exists precisely to replace an unavailable A₂ by a bound from an
-auxiliary form; it is likewise not implemented, and naming it is not the same as having it.
+**A₂ was the price, and it turned out to be cheap.** `A₀` and `A₁` are what `certified_bracket` already builds
+(`A₁` is minus the certified `A_entry` matrix). `A₂ = ⟨M w_i, M w_j⟩_{Ḣ¹}` looked as though it needed M *applied*
+to a trial function rather than tested against one — by the source's identity `∂_x M(f) = −χ(H(f) + c(f))`, the
+integral `∫₋₁¹ (H w_i + c(w_i))(H w_j + c(w_j)) dx`, wanting the Hilbert transform of a truncated sine.
+
+It does not. `M` maps `V` into `V` and `{s_k}` is a basis of `V`, so `A₂ = AᵀB⁻¹A` — see
+`problem_dg_profile.A2_enclosure` and `lehmann_matrices`. That reduction is the problem-specific part of this
+work; the machinery in this file is not. The Hilbert-transform route survives as an **independent cross-check**,
+which is a better use for it: the certified interval contains the value that route computes.
 
 Certified without an eigensolver
 --------------------------------

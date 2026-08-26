@@ -345,18 +345,65 @@ for m in (1, 2, 3):
     check(f'|A_k,{m}| <= A_entry_abs_bound for k = 2m, 3m, 10m, 40m', ok)
 
 
+print('\n[20] LEHMANN ON M: certified UPPER bounds, and the bracket closed from both sides')
+# The payoff. Feeding A2 = A^T B^-1 A through Lehmann gives upper bounds on lambda_j for the REAL operator, so
+# the enclosure no longer borrows Corollary 3.7 for its answer. The corollary is still load-bearing, but only as
+# an a priori input for choosing the shift - it supplies lambda_{J+1} < 1/((J+1)pi), which with our certified
+# lower bound on lambda_J establishes the hypothesis "exactly J eigenvalues of T = -M lie below rho".
+UB, RHO, WIN = P.certified_upper_bounds(K=8, J=3, Ksum=80)
+BR3 = P.certified_bracket(K=16, J=3)
+
+check('the shift window is non-empty (Cor 3.7 on lambda_4 below our lower bound on lambda_3)',
+      WIN[0] < WIN[1], f'-rho in [{mp.nstr(WIN[0], 8)}, {mp.nstr(WIN[1], 8)}), used {mp.nstr(-RHO, 8)}')
+check('the shift actually lies in its own window', WIN[0] <= -RHO < WIN[1])
+
+for j in range(3):
+    check(f'lambda_{j+1}: a Lehmann upper bound was isolated', UB[j] is not None)
+for j in range(3):
+    check(f'lambda_{j+1}: upper bound is above our certified lower bound', BR3[j][0] <= UB[j],
+          f'[{mp.nstr(BR3[j][0], 10)}, {mp.nstr(UB[j], 10)}]  width {mp.nstr(UB[j] - BR3[j][0], 4)}')
+for j in range(3):
+    cor = 1 / ((j + 1) * MPPI)
+    check(f'lambda_{j+1}: Lehmann BEATS Corollary 3.7', UB[j] < cor,
+          f'{mp.nstr(UB[j], 10)} < {mp.nstr(cor, 10)}')
+for j in range(3):
+    pub = P.PUBLISHED[j]
+    plo, phi = pub - mpf('0.00005'), pub + mpf('0.00005')
+    check(f'lambda_{j+1}: the two-sided bracket is consistent with the published value',
+          BR3[j][0] <= phi and UB[j] >= plo)
+
+# Careful with this one - there are TWO published numbers and they are different objects. lambda~_n = 1/(n pi)
+# is an a priori UPPER BOUND, not an estimate of lambda_n. The Appendix-A values 0.2896, 0.1509, ... ARE
+# estimates, printed to four decimals. The check below is against the SECOND: our certified width is narrower
+# than the +-5e-5 implied by how precisely they printed their own estimate. It is NOT a claim about 1/pi, and
+# NOT a claim that their underlying mathematics is good only to four decimals.
+check('lambda_1: certified width is below the precision at which the Appendix-A estimate is printed',
+      UB[0] - BR3[0][0] < mpf('0.0001'),
+      f'width {mp.nstr(UB[0] - BR3[0][0], 4)} vs the +-5e-5 implied by the printed {mp.nstr(P.PUBLISHED[0], 4)}')
+
+refused = False
+try:
+    P.certified_upper_bounds(K=8, J=3, Ksum=10)     # Ksum < 2K: the vector tail bound does not hold
+except ValueError:
+    refused = True
+check('certified_upper_bounds refuses when Ksum is too small for the vector tail bound', refused)
+
+
 print('\n' + ('R4b: ALL PASS' if not FAILS else f'R4b: {len(FAILS)} FAILURE(S) -> ' + ', '.join(FAILS)))
-print('\nSCOPE: the Galerkin numbers are ORDINARY numerics, not a certificate. What IS established here is that')
-print('       the operator is transcribed correctly and our discretisation reproduces the paper.')
-print('       The A_{nm} are CLOSED FORMS in Si and Ci, enclosed rigorously by sici.py, and certified_bracket')
-print('       turns them into a genuine two-sided bracket on lambda_1..lambda_6. But the LOWER half is ours')
-print('       (Courant-Fischer, no truncation estimate needed) and the UPPER half is Corollary 3.7 of the')
-print('       source, used as a citation. lehmann.py now implements the Lehmann-Maehly machinery that would')
-print('       replace it - graded valid and quadratically convergent on the comparison operator - but it is')
-print('       NOT yet instantiated for M, because that needs A2 = <M w_i, M w_j>_H1, i.e. M applied to a trial')
-print('       function rather than tested against one. Lehmann also does not remove the dependence on')
-print('       Corollary 3.7: it converts it from the answer into an a priori input for choosing the shift.')
-print('       A2 IS NOW AVAILABLE: A2 = A^T B^-1 A needs no Hilbert transform, and its truncation tail is')
-print('       bounded in closed form - so the last missing ingredient for instantiating Lehmann on M exists.')
-print('       What has NOT been done is wiring it through and re-checking the shift hypothesis on M itself.')
+print('\nSCOPE. The Galerkin eigenvalues are ORDINARY numerics. What is CERTIFIED is this:')
+print('  * A_{nm} are closed forms in Si and Ci, and sici.py encloses those rigorously.')
+print('  * A2 = A^T B^-1 A needs no Hilbert transform; its truncation tail is bounded in closed form.')
+print('  * certified_bracket gives LOWER bounds by Courant-Fischer, needing no truncation estimate at all.')
+print('  * certified_upper_bounds gives UPPER bounds by Lehmann-Maehly, beating Corollary 3.7 on every')
+print('    one, with the bracket on lambda_1 narrower than the published four-figure value own precision.')
+print('')
+print('STILL BORROWED: Corollary 3.7 fixes the SHIFT. It supplies lambda_{J+1} < 1/((J+1)pi), which with')
+print('  our lower bound on lambda_J establishes Lehmann hypothesis that exactly J eigenvalues of T = -M')
+print('  lie below rho. It is an a priori INPUT now rather than the answer - an improvement, not an')
+print('  elimination, and writing it up as an elimination would be the overclaim this line polices.')
+print('')
+print('NOT CLAIMED: none of this is a statement about the PDE. It bounds the SPECTRUM of M. The')
+print('  self-similar profile statement needs the eigenFUNCTION and the functional c(f), and neither is')
+print('  enclosed here. Nothing above says anything about De Gregorio blow-up, on any domain.')
+
 sys.exit(1 if FAILS else 0)

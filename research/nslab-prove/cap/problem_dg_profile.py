@@ -102,6 +102,7 @@ much stronger grading statement than the one this module could make before.
 from mpmath import mp, mpf, iv, pi as MPPI, sin as msin, sqrt as msqrt, quad, inf, si as msi, ci as mci
 
 import sici
+import lehmann
 from ivutil import ival, lo, hi
 
 # Published eigenvalues, Huang-Tong-Wei Appendix A, Figure 1.
@@ -521,6 +522,116 @@ def A2_enclosure(i, j, K=None, target=30):
     tail = A2_tail_bound(i, j, K)
     tmag = max(abs(lo(tail)), abs(hi(tail)))
     return total + iv.mpf([-tmag, tmag])
+
+
+# ------------------------------------------------------------------------------------------------------------
+# 6. Lehmann on M itself: certified UPPER bounds, closing the bracket from the other side
+# ------------------------------------------------------------------------------------------------------------
+
+def _vector_tail_bound(va, vb, K, Ksum):
+    """Bound Σ_{k>Ksum} |p_a[k] p_b[k]| / (k²π²) where p_a[k] = Σ_{l≤K} A_{kl} v_a[l].
+
+    `M w_a` is **not** in the trial span — it has components at every k — so A₂ carries a genuine tail even when
+    the trial space is finite. This is the vector form of `A2_tail_bound`, and it reuses the same two ingredients:
+    the blunt entry bound and the three `∫ ln^p(x)/x⁴` moments.
+
+    For k ≥ 2K every term obeys `|A_{kl}| ≤ (8l/(3πk))(ln(k/l) + D_l)` with `D_l = |Ci(2lπ)| + 1/π`, so
+
+        |p_a[k]| ≤ (8/(3πk))·( ln(k)·S1_a + S2_a ),
+        S1_a = Σ_l l|v_a[l]|,   S2_a = Σ_l l|v_a[l]|·(D_l − ln l)
+
+    and the product summed against the moments gives the bound. Requires Ksum ≥ 2K.
+    """
+    if Ksum < 2 * K:
+        raise ValueError('the vector tail bound needs Ksum >= 2K so the entry bound holds for every k > Ksum')
+    S1 = [iv.mpf(0), iv.mpf(0)]
+    S2 = [iv.mpf(0), iv.mpf(0)]
+    for idx, v in enumerate((va, vb)):
+        for l in range(1, K + 1):
+            cl = sici.ci_at_2npi(l)
+            Dl = iv.mpf(max(abs(lo(cl)), abs(hi(cl)))) + iv.mpf(1) / iv.pi
+            w = iv.mpf(l) * abs(iv.mpf(v[l - 1]))
+            S1[idx] = S1[idx] + w
+            S2[idx] = S2[idx] + w * (Dl - iv.log(iv.mpf(l)))
+    m0, m1, m2 = _log_moment_integrals(Ksum)
+    pref = iv.mpf(64) / (iv.mpf(9) * iv.pi ** 4)
+    return pref * (S1[0] * S1[1] * m2 + (S1[0] * S2[1] + S2[0] * S1[1]) * m1 + S2[0] * S2[1] * m0)
+
+
+def lehmann_matrices(V, K, Ksum, target=30):
+    """The three Lehmann matrices for `T = −M` on the trial span, every entry a certified interval.
+
+        A₀_ab = ⟨w_a, w_b⟩_{Ḣ¹}     = Σ_l v_a[l] v_b[l] (lπ)²          — exact, B is diagonal
+        A₁_ab = ⟨T w_a, w_b⟩_{Ḣ¹}   = −v_aᵀ A v_b                       — the certified A matrix
+        A₂_ab = ⟨M w_a, M w_b⟩_{Ḣ¹} = Σ_k p_a[k] p_b[k]/(kπ)² ± tail    — A = AᵀB⁻¹A, in vector form
+    """
+    J = len(V)
+    Ent = {}
+    for k in range(1, Ksum + 1):
+        for l in range(1, K + 1):
+            Ent[(k, l)] = A_entry_enclosure(k, l, target)
+
+    p = []
+    for a in range(J):
+        col = []
+        for k in range(1, Ksum + 1):
+            s = iv.mpf(0)
+            for l in range(1, K + 1):
+                s = s + Ent[(k, l)] * iv.mpf(V[a][l - 1])
+            col.append(s)
+        p.append(col)
+
+    A0 = [[iv.mpf(0)] * J for _ in range(J)]
+    A1 = [[iv.mpf(0)] * J for _ in range(J)]
+    A2 = [[iv.mpf(0)] * J for _ in range(J)]
+    for a in range(J):
+        for b in range(J):
+            s0 = iv.mpf(0)
+            for l in range(1, K + 1):
+                s0 = s0 + iv.mpf(V[a][l - 1]) * iv.mpf(V[b][l - 1]) * (iv.mpf(l) * iv.pi) ** 2
+            s1 = iv.mpf(0)
+            for k in range(1, K + 1):
+                s1 = s1 + iv.mpf(V[a][k - 1]) * p[b][k - 1]
+            s2 = iv.mpf(0)
+            for k in range(1, Ksum + 1):
+                s2 = s2 + p[a][k - 1] * p[b][k - 1] / ((iv.mpf(k) * iv.pi) ** 2)
+            t = _vector_tail_bound(V[a], V[b], K, Ksum)
+            tmag = max(abs(lo(t)), abs(hi(t)))
+            A0[a][b] = s0
+            A1[a][b] = -s1
+            A2[a][b] = s2 + iv.mpf([-tmag, tmag])
+    return A0, A1, A2
+
+
+def certified_upper_bounds(K=10, J=4, Ksum=None, target=30):
+    """Certified **upper** bounds on λ₁…λ_J for M, by Lehmann–Maehly. Returns (bounds, rho, window).
+
+    The shift's hypothesis — exactly J eigenvalues of `T = −M` below ρ — is `λ_J > −ρ ≥ λ_{J+1}`, and both sides
+    are supplied rather than assumed:
+
+      * `−ρ < λ_J` from **our** certified Rayleigh–Ritz lower bound (`certified_bracket`);
+      * `−ρ ≥ λ_{J+1}` from **Corollary 3.7** of the source, `λ_{J+1} < 1/((J+1)π)`.
+
+    So Corollary 3.7 is still load-bearing — but as an *a priori input for choosing the shift*, not as the answer.
+    The bound returned is Lehmann's. That distinction is the entire content of this function and must survive
+    into any write-up of it.
+
+    Returns `(None, ...)` in a slot the bisection could not isolate, and raises if the shift window is empty.
+    """
+    if Ksum is None:
+        Ksum = max(2 * K, 120)
+    V = _approx_eigenvectors(K, J)
+    A0, A1, A2 = lehmann_matrices(V, K, Ksum, target)
+
+    br = certified_bracket(K=max(K, 16), J=J)
+    L_J = br[J - 1][0]
+    U_next = 1 / ((J + 1) * MPPI)
+    if not (U_next < L_J):
+        raise ValueError('empty shift window: Corollary 3.7 gives lambda_%d < %s but our lower bound on '
+                         'lambda_%d is only %s, so no rho separates them'
+                         % (J + 1, mp.nstr(U_next, 8), J, mp.nstr(L_J, 8)))
+    rho = -(U_next + L_J) / 2
+    return lehmann.upper_bounds(A0, A1, A2, rho, J, J), rho, (U_next, L_J)
 
 def galerkin_eigenvalues(K=8):
     """Largest K eigenvalues of M by Galerkin projection onto span{s_1..s_K}.

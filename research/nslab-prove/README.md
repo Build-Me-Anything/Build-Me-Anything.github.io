@@ -5,7 +5,7 @@ a DNS run is a measurement with error bars that shrink if you spend more, and a 
 list of inequalities that is either true or refused. No quantity of the first becomes the second.
 
 ```bash
-cd research/nslab-prove/cap && python run-all.py     # 9 suites, 325 checks, ~4.5 min, mpmath only
+cd research/nslab-prove/cap && python run-all.py     # 9 suites, 341 checks, ~4.5 min, mpmath only
 ```
 
 It prints `CAP SUITES: ALL PASS (9 suites)` or it fails loudly. There is no third answer and no tolerance to tune.
@@ -29,7 +29,7 @@ It prints `CAP SUITES: ALL PASS (9 suites)` or it fails loudly. There is no thir
 | **R2** De Gregorio steady state | certificate **for the Galerkin truncation only**; the PDE statement is not claimed |
 | **R3** preconditioning cure for derivative loss | certificate — and **the wrong door**, see the literature check |
 | **R4** compact-operator eigenpairs | certificate — the route the literature actually uses |
-| **R4b** the De Gregorio profile operator | **not a certificate** — but entries are closed forms in Si and Ci, and `sici.py` encloses those rigorously; only the Galerkin truncation bound is missing |
+| **R4b** the De Gregorio profile operator | **certified two-sided enclosure of the spectrum** — λ₁ ∈ [0.2895674, 0.2895979]; lower by Courant–Fischer, upper by Lehmann. **Not** a PDE statement, and not audited |
 | **R5** 2D Boussinesq / axisymmetric Euler | out of reach alone, and `cap/README.md` §R3 says *why* with a number |
 | **Machine C** the auditor | audits R0/R1a/R1b/R2/R3/**R4** in exact rationals — 44 tampered certificates rejected; **not R4b**, which is not a certificate to audit |
 
@@ -56,75 +56,55 @@ blow-up" without the domain.
 - **Certificates cannot vouch for their own relevance.** Soundness is machine-checkable. Whether the theorem is
   the one the problem needs is not — that is what R3 cost, and what the fleet exists to catch.
 
-## The next task, and it just got smaller
+## Where R4b stands: a certified two-sided enclosure, both halves ours
 
-Certifying `λf = M(f)` at R4b needed rigorous enclosures of `A_{nm} = ⟨s_n, s_m⟩_{Ḣ^{1/2}(ℝ)}` — improper
-oscillatory integrals — plus a proven bound on the truncation. **Those integrals turn out to have a closed form:**
+`A_{nm} = ⟨s_n, s_m⟩_{Ḣ^{1/2}(ℝ)}` were improper oscillatory integrals evaluated by quadrature. They have closed
+forms —
 
     A_{nn} = 2n·Si(2nπ)
     A_{nm} = −( 2nm(−1)^{n+m} / (π(m²−n²)) )·[ ln(m/n) − Ci(2mπ) + Ci(2nπ) ]      (n ≠ m)
 
-The improper integral is gone, and of the two pieces that replaced it, **the first is done.** `sici.py` encloses
-Si and Ci rigorously by their convergent Maclaurin series with a proved Leibniz remainder — the hypothesis is the
-elementary `2k+3 > x`, and the module *refuses* rather than applying the bound where it is unmet — so
-`A_entry_enclosure(n, m)` returns a certified interval for every matrix entry, graded against mpmath's
-independently implemented `si`/`ci`.
+— which `sici.py` encloses rigorously, so every matrix entry is a certified interval. From there:
 
-**And there is now a certified two-sided bracket** — `certified_bracket` — on the six leading eigenvalues:
-
-| j | certified bracket | published | vs the published lower bound |
+| j | certified enclosure | width | Corollary 3.7's a priori bound |
 |---|---|---|---|
-| 1 | [0.2895674, 0.3183099) | 0.2896 | ×1.43 |
-| 2 | [0.1508500, 0.1591549) | 0.1509 | ×1.49 |
-| 6 | [0.0519998, 0.0530516) | 0.0520 | ×1.54 |
+| 1 | [0.2895674, 0.2895979] | **3.0e-5** | λ₁ < 0.3183099 |
+| 2 | [0.1508500, 0.1509279] | 7.8e-5 | λ₂ < 0.1591549 |
+| 3 | [0.1021951, 0.1028375] | 6.4e-4 | λ₃ < 0.1061033 |
 
-**Read the halves separately, because they are not the same kind of thing.** The **lower** half is ours and needs
-no truncation estimate at all: by Courant–Fischer on `V`, *any* j-dimensional trial subspace bounds `λ_j` from
-below, so certified entries plus Gershgorin give it directly — which is why Rayleigh–Ritz converges from below.
-The **upper** half is Corollary 3.7 of the source, used as a **citation**. Nothing here derives an upper bound.
+**Lower** half: Courant–Fischer, needing no truncation estimate at all — any j-dimensional trial subspace of V
+bounds λ_j from below, which is why Rayleigh–Ritz converges from below. **Upper** half: Lehmann–Maehly, certified
+without an eigensolver by Sylvester inertia counting in an interval LDLᵀ, refusing when a pivot cannot be signed.
 
-So the Galerkin truncation error is *bounded* by the bracket width, but not by an argument of ours.
+**`A₂` was the blocker and it dissolved.** It looked as though it needed M *applied* to a trial function — the
+Hilbert transform of a truncated sine. It does not: M maps V into V and `{s_k}` is a basis, so `A₂ = AᵀB⁻¹A`, the
+matrix already certified plus a tail. **And that tail bound *is* the Galerkin truncation bound this rung was
+missing** — two obligations that were one object. The Hilbert-transform route survives as an *independent
+cross-check*, which is a better use for it: the certified interval contains what it computes.
 
-**`lehmann.py` is the machinery that would replace the citation** — Lehmann–Maehly, which bounds the eigenvalues
-of `T = −M` below a shift from below, i.e. `λ_j` from **above**. It is certified without an eigensolver: since
-`R ≻ 0`, Sylvester's law of inertia turns "how many eigenvalues below `t`" into a count of negative pivots in an
-interval LDLᵀ, and a pivot whose enclosure straddles zero returns `None` rather than a guess. Graded on the
-source's comparison operator, where `M̃ s_n = λ̃_n s_n` makes every Lehmann matrix exact: bounds valid at every
-trial space tried, and the worst relative gap falls **0.153 → 0.0056 → 6.0e-5** as the trial space improves —
-the quadratic convergence Lehmann predicts.
+### What is borrowed, and what is not
 
-**`A₂` was the blocker, and it dissolved.** It looked as though it needed M *applied* to a trial function — by the
-source's identity, `∫₋₁¹ (H w_i + c(w_i))(H w_j + c(w_j)) dx`, wanting the Hilbert transform of a truncated sine.
-It does not. M maps V into V and `{s_k}` is a basis of V, so `M s_m = Σ_k c_{km} s_k`; testing with `s_n` in `Ḣ¹`
-and using `⟨s_n, s_m⟩_{Ḣ¹} = n²π²δ_{nm}` gives `c_{nm} = A_{nm}/(n²π²)`, hence
+Corollary 3.7 (Huang–Tong–Wei) is still load-bearing, but as an **input certificate**, not the answer: it supplies
+`λ_{J+1} < 1/((J+1)π)`, which with our own certified lower bound on `λ_J` establishes the Lehmann shift
+hypothesis. The enclosure returned is ours and is far tighter than the corollary.
 
-    A₂ = Aᵀ B⁻¹ A,    A₂_{ij} = Σ_k A_{ki} A_{kj} / (k²π²),   B = diag(k²π²)
+Two wording traps worth keeping straight. `λ̃_n = 1/(nπ)` is an a priori **upper bound**, not an estimate of `λ_n`;
+the Appendix-A values `0.2896, 0.1509, …` **are** estimates, printed to four decimals. Our certified width of
+3.0e-5 on λ₁ is below the ±5e-5 implied by that printed value — a statement about display precision, **not** a
+claim to have refined their mathematics.
 
-**no Hilbert transform anywhere** — just the matrix already certified, plus a tail. And **the tail bound on that
-sum *is* the Galerkin truncation bound this rung was missing.** The two open problems were one problem. Both are
-now in `A2_enclosure`, with the tail bounded in closed form from `|Ci(x)| ≤ 2/x` and three elementary
-`∫ln^p(x)/x⁴` moments. Verified against the Hilbert-transform route — computed independently, through the
-operator — which the certified interval contains at every entry tested.
+### Prior art: the machinery is not new, and the files say so
 
-**What remains before Lehmann is instantiated on M** is wiring `A₂` through and re-checking the shift hypothesis
-`λ_{J+1} < −ρ < λ_J` for M itself. And **Lehmann still does not remove the dependence on Corollary 3.7**: it
-converts it from *the answer* into an *a priori input* for choosing that shift — a real improvement, not an
-elimination.
+Intermediate-problem lower bounds run Weinstein → Aronszajn → **Bazley–Fox** → Temple–Lehmann → Goerisch →
+Beattie–Greenlee. Truncation of these constructions has been a named subject since Bazley & Fox (1961). Nothing in
+`lehmann.py` is a new theorem. What is problem-specific is the instantiation: the `AᵀB⁻¹A` reduction for *this*
+operator and basis, and the explicit certified tail. See [`LITERATURE-CHECK.md`](LITERATURE-CHECK.md), which also
+records a **rejected match** — Beattie–Greenlee has its own "Corollary 3.7", and it is not this one.
 
-One thing to resolve first: `problem_dg_profile.bracket`'s prose and its own formula **disagree** about
-Corollary 3.7 — 0.2026/n as written, 0.06450/n as coded. Both upper bounds agree and every computed eigenvalue
-satisfies both lower bounds, so nothing is unsound; the code keeps the weaker one deliberately, and the table
-above quotes the improvement against the *tighter* reading. Flagged for the `oracle-hunter`.
+### What is still not claimed
 
-Finding the closed form also corrected the quadrature it replaced, which carried a relative error of order 1e-4
-from truncating its tail — the same order as the tolerance the published-eigenvalue check was using. With exact
-entries all six eigenvalues land inside the *rounding intervals* of the published four-figure values.
-
-The auditor gap is closed: `emit_certs.py` emits an R4 certificate on a dyadic instance and `auditor_r4.py`
-re-derives it in exact rationals, forming no matrix and inverting nothing. It rejected a genuine certificate on
-its first run — the perturbation constant had been written as a decimal string that was 2⁻²⁶ truncated at 17
-digits, so prover and certificate denoted different numbers — which is the clearest demonstration this project
-has that an independent implementation earns its keep.
+None of this is a statement about the PDE. It bounds the **spectrum** of M. The self-similar profile statement
+needs the eigen*function* and the functional `c(f)`, and neither is enclosed here. Machine C does not reach R4b.
 
 ---
 
