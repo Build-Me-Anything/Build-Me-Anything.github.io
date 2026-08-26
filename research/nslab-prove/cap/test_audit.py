@@ -28,6 +28,7 @@ import auditor
 import auditor_r23
 import auditor_r01
 import auditor_r4
+import auditor_r4b
 from auditor import ACCEPT, REJECT
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -51,7 +52,7 @@ print('\n[1] the auditor is independent: it imports nothing from the prover')
 PROVER_MODULES = {'ell1', 'ivutil', 'radiipoly', 'krawczyk', 'clm', 'problem_quadratic',
                   'problem_clm_fourier', 'problem_degregorio', 'problem_burgers', 'problem_eigen',
                    'mpmath', 'certificate'}
-for mod in ('auditor.py', 'auditor_r23.py', 'auditor_r01.py', 'auditor_r4.py'):
+for mod in ('auditor.py', 'auditor_r23.py', 'auditor_r01.py', 'auditor_r4.py', 'auditor_r4b.py'):
     src = open(os.path.join(HERE, mod), encoding='utf-8').read()
     imported = set()
     for node in ast.walk(ast.parse(src)):
@@ -313,6 +314,52 @@ r4_tamper('r4: Z2 raised within the slack (blunt, still closes)',
           lambda d: _setb(d, 'Z2', Fraction(d['bounds']['Z2']) * (1 + Fraction(1, 10 ** 6))), expect=ACCEPT)
 r4_tamper('r4: Y0 doubled - blunt AND p(r) no longer negative, so refused',
           lambda d: _setb(d, 'Y0', Fraction(d['bounds']['Y0']) * 2))
+
+
+# --------------------------------------------------------------------------------------------------------
+print('\n[17] R4b: the Gram matrix re-derived in exact rationals, with no special functions')
+# The tightest result in this line was, until now, its least independently checked. The prover reaches the Gram
+# matrix through Ci, which needs gamma and a logarithm - neither available to an auditor restricted to
+# fractions/json/math. Lemma 1' removes both: gamma cancels between the two Ci terms and the log cancels against
+# ln(m/n), leaving the ENTIRE functions Si and Cin. So this auditor evaluates a DIFFERENT representation of the
+# same object, in rational arithmetic rounded outward, with pi from Machin rather than from mpmath.
+r4b = load('r4b-gram')
+v, f = auditor_r4b.audit_doc(r4b)
+check('the genuine R4b Gram certificate is ACCEPTed', v == ACCEPT, '; '.join(f[:1]) if v != ACCEPT else '')
+check('the auditor actually recomputed (it reports its own widths)', any('auditor width' in x for x in f))
+
+
+def r4b_tamper(name, mutate, expect=REJECT):
+    doc = json.loads(json.dumps(r4b))
+    mutate(doc)
+    v, f = auditor_r4b.audit_doc(doc)
+    detail = next((x for x in f if x.startswith('REJECT')), '')
+    check(name, v == expect, detail[:112])
+
+
+def _shift(doc, key, delta):
+    lo_, hi_ = doc['gram'][key]
+    doc['gram'][key] = [str(Fraction(lo_) + delta), str(Fraction(hi_) + delta)]
+
+
+print('\n[18] R4b tampering must be rejected')
+r4b_tamper('r4b: A_1,1 shifted off the true value', lambda d: _shift(d, '1,1', Fraction(1, 1000)))
+r4b_tamper('r4b: A_2,3 shifted off the true value', lambda d: _shift(d, '2,3', Fraction(-1, 10 ** 6)))
+r4b_tamper('r4b: A_1,2 sign flipped',
+           lambda d: d['gram'].__setitem__('1,2', [str(-Fraction(d['gram']['1,2'][1])),
+                                                   str(-Fraction(d['gram']['1,2'][0]))]))
+r4b_tamper('r4b: A_5,5 collapsed to a wrong point',
+           lambda d: d['gram'].__setitem__('5,5', ['15', '15']))
+r4b_tamper('r4b: an off-diagonal given the diagonal entry value',
+           lambda d: d['gram'].__setitem__('1,2', d['gram']['1,1']))
+r4b_tamper('r4b: the problem renamed', lambda d: d.__setitem__('problem', 'something_else'))
+
+print('\n[19] R4b: a blunt certificate is still accepted - only disjointness is fatal')
+r4b_tamper('r4b: every entry widened a thousandfold (blunt, not wrong)',
+           lambda d: [d['gram'].__setitem__(k, [str(Fraction(a) - Fraction(1, 1000)),
+                                                str(Fraction(b) + Fraction(1, 1000))])
+                      for k, (a, b) in list(d['gram'].items())], expect=ACCEPT)
+
 
 print('\n' + ('AUDIT: ALL PASS' if not FAILS else f'AUDIT: {len(FAILS)} FAILURE(S) -> ' + ', '.join(FAILS)))
 sys.exit(1 if FAILS else 0)

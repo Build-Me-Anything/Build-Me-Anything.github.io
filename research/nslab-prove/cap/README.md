@@ -7,7 +7,7 @@ tune and no third answer.
 
 ```bash
 cd research/nslab-prove/cap
-python run-all.py          # all nine suites, 350 checks, ~4.5 minutes (R1b is most of it)
+python run-all.py          # all nine suites, 362 checks, ~4.5 minutes (R1b is most of it)
 ```
 
 Requires `mpmath` only (already present with sympy). Pure Python, arbitrary precision, outward-rounding interval
@@ -32,12 +32,13 @@ arithmetic — slow, and deliberately so: at this scale a reader auditing every 
 | `auditor.py` | **Machine C** | independent re-check of the radii-polynomial certificates (R1b), exact rationals |
 | `auditor_r23.py` | **Machine C** | R2 and R3: exact rational **interval** arithmetic for the Krawczyk verdict, and the preconditioned Burgers bounds |
 | `auditor_r01.py` | **Machine C** | R0 enclosures and R1a's completeness check, with its own π, sin and cos from series with proved remainders |
+| `auditor_r4b.py` | **Machine C** | the R4b Gram matrix in exact rationals: evaluates the **Cin** form, so it needs neither γ nor a logarithm, and takes π from Machin rather than mpmath |
 | `auditor_r4.py` | **Machine C** | R4 eigenpairs: rebuilds the operator from the parameters and recomputes Y₀ exactly — forms no matrix and inverts nothing |
 | `lehmann.py` | **R4b** | Lehmann-Maehly upper bounds by Sylvester inertia counting - no eigensolver, and it refuses when a pivot cannot be signed |
 | `sici.py` | **R4b** | rigorous enclosures of Si and Ci by convergent series with a **proved** Leibniz remainder; refuses where the hypothesis is unmet |
 | `emit_certs.py` | contract | runs the provers and writes their certificates into `certs/` |
 | `run-all.py` | | one command, eight suites, and it fails loudly — the `build.js --verify` of this line |
-| `test_r0/r1/r1b/r2/r3/r4/r4b/audit.py` | | 11 / 25 / 22 / 18 / 17 / 18 / 143 / 69 / 27 checks — **350** in total |
+| `test_r0/r1/r1b/r2/r3/r4/r4b/audit.py` | | 11 / 25 / 22 / 18 / 17 / 18 / 143 / 79 / 29 checks — **362** in total |
 
 ## Status
 

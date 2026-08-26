@@ -260,9 +260,40 @@ def emit_eigen(outdir):
     return path, cert
 
 
+def emit_r4b(outdir):
+    """R4b: the Gram matrix as certified intervals, for the exact-rational auditor.
+
+    Entries are emitted through `A_entry_enclosure_via_cin` — the Cin form — because that is the representation
+    an auditor restricted to fractions/json/math can reach. The Ci form is the derivation; the Cin form is the
+    contract. Endpoints are exact rationals, as everywhere else in this directory.
+    """
+    import problem_dg_profile as DGP
+    pairs = [(1, 1), (2, 2), (1, 2), (2, 3), (3, 7), (1, 12), (5, 5), (4, 9)]
+    gram = {}
+    for (n, m) in pairs:
+        e = DGP.A_entry_enclosure_via_cin(n, m)
+        gram['%d,%d' % (n, m)] = [str(exact(lo(e))), str(exact(hi(e)))]
+    path = os.path.join(outdir, 'certificate-r4b-gram.json')
+    doc = {
+        'contract': C.CONTRACT_VERSION,
+        'problem': 'r4b_gram',
+        'params': {'basis': 'chi*sin(n*pi*x)', 'inner_product': 'Hdot^{1/2}(R)'},
+        'gram': gram,
+        'claim': ('Certified enclosures of A_{nm} = <s_n, s_m>_{Hdot^{1/2}(R)} for the Huang-Tong-Wei profile '
+                  'operator, via the Cin closed form. A statement about this Gram matrix only - not about the '
+                  'spectrum, not about an eigenfunction, and not about the De Gregorio equation.'),
+        'notes': {'closed_form': 'A_nn = 2n Si(2n pi); A_nm = -(2nm(-1)^(n+m)/(pi(m^2-n^2)))[Cin(2m pi) - Cin(2n pi)]',
+                  'why_cin': 'gamma and log cancel, so an auditor with only fractions/json/math can reach it'},
+    }
+    import json as _json
+    with open(path, 'w', encoding='utf-8') as f:
+        _json.dump(doc, f, indent=2)
+    return path, type('V', (), {'status': 'CERTIFIED', 'proved': True})()
+
+
 def main(outdir='.'):
     os.makedirs(outdir, exist_ok=True)
-    for fn in (emit_quadratic, emit_clm, emit_degregorio, emit_burgers, emit_r0, emit_r1a, emit_eigen):
+    for fn in (emit_quadratic, emit_clm, emit_degregorio, emit_burgers, emit_r0, emit_r1a, emit_eigen, emit_r4b):
         path, cert = fn(outdir)
         print('wrote %s   (%s)' % (os.path.basename(path), cert.status))
     return 0

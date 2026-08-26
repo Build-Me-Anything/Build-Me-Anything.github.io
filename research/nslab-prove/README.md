@@ -5,7 +5,7 @@ a DNS run is a measurement with error bars that shrink if you spend more, and a 
 list of inequalities that is either true or refused. No quantity of the first becomes the second.
 
 ```bash
-cd research/nslab-prove/cap && python run-all.py     # 9 suites, 350 checks, ~4.5 min, mpmath only
+cd research/nslab-prove/cap && python run-all.py     # 9 suites, 362 checks, ~4.5 min, mpmath only
 ```
 
 It prints `CAP SUITES: ALL PASS (9 suites)` or it fails loudly. There is no third answer and no tolerance to tune.
@@ -32,7 +32,7 @@ It prints `CAP SUITES: ALL PASS (9 suites)` or it fails loudly. There is no thir
 | **R4** compact-operator eigenpairs | certificate — the route the literature actually uses |
 | **R4b** the De Gregorio profile operator | **certified two-sided enclosure of the spectrum** — λ₁ ∈ [0.2895674, 0.2895979]; lower by Courant–Fischer, upper by Lehmann. **Not** a PDE statement, and not audited |
 | **R5** 2D Boussinesq / axisymmetric Euler | out of reach alone, and `cap/README.md` §R3 says *why* with a number |
-| **Machine C** the auditor | audits R0/R1a/R1b/R2/R3/**R4** in exact rationals — 44 tampered certificates rejected; **not R4b**, which is not a certificate to audit |
+| **Machine C** the auditor | audits R0/R1a/R1b/R2/R3/**R4** in exact rationals — 44 tampered certificates rejected; **and R4b's Gram matrix** — 51 tampered certificates rejected |
 
 ## What is proved, and what is not
 

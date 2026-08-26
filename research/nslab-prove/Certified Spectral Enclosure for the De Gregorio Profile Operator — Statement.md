@@ -6,6 +6,18 @@
 against a *stated theorem* rather than inferred backwards from code. Nothing below is refereed. Every lemma is
 graded numerically against an independent route, and each such grading is named where it applies.
 
+> ## RESULT STATUS — read before anything else
+>
+> | | |
+> |---|---|
+> | **Certified** | Rigorous two-sided spectral enclosures for selected eigenvalues of `M`, e.g. `λ₁ ∈ [0.2895674, 0.2895979]`. |
+> | **NOT certified** | Eigenfunctions. The functional `c(f)`. The self-similar profile. Any PDE blow-up conclusion. |
+> | **Novelty status** | *Potentially novel* operator-specific certification construction. Prior art has **not** been exhaustively checked — MathSciNet and zbMATH have not been consulted. The correct status is **no identified prior art**, which is not the same as novel. |
+> | **Classical components** | Lehmann / intermediate-problem theory, Galerkin truncation, Courant–Fischer, Sylvester inertia counting, interval arithmetic — and their historical lineage. No novelty is claimed for any of it. |
+> | **Independent audit** | **Partial.** Machine C now re-derives the **Gram matrix** (Lemma 1′) in exact rationals via the `Cin` form, with π from Machin — 6 tamper cases rejected. It does **not** yet reach `A₂`, the Lehmann step, or the enclosures themselves. |
+>
+> **This document is not a blow-up proof and contains none.** If you read only the first two pages, read this box.
+
 **One-line summary.** For Huang–Tong–Wei's compact profile operator `M`, in the sine basis of its own comparison
 operator, we derive closed forms for the Gram matrix, prove that the Lehmann `A₂` term reduces to `AᵀB⁻¹A`, bound
 the resulting tail explicitly, and obtain certified two-sided enclosures of the leading eigenvalues — for example
@@ -296,10 +308,17 @@ The `Ci` form is how the derivation reads; the `Cin` form is what an exact-ratio
 needs `π` and two entire series but neither `γ` nor `log`; the interval certificate is what the verifier emits.
 Their `6e-21` agreement is an **independent consistency check**, not evidence for the theorem.
 
-**Independent audit status: incomplete.** The project's auditor (`auditor*.py`, importing only `fractions`, `json`
-and `math`, re-deriving every bound in exact rationals by different arguments, rejecting 44 tampered certificates)
-reaches R0–R4 and **does not reach the result stated here**. Until it does, the tightest claim in this line is also
-its least independently checked, and that should weigh against the claim rather than for it.
+**Independent audit status: partial, and the boundary matters.** `auditor_r4b.py` imports `fractions`, `json`,
+`math` and `auditor_r01` (for π by Machin) — a structural test asserts it — and re-derives the **Gram matrix** of
+Lemma 1′ in rational arithmetic rounded outward. It is an audit rather than a re-run on three counts: a different
+*representation* (`Cin`, not `Ci`), different *arithmetic* (rational endpoints, not interval floats), and a
+different *constant* (Machin's π, not `iv.pi`). It accepts the emitted certificate, rejects six tampered variants,
+and accepts a blunt one — only disjointness is fatal.
+
+**It stops at the Gram matrix.** `A₂` (Lemma 2), the tail (Lemma 3), the Lehmann step and the enclosures of §5 are
+**not** independently re-derived. So the certified numbers in the table above still rest on a single
+implementation. That should weigh against the claim rather than for it, and the honest reading is that the audit
+has climbed one rung of four.
 
 ---
 
