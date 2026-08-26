@@ -252,6 +252,39 @@ def A_entry_enclosure(n, m, target=30):
     return -(pref * inner)
 
 
+def A_entry_via_cin(n, m):
+    """The same entry written with `Cin` instead of `Ci` — the form an exact-rational auditor can reach.
+
+        A_{nn} = 2n·Si(2nπ)
+        A_{nm} = −( 2nm(−1)^{n+m} / (π(m²−n²)) )·[ Cin(2mπ) − Cin(2nπ) ]      (n ≠ m)
+
+    Identical in value to `A_entry`; γ and the logarithm cancel between the two Ci terms and the ln(m/n) in front.
+    Kept as a separate function rather than replacing `A_entry`, because the two agreeing is itself a check on the
+    cancellation, and because the Ci form is how the derivation reads.
+    """
+    n, m = int(n), int(m)
+    if n == m:
+        return 2 * n * msi(2 * n * MPPI)
+    inner = _cin(2 * m * MPPI) - _cin(2 * n * MPPI)
+    return -(2 * n * m * (mpf(-1) ** (n + m)) / (MPPI * (m * m - n * n))) * inner
+
+
+def _cin(x):
+    """Cin(x) = γ + ln x − Ci(x), for the point-value cross-check only."""
+    from mpmath import euler as _eu
+    return _eu + mp.log(x) - mci(x)
+
+
+def A_entry_enclosure_via_cin(n, m, target=30):
+    """Certified entry through the Cin form — no γ, no logarithm, only π and two entire series."""
+    n, m = int(n), int(m)
+    if n == m:
+        return iv.mpf(2 * n) * sici.si_at_2npi(n, target)
+    inner = sici.cin_at_2npi(m, target) - sici.cin_at_2npi(n, target)
+    sgn = iv.mpf(-1) if (n + m) % 2 else iv.mpf(1)
+    return -(iv.mpf(2 * n * m) * sgn / (iv.pi * iv.mpf(m * m - n * n))) * inner
+
+
 def A_entry_quadrature(n, m, breaks_per_side=None):
     """The same entry by direct quadrature — kept as an INDEPENDENT route, not as the primary one.
 

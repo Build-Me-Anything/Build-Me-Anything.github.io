@@ -3,7 +3,7 @@
 **Scoping document, NSLab rigorous-numerics line (NSLab-Prove).** Written 2026-08-24, ladder updated 2026-08-25.
 
 **Build status.** The ladder of §4 is built through **R4b**: `cd research/nslab-prove/cap && python run-all.py` runs
-nine suites and reports ALL PASS (341 checks). R0, R1a, R1b, R3 and R4 carry certificates; R2 carries one for
+nine suites and reports ALL PASS (350 checks). R0, R1a, R1b, R3 and R4 carry certificates; R2 carries one for
 the Galerkin truncation only; R4b is transcription and ordinary numerics, deliberately not a certificate. Machine C
 audits R0–R4 in exact rationals and rejects 44 tampered certificates; it does not reach R4b, which has no
 certificate to audit.

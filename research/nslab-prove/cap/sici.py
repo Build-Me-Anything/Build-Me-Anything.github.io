@@ -47,7 +47,7 @@ import math
 
 from mpmath import iv, mp, mpf
 
-__all__ = ['si', 'ci', 'si_at_2npi', 'ci_at_2npi', 'working_dps']
+__all__ = ['si', 'ci', 'cin', 'si_at_2npi', 'ci_at_2npi', 'cin_at_2npi', 'working_dps']
 
 
 def working_dps(x, target=30):
@@ -174,5 +174,25 @@ def ci_at_2npi(n, target=30):
         iv.dps = working_dps(2 * n * 3.15 + 1, target)
         x = iv.mpf(2 * n) * iv.pi
         return ci(x, target)
+    finally:
+        iv.dps = dps_saved
+
+
+def cin_at_2npi(n, target=30):
+    """Enclosure of Cin(2nπ) — and the reason it is worth having separately from `ci_at_2npi`.
+
+    Writing the R4b matrix entries in terms of `Ci` needs `γ` and `ln`. Writing them in terms of `Cin` needs
+    neither: in the entry's bracket `[ln(m/n) − Ci(2mπ) + Ci(2nπ)]`, substituting `Ci(x) = γ + ln x − Cin(x)`
+    cancels the Euler–Mascheroni constant **and** the logarithm, leaving `Cin(2mπ) − Cin(2nπ)`.
+
+    That matters for Machine C rather than for the prover. `Cin` is **entire**, with a pure alternating power
+    series, so an auditor importing only `fractions`, `json` and `math` can reach it from a rigorously enclosed π
+    — which `auditor_r01.py` already builds from series with proved remainders. It cannot reach `γ` or `ln` that
+    way. The obstacle to auditing R4b was an artefact of how the closed form was written, not of the mathematics.
+    """
+    dps_saved = iv.dps
+    try:
+        iv.dps = working_dps(2 * n * 3.15 + 1, target)
+        return cin(iv.mpf(2 * n) * iv.pi, target)
     finally:
         iv.dps = dps_saved

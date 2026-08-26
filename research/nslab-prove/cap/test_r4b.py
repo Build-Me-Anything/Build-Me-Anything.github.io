@@ -390,6 +390,27 @@ check('certified_upper_bounds refuses when Ksum is too small for the vector tail
 
 
 print('\n' + ('R4b: ALL PASS' if not FAILS else f'R4b: {len(FAILS)} FAILURE(S) -> ' + ', '.join(FAILS)))
+print('\n[21] the Cin form: gamma and the logarithm cancel, which is what unblocks Machine C')
+# Ci(x) = gamma + ln x - Cin(x). In the entry bracket [ln(m/n) - Ci(2m pi) + Ci(2n pi)] both gamma AND the
+# logarithm cancel, leaving Cin(2m pi) - Cin(2n pi). Cin is ENTIRE with a pure alternating power series, so an
+# auditor importing only fractions/json/math can reach it from a rigorously enclosed pi - which auditor_r01.py
+# already builds. It cannot reach gamma or ln that way. The obstacle to auditing R4b was how the closed form was
+# WRITTEN, not the mathematics.
+for (n, m) in [(1, 1), (1, 2), (2, 3), (3, 7), (1, 12)]:
+    a, b = P.A_entry(n, m), P.A_entry_via_cin(n, m)
+    check(f'A_{n},{m}: the Ci form and the Cin form agree', abs(a - b) <= abs(a) * mpf('1e-20'),
+          f'rel diff {mp.nstr(abs(a - b) / abs(a), 3)}')
+for (n, m) in [(1, 1), (2, 3), (1, 12)]:
+    e = P.A_entry_enclosure_via_cin(n, m)
+    check(f'A_{n},{m}: the Cin-form enclosure contains the value', lo(e) <= P.A_entry(n, m) <= hi(e),
+          f'width {mp.nstr(hi(e) - lo(e), 3)}')
+c1 = sici.cin_at_2npi(3)
+with mp.workdps(60):
+    ref = mp.euler + mp.log(6 * mp.pi) - mp.ci(6 * mp.pi)
+    ok = mpf(c1.a) <= ref <= mpf(c1.b)
+check('Cin(6 pi) enclosure contains gamma + ln x - Ci(x) computed independently', ok)
+
+
 print('\nSCOPE. The Galerkin eigenvalues are ORDINARY numerics. What is CERTIFIED is this:')
 print('  * A_{nm} are closed forms in Si and Ci, and sici.py encloses those rigorously.')
 print('  * A2 = A^T B^-1 A needs no Hilbert transform; its truncation tail is bounded in closed form.')
