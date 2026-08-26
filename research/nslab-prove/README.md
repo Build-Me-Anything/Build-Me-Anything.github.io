@@ -104,6 +104,12 @@ Beattie–Greenlee. Truncation of these constructions has been a named subject s
 operator and basis, and the explicit certified tail. See [`LITERATURE-CHECK.md`](LITERATURE-CHECK.md), which also
 records a **rejected match** — Beattie–Greenlee has its own "Corollary 3.7", and it is not this one.
 
+**The zbMATH Open novelty check ran 2026-08-26** (LITERATURE-CHECK, fifth check; AL-013): structured field
+search plus an exhaustive sweep of HTW's citations. Nothing found — including two zero-hit queries showing
+zbMATH indexes no document pairing Lehmann-method bounds with an integral operator at all. The claim stays
+"**no identified prior art**" on a stronger basis than before; **MathSciNet remains unconsulted**, and the
+German-language 1980s corpus was checked by title and abstract only.
+
 ### What is still not claimed
 
 None of this is a statement about the PDE. It bounds the **spectrum** of M. The self-similar profile statement

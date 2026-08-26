@@ -179,6 +179,18 @@ numerical decision — `uncertainty ⇒ no certificate`, never `uncertainty ⇒ 
 | **Resolution** | With this entry **all four rungs are audited under contracts frozen before their implementations** — Gram matrix (`d453595`), `A₂` + tail (AL-005), Lehmann pencil (AL-010), assembled enclosures (this entry). Two boundaries survive completion, fixed in the contract's §7 before the implementation ran: the frozen statement does not change because the audit finished, and an **independently audited certificate is still not an independently proved theorem** — the proof is the statement document; the ladder is independent computational evidence that the machinery was implemented correctly. AL-010's asymmetry recurs through the assembly: the auditor's own `U₃ = 0.10265` is again sharper than the claimed `0.10284`, and again that is a finding, not a revision — the statement's table stands as frozen. |
 | **Resulting commit** | (this commit) |
 
+### AL-013 — the zbMATH Open novelty check: nothing found, and the claim does not change
+
+| | |
+|---|---|
+| **Commit** | (this commit) |
+| **Rung / test** | — (novelty status, not a certification rung); full record in `LITERATURE-CHECK.md`, fifth check |
+| **Observation** | The statement's §8 check has now been half-discharged: **zbMATH Open consulted** via structured field search (the corpora around Lehmann/Goerisch/Behnke/intermediate-problems, the De Gregorio literature, the modern guaranteed-bounds FEM line), plus an **exhaustive citation sweep of HTW** (8 citing papers, all analytic). The sharpest results are two zero-hit queries: zbMATH Open indexes **no document pairing Lehmann-method eigenvalue bounds with an integral operator**, and none for `eigenvalue enclosure + integral operator`. No prior instance of the invariance collapse `M(V) ⊆ V ⇒ A₂ = AᵀB⁻¹A`, of the tail-doubles-as-truncation-bound observation, or of any spectral computation of the HTW operator was found. One new name collision recorded: the physics "Lehmann representation" (Green's functions). |
+| **Changes the theorem?** | No. |
+| **Changes the certificate?** | No. |
+| **Resolution** | Per the standing rule, the novelty claim changes **only if prior art appears; none did**, so the claim stays "**no identified prior art**" — with its evidentiary basis upgraded from web string searches to a structured database search and an exhaustive citation sweep. Two residual gaps, named rather than glossed: **MathSciNet remains unconsulted** (subscription), and the German-language 1980s Goerisch/Albrecht corpus was enumerated by title and abstract only — a general invariance remark could hide in a full text. The frozen statement's §8 is deliberately unedited. |
+| **Resulting commit** | (this commit) |
+
 ---
 
 *The mathematical claim under audit is fixed at tag `r4b-statement-v1`. Nothing in this log is a claim about the

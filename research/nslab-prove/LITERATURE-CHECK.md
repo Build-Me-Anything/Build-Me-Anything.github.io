@@ -367,3 +367,63 @@ supplies.*
 And the epistemic role of Corollary 3.7 in the certification is worth stating explicitly, because it is unusual:
 it is **not** used as the answer. It supplies `λ_{J+1} < 1/((J+1)π)`, which together with our own certified lower
 bound on `λ_J` establishes the Lehmann shift hypothesis. A published theorem used as an **input certificate**.
+
+---
+
+# Fifth check: the zbMATH Open novelty search (2026-08-26)
+
+The statement's §8 flagged that a definitive prior-art check "requires MathSciNet or zbMATH, which have not
+been consulted." **zbMATH Open has now been consulted** — a structured field search through its public REST API
+(`api.zbmath.org`, same query syntax as the site), not a web string search. **MathSciNet has still not been**:
+it needs an institutional subscription this machine does not have. The claim's status line must keep saying so.
+
+## What was searched, with hit counts
+
+Queries are zbMATH one-line syntax; an empty result set returns 404 from the API, recorded below as 0.
+
+| axis | query (abridged) | hits | outcome |
+|---|---|---|---|
+| verified-Lehmann corpus | `Lehmann + eigenvalue + interval arithmetic` | 7 | Behnke, Davies, Liu–Okayama–Oishi, Mayer — all differential operators / matrices |
+| Goerisch corpus | `Goerisch + eigenvalue` | 25 | the classical lineage, 1978–2018: plates, sloshing, Steklov, Trefftz, FEM flux reconstruction |
+| Behnke corpus | `au:Behnke + eigenvalue` | 13 | matrices, plates, photonic crystals, domain decomposition — no integral operator |
+| Lehmann–Maehly by name | `"Lehmann-Maehly"` | 10 | + Bazley–Fox 1964, Barrenechea–Boulton–Boussaïd, Liu 2024 — none nonlocal |
+| truncation of intermediate problems | `intermediate problems + truncation + eigenvalue` | 5 | Gould, Poznyak, Beattie–Greenlee, Beattie–Banach — the known lineage |
+| De Gregorio corpus | `De Gregorio + blow-up`, `ti: self-similar De Gregorio` | 7 + 2 | all analytic; HTW is Zbl 1529.35388 |
+| HTW citation sweep | Semantic Scholar, arXiv:2209.08232 | **8** | exhaustive; all analytic self-similar-blowup papers; none certifies σ(M) |
+| the two spectral neighbours | Xu arXiv:2607.19762; Guo–Jiu arXiv:2506.02800 | — | CLM collapse spectrum (exact, analytic, different operator); DG torus stability (analytic) |
+| guaranteed bounds, modern FEM | `guaranteed + eigenvalue bounds + compact` | 2 | Carstensen–Ern–Puttkammer, Gallistl — Laplacian-type |
+| **the gap itself** | `Lehmann + integral operator + bounds` | **0** | and `eigenvalue enclosure + integral operator` = **0** |
+
+The lone 2-term hit for `Lehmann + integral operator` is a many-body-physics paper using the **Lehmann
+representation** of Green's functions — a name collision, same species as the Beattie–Greenlee "Corollary 3.7"
+false match above, recorded so the next search does not chase it.
+
+## What the search found, and did not find
+
+**Found — the machinery lineage, again.** Every rigorous Lehmann/Goerisch/Zimmermann–Mertins computation
+located operates on a **differential operator** (Laplacian, plates, Maxwell, angular Kerr–Newman Dirac,
+Schrödinger–Poisson) through FEM or spline trial spaces, where applying the operator to a trial function is
+direct. The nearest machinery neighbour is Boulton–Winklmeier (arXiv:1410.5357): certified sharp enclosures for
+a Dirac-type operator — still differential, piecewise-linear trial functions, no invariance collapse.
+
+**Not found — any of the three ingredients of the narrow claim, in any combination:** (i) a Lehmann/inertia
+certificate for a **compact nonlocal integral operator** none of whose applications to trial functions is
+computed directly; (ii) the **invariance collapse** `M(V) ⊆ V ⇒ A₂ = AᵀB⁻¹A` making the second Lehmann matrix
+available from the already-certified first; (iii) a tail bound **doubling** as the Galerkin truncation
+enclosure. The zero-hit queries above are the sharpest statement: zbMATH Open indexes no document pairing
+Lehmann-method eigenvalue bounds with an integral operator at all.
+
+**Also not found — anyone else computing σ(M).** The eight papers citing HTW, plus the zbMATH De Gregorio
+corpus, contain no rigorous (or even numerical-headline) spectral computation of the HTW profile operator. The
+two spectral papers in the neighbourhood study different operators by purely analytic means.
+
+## Status after this check
+
+The claim stays exactly where AL-012 and the completion statement left it, with a stronger evidentiary basis:
+
+> **No identified prior art** — now on the basis of a structured zbMATH Open field search and an exhaustive
+> citation sweep of HTW, not merely web string searches. **Still not the same as novel.** MathSciNet remains
+> unconsulted, and the German-language 1980s Goerisch/Albrecht corpus was enumerated by title and abstract
+> only — a general invariance remark could hide in a full text; that is the residual risk, named.
+
+The frozen statement's §8 wording is unchanged, as the freeze requires.
