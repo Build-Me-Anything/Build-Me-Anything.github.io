@@ -5,10 +5,10 @@ a DNS run is a measurement with error bars that shrink if you spend more, and a 
 list of inequalities that is either true or refused. No quantity of the first becomes the second.
 
 ```bash
-cd research/nslab-prove/cap && python run-all.py     # 9 suites, 433 checks, ~12 min, mpmath only
+cd research/nslab-prove/cap && python run-all.py     # 10 suites, 446 checks, ~13 min, mpmath only
 ```
 
-It prints `CAP SUITES: ALL PASS (9 suites)` or it fails loudly. There is no third answer and no tolerance to tune.
+It prints `CAP SUITES: ALL PASS (10 suites)` or it fails loudly. There is no third answer and no tolerance to tune.
 
 ## Read in this order
 
@@ -22,6 +22,7 @@ It prints `CAP SUITES: ALL PASS (9 suites)` or it fails loudly. There is no thir
 | [`cap/README.md`](cap/README.md) | The working code, rung by rung, with the numbers each one is graded against and the four failures worth keeping. |
 | [`agents/README.md`](agents/README.md) | The verification fleet: three agents that emit artefacts, never verdicts. |
 | [`PROOF-AUDIT.md`](PROOF-AUDIT.md) | **Roadmap stage 4, first pass complete**: all 28 implications of the frozen statement classified — no gap; ten glossed proofs completed in place (the invariance collapse, the tail's hidden monotonicity and sign conditions, the Lehmann pairing derived rather than "fixed by experiment"); and at the second pass **all four citation checks closed against sources** — HTW’s constant is exactly 1, the conventions match symbol for symbol, and the Lehmann step is Zimmermann–Mertins with our pencil verbatim. One finding: two HTW citation labels were wrong everywhere (AL-018). |
+| [`sanity/`](sanity/) | **Roadmap stage 6, run and PASS**: the deliberately non-rigorous falsification layer — float64 quadrature of the defining integral, numpy eigensolver, no closed forms, no interval arithmetic. Every conventional eigenvalue landed inside its certified interval; a one-way valve (it can stop the project, never repair the certificate). |
 | [`repro/`](repro/) | **Roadmap stage 3, ready to hand over**: the clean-room reproduction package — certificates, the seven-file auditor closure (stdlib only), frozen statement + contracts, a manifest-checked runner. The reviewer gets no prover code and no guidance; `python reproduce.py` either reproduces ACCEPT at all four rungs or reports a finding. |
 | [`POST-AUDIT-ROADMAP.md`](POST-AUDIT-ROADMAP.md) | **What happens after AL-017**, staged so no step gets skipped: audit release → third-party clean-room reproduction → mathematical proof audit → adversarial theorem tests → expert review → publication package → only then the formal theorem claim. |
 

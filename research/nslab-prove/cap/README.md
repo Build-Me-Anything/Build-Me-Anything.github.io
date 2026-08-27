@@ -7,7 +7,7 @@ tune and no third answer.
 
 ```bash
 cd research/nslab-prove/cap
-python run-all.py          # all nine suites, 433 checks, ~12 minutes (R1b and the audit are most of it)
+python run-all.py          # all ten suites, 446 checks, ~13 minutes (R1b and the audit are most of it)
 ```
 
 Requires `mpmath` only (already present with sympy). Pure Python, arbitrary precision, outward-rounding interval
@@ -40,8 +40,9 @@ arithmetic — slow, and deliberately so: at this scale a reader auditing every 
 | `lehmann.py` | **R4b** | Lehmann-Maehly upper bounds by Sylvester inertia counting - no eigensolver, and it refuses when a pivot cannot be signed |
 | `sici.py` | **R4b** | rigorous enclosures of Si and Ci by convergent series with a **proved** Leibniz remainder; refuses where the hypothesis is unmet |
 | `emit_certs.py` | contract | runs the provers and writes their certificates into `certs/` |
-| `run-all.py` | | one command, nine suites, and it fails loudly — the `build.js --verify` of this line |
-| `test_r0/r1/r1b/r2/r3/r4/r4b/audit/candidate.py` | | 11 / 25 / 22 / 18 / 17 / 18 / 143 / 150 / 29 checks — **433** in total |
+| `test_adversarial.py` | **stage 7** | the hypothesis-removal matrix: falsify exactly one mathematical hypothesis at a time — (H3), `M(V) ⊆ V`, basis order, min–max rank, `R ≻ 0`, (H12), the pairing, (H6), (H_K) — and require REFUSE; positive controls bracket the matrix |
+| `run-all.py` | | one command, ten suites, and it fails loudly — the `build.js --verify` of this line |
+| `test_r0/r1/r1b/r2/r3/r4/r4b/audit/candidate/adversarial.py` | | 11 / 25 / 22 / 18 / 17 / 18 / 143 / 150 / 29 / 13 checks — **446** in total |
 
 ## Status
 

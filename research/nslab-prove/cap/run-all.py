@@ -13,7 +13,8 @@ SUITES = [('R0   Krawczyk root enclosure', 'test_r0.py'),
           ('R4   compact-operator eigenpairs: the route the literature uses', 'test_r4.py'),
           ('R4b  the De Gregorio profile operator, against Huang-Tong-Wei', 'test_r4b.py'),
           ('C    Machine C: independent audit in exact rational arithmetic', 'test_audit.py'),
-          ('K    candidate.json: the A -> B contract, and what it refuses to represent', 'test_candidate.py')]
+          ('K    candidate.json: the A -> B contract, and what it refuses to represent', 'test_candidate.py'),
+          ('ADV  adversarial theorem tests: invalid mathematical premise => REFUSE', 'test_adversarial.py')]
 
 # Machine C audits certificates, so they have to exist. Emitting them here rather than inside the audit
 # suite keeps the auditor free of any dependency on the prover - including the dependency of having
