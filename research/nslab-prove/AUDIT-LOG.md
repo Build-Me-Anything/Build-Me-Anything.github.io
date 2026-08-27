@@ -227,6 +227,21 @@ numerical decision — `uncertainty ⇒ no certificate`, never `uncertainty ⇒ 
 | **Resolution** | Four open mirrors now stand — zbMATH Open (AL-013/014), the HTW citation graph, arXiv metadata + full text (AL-015), Semantic Scholar (this entry) — with different coverage, converging on the same lineages and no instance of the combination. The standing novelty formulation is unchanged; its qualification (MathSciNet + Fichera full-text examination) is the only open gate, and its outcome becomes **AL-017** (the brief's §6 updated). |
 | **Resulting commit** | (this commit) |
 
+### AL-018 — the proof audit's source check: every cited statement true, two citation labels wrong
+
+*(AL-017 remains allocated to the pending MathSciNet/historical check; this entry completes out of numerical
+order because the proof audit reached its sources first.)*
+
+| | |
+|---|---|
+| **Commit** | (this commit) |
+| **Rung / test** | — (mathematical proof audit, `PROOF-AUDIT.md` §8); verified against HTW arXiv v2 HTML **and** the v1 TeX source, environments counted against the shared per-section theorem counter |
+| **Observation** | All four of the proof audit's open citation items closed. **C-1:** HTW Lemma 3.2 gives `‖M(f)‖_{Ḣ²} ≤ ‖f‖_{Ḣ¹}` with **constant exactly 1** — the R2/R3 audit tails rest on it, and it holds. **C-2:** HTW's `(−Δ)^{−1/2}`, `c(f)`, (3.3), and Hilbert-kernel conventions match ours symbol for symbol (`−i sgn ξ`), so the (H4) derivation stands in matching conventions. **C-3:** the eigenvalue bracket's lower constant is `(2/π²)λ̃_n = 2/(nπ³)` — the weaker, coded gate; the "0.2026/n" prose reading is dead. **C-4:** the Lehmann step is Zimmermann–Mertins (ZAA 14, 1995), whose self-contained re-derivation in arXiv:1306.5354 has our pencil verbatim and our pairing as its Corollary 4; every hypothesis discharges against P-22/P-23/P-25. **The finding:** the bracket is HTW **Corollary 3.9** in *every* version — our documents, the frozen statement included, cited "Corollary 3.7", a label that never existed for it; HTW's actual Theorem 3.7 is the `c(f) ≠ 0` result, which the statement's §6 in turn misattributes to "Theorem 3.5" (their 3.5 is uniqueness-up-to-constant). |
+| **Changes the theorem?** | **No.** Every cited statement is true, correctly used, and now verified verbatim; only the labels were wrong. |
+| **Changes the certificate?** | No. |
+| **Resolution** | The frozen statement is deliberately not edited (AL-007 discipline); its labels are corrected by this entry and by `PROOF-AUDIT.md` §8, and any future statement version fixes them under a new tag. All living documents and code comments corrected (`Corollary 3.7 → 3.9`, `Theorem 3.5 → 3.7` for `c(f) ≠ 0`); the tagged `AUDIT-COMPLETION.md` snapshot is likewise left as tagged. The irony is recorded as the lesson: the line had already logged a warning about *Beattie–Greenlee's* "Corollary 3.7" label collision — while its own "3.7" was wrong. **Three unrelated results now share that label in our history** (Beattie–Greenlee's convergence corollary, HTW's `c(f) ≠ 0` theorem, and the mislabelled bracket), and the prior-art briefs are updated so the next searcher inherits the full map. Check a label against the source's numbering, not against your own documents' repetition of it. |
+| **Resulting commit** | (this commit) |
+
 ---
 
 *The mathematical claim under audit is fixed at tag `r4b-statement-v1`. Nothing in this log is a claim about the

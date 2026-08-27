@@ -73,9 +73,9 @@ evaluated by quadrature. They have a **closed form** in Si and Ci (below), `sici
 **The two halves of that bracket are not the same kind of thing, and the difference is the whole point.** The
 lower half is ours and needs **no truncation estimate at all**: Courant–Fischer says any j-dimensional trial
 subspace of V bounds λ_j from below, so certified entries plus Gershgorin deliver it — that is exactly why
-Rayleigh–Ritz converges from below. The upper half of *that* bracket is **Corollary 3.7 of the source, used as a
+Rayleigh–Ritz converges from below. The upper half of *that* bracket is **Corollary 3.9 of the source, used as a
 citation** — and the **Lehmann–Maehly** route to a self-derived upper bound (which consumes exactly the a priori
-separation Corollary 3.7 provides, as an input rather than as the answer) is now implemented in `lehmann.py` and
+separation Corollary 3.9 provides, as an input rather than as the answer) is now implemented in `lehmann.py` and
 `certified_upper_bounds`, giving the far tighter enclosures in the frozen statement document — for example
 `λ₁ ∈ [0.2895674, 0.2895979]`. See the statement document and `../AUDIT-LOG.md` for what is and is not audited.
 
@@ -266,7 +266,7 @@ With exact entries, at K = 8:
 | 5 | 0.062107676 | 0.0622 | 9.2e-5 |
 | 6 | 0.051917606 | 0.0520 | 8.2e-5 |
 
-Every value also passes the Corollary 3.7 bracket, and K = 4 lies below K = 8 which lies below the upper bracket —
+Every value also passes the Corollary 3.9 bracket, and K = 4 lies below K = 8 which lies below the upper bracket —
 monotone from below, as a projected supremum must be.
 
 And the check that only became available once the entries were exact: at **K = 24 every one of the six lies inside

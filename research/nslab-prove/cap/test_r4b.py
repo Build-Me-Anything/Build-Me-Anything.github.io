@@ -6,7 +6,7 @@ that can be compared against a paper. Four externally-known things are used, and
   * **Castro's exact identity** M(Ω₀) = 0, with (−Δ)^{−1/2}Ω₀ = −x on [−1,1] and c(Ω₀) = −1 — grades the
     transcription of the OPERATOR itself, independently of any eigenvalue;
   * the **comparison spectrum** λ̃_n = 1/(nπ), exact, in the same space with the same inner product;
-  * the **rigorous two-sided bracket** (2/π²)λ̃_n ≤ λ_n < λ̃_n (their Corollary 3.7) — an acceptance gate any
+  * the **rigorous two-sided bracket** (2/π²)λ̃_n ≤ λ_n < λ̃_n (their Corollary 3.9) — an acceptance gate any
     computed eigenvalue must pass, with a strict upper bound;
   * the **six published eigenvalues** 0.2896, 0.1509, 0.1022, 0.0773, 0.0622, 0.0520.
 
@@ -77,7 +77,7 @@ for i in range(6):
 
 print('\n[5] every computed eigenvalue must pass the published bracket')
 for i in range(6):
-    check(f'lambda_{i+1} inside the Corollary 3.7 bracket', P.in_bracket(i + 1, ev8[i]),
+    check(f'lambda_{i+1} inside the Corollary 3.9 bracket', P.in_bracket(i + 1, ev8[i]),
           f'{mp.nstr(ev8[i], 8)}')
 
 print('\n[6] Galerkin converges monotonically from below, as a projected supremum must')
@@ -188,7 +188,7 @@ for (n, m) in [(1, 1), (2, 2), (1, 2), (2, 3), (3, 7), (1, 12)]:
 print('\n[13] A CERTIFIED two-sided bracket on the six eigenvalues')
 # The lower half is ours and is the payoff of the certified entries: by Courant-Fischer on V, ANY j-dimensional
 # trial subspace of V gives lambda_j >= min of the Rayleigh quotient over it, so Rayleigh-Ritz bounds from below
-# with no truncation estimate at all. The upper half is Corollary 3.7 of the source, used as a citation - this
+# with no truncation estimate at all. The upper half is Corollary 3.9 of the source, used as a citation - this
 # module derives no upper bound, and the bracket's width is set by how loose that corollary is.
 BR = P.certified_bracket(K=16, J=6)
 for j, (lo_, hi_) in enumerate(BR, start=1):
@@ -213,7 +213,7 @@ for j, (lo_, hi_) in enumerate(BR, start=1):
           lo_ <= ev, f'{mp.nstr(lo_, 10)} <= {mp.nstr(ev, 10)}')
 
 print('\n[14] the certified lower bound must BEAT the published one, or it is not worth having')
-# Quoted against the CONSERVATIVE reading of Corollary 3.7 - see the warning in P.bracket, where this file's
+# Quoted against the CONSERVATIVE reading of Corollary 3.9 - see the warning in P.bracket, where this file's
 # prose and its own formula disagree about whether the published lower bound is 0.2026/n or 0.06450/n. Using the
 # tighter of the two makes this claim harder to satisfy, which is the right direction when the source has not
 # been re-read.
@@ -228,7 +228,7 @@ print('\n[15] LEHMANN-MAEHLY: the machinery, graded on the comparison operator')
 # source's comparison operator M~, where M~ s_n = lambda~_n s_n makes all three Lehmann matrices exact and the
 # spectrum is known in closed form. Trial vectors are perturbed eigenvectors, so the method has to work.
 #
-# NOTE this test cannot show Lehmann beating Corollary 3.7, because on M~ the corollary is an EQUALITY by
+# NOTE this test cannot show Lehmann beating Corollary 3.9, because on M~ the corollary is an EQUALITY by
 # construction - lambda~_n IS that operator's spectrum. What it shows is that the bounds are VALID and that they
 # converge as the trial space improves, which is what grades an implementation.
 LK, LJ = 12, 4
@@ -347,13 +347,13 @@ for m in (1, 2, 3):
 
 print('\n[20] LEHMANN ON M: certified UPPER bounds, and the bracket closed from both sides')
 # The payoff. Feeding A2 = A^T B^-1 A through Lehmann gives upper bounds on lambda_j for the REAL operator, so
-# the enclosure no longer borrows Corollary 3.7 for its answer. The corollary is still load-bearing, but only as
+# the enclosure no longer borrows Corollary 3.9 for its answer. The corollary is still load-bearing, but only as
 # an a priori input for choosing the shift - it supplies lambda_{J+1} < 1/((J+1)pi), which with our certified
 # lower bound on lambda_J establishes the hypothesis "exactly J eigenvalues of T = -M lie below rho".
 UB, RHO, WIN = P.certified_upper_bounds(K=8, J=3, Ksum=80)
 BR3 = P.certified_bracket(K=16, J=3)
 
-check('the shift window is non-empty (Cor 3.7 on lambda_4 below our lower bound on lambda_3)',
+check('the shift window is non-empty (Cor 3.9 on lambda_4 below our lower bound on lambda_3)',
       WIN[0] < WIN[1], f'-rho in [{mp.nstr(WIN[0], 8)}, {mp.nstr(WIN[1], 8)}), used {mp.nstr(-RHO, 8)}')
 check('the shift actually lies in its own window', WIN[0] <= -RHO < WIN[1])
 
@@ -364,7 +364,7 @@ for j in range(3):
           f'[{mp.nstr(BR3[j][0], 10)}, {mp.nstr(UB[j], 10)}]  width {mp.nstr(UB[j] - BR3[j][0], 4)}')
 for j in range(3):
     cor = 1 / ((j + 1) * MPPI)
-    check(f'lambda_{j+1}: Lehmann BEATS Corollary 3.7', UB[j] < cor,
+    check(f'lambda_{j+1}: Lehmann BEATS Corollary 3.9', UB[j] < cor,
           f'{mp.nstr(UB[j], 10)} < {mp.nstr(cor, 10)}')
 for j in range(3):
     pub = P.PUBLISHED[j]
@@ -415,10 +415,10 @@ print('\nSCOPE. The Galerkin eigenvalues are ORDINARY numerics. What is CERTIFIE
 print('  * A_{nm} are closed forms in Si and Ci, and sici.py encloses those rigorously.')
 print('  * A2 = A^T B^-1 A needs no Hilbert transform; its truncation tail is bounded in closed form.')
 print('  * certified_bracket gives LOWER bounds by Courant-Fischer, needing no truncation estimate at all.')
-print('  * certified_upper_bounds gives UPPER bounds by Lehmann-Maehly, beating Corollary 3.7 on every')
+print('  * certified_upper_bounds gives UPPER bounds by Lehmann-Maehly, beating Corollary 3.9 on every')
 print('    one, with the bracket on lambda_1 narrower than the published four-figure value own precision.')
 print('')
-print('STILL BORROWED: Corollary 3.7 fixes the SHIFT. It supplies lambda_{J+1} < 1/((J+1)pi), which with')
+print('STILL BORROWED: Corollary 3.9 fixes the SHIFT. It supplies lambda_{J+1} < 1/((J+1)pi), which with')
 print('  our lower bound on lambda_J establishes Lehmann hypothesis that exactly J eigenvalues of T = -M')
 print('  lie below rho. It is an a priori INPUT now rather than the answer - an improvement, not an')
 print('  elimination, and writing it up as an elimination would be the overclaim this line polices.')

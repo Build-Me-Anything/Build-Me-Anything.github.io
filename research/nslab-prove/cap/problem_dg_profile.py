@@ -37,7 +37,7 @@ That compactness is the entire reason this route works where R3's preconditionin
 
 **The eigenvalue is not the blow-up rate.** λ is a rescaling-invariant shape label; the rate is `c_ω = c(f)`, a
 separate functional. Since M is linear, λ is unchanged under `f ↦ αf` while `c(f) ↦ α c(f)`, so one picks
-`α = −1/c(f)` to land on `c_l = c_ω = −1`. Their Theorem 3.5 guarantees `c(f) ≠ 0` for every eigenfunction, which
+`α = −1/c(f)` to land on `c_l = c_ω = −1`. Their Theorem 3.7 (thm:cf_nonzero) guarantees `c(f) ≠ 0` for every eigenfunction, which
 is what makes that legal.
 
 What is exactly known, and therefore gradeable
@@ -50,7 +50,7 @@ What is exactly known, and therefore gradeable
    — exact, and in the *same* space with the *same* inner product. This is the ideal grading target, and the R4
    machinery certifies its eigenpairs directly.
 
-2. **A rigorous two-sided bracket on the real spectrum** (their Corollary 3.7):
+2. **A rigorous two-sided bracket on the real spectrum** (their Corollary 3.9):
 
        (2/π²)·λ̃_n  ≤  λ_n  <  λ̃_n,       i.e.   0.2026/n ≤ λ_n < 0.3183/n
 
@@ -119,7 +119,7 @@ def comparison_eigenvalue(n):
 
 
 def bracket(n):
-    """The rigorous two-sided bracket of Corollary 3.7: (2/π²)λ̃_n ≤ λ_n < λ̃_n, as an interval.
+    """The rigorous two-sided bracket of Corollary 3.9: (2/π²)λ̃_n ≤ λ_n < λ̃_n, as an interval.
 
     **UNRESOLVED — this file's prose and its own formula disagree, and the source has not been re-read.** The
     module docstring above states the bracket as "0.2026/n ≤ λ_n < 0.3183/n". The formula implemented here is
@@ -390,15 +390,15 @@ def certified_bracket(K=24, J=6, target=30):
 
     Upper bound - **theirs, not ours**
     ----------------------------------
-    Corollary 3.7 of the source: `λ_n < λ̃_n = 1/(nπ)`, strictly. That is a published theorem, used here as a
+    Corollary 3.9 of the source: `λ_n < λ̃_n = 1/(nπ)`, strictly. That is a published theorem, used here as a
     citation. **This module does not derive an upper bound**, and the bracket is therefore not a self-contained
-    result: its width is set by how loose Corollary 3.7 is, not by anything computed here.
+    result: its width is set by how loose Corollary 3.9 is, not by anything computed here.
 
     What that means for the truncation error
     ----------------------------------------
     The Galerkin truncation error `λ_j − λ_j^{(K)}` is *bounded* by the width of this bracket, but not by an
     argument of ours — the upper half is borrowed. A self-derived upper bound is the standard
-    **Lehmann-Maehly-Goerisch** construction, which takes an a priori separation of the spectrum (Corollary 3.7
+    **Lehmann-Maehly-Goerisch** construction, which takes an a priori separation of the spectrum (Corollary 3.9
     supplies exactly that) and returns sharp upper bounds. It is **not implemented here**, and calling this a
     truncation bound without that distinction would be an overclaim.
     """
@@ -643,9 +643,9 @@ def certified_upper_bounds(K=10, J=4, Ksum=None, target=30):
     are supplied rather than assumed:
 
       * `−ρ < λ_J` from **our** certified Rayleigh–Ritz lower bound (`certified_bracket`);
-      * `−ρ ≥ λ_{J+1}` from **Corollary 3.7** of the source, `λ_{J+1} < 1/((J+1)π)`.
+      * `−ρ ≥ λ_{J+1}` from **Corollary 3.9** of the source, `λ_{J+1} < 1/((J+1)π)`.
 
-    So Corollary 3.7 is still load-bearing — but as an *a priori input for choosing the shift*, not as the answer.
+    So Corollary 3.9 is still load-bearing — but as an *a priori input for choosing the shift*, not as the answer.
     The bound returned is Lehmann's. That distinction is the entire content of this function and must survive
     into any write-up of it.
 
@@ -660,7 +660,7 @@ def certified_upper_bounds(K=10, J=4, Ksum=None, target=30):
     L_J = br[J - 1][0]
     U_next = 1 / ((J + 1) * MPPI)
     if not (U_next < L_J):
-        raise ValueError('empty shift window: Corollary 3.7 gives lambda_%d < %s but our lower bound on '
+        raise ValueError('empty shift window: Corollary 3.9 gives lambda_%d < %s but our lower bound on '
                          'lambda_%d is only %s, so no rho separates them'
                          % (J + 1, mp.nstr(U_next, 8), J, mp.nstr(L_J, 8)))
     rho = -(U_next + L_J) / 2

@@ -21,7 +21,7 @@ It prints `CAP SUITES: ALL PASS (9 suites)` or it fails loudly. There is no thir
 | [`AUDIT-COMPLETION.md`](AUDIT-COMPLETION.md) | **The post-audit bridge**, tagged `r4b-audit-complete-v1`: the commit chain, the verdicts, the independence structure, the three findings that matter — and the precise definition of what "independently audited certificate" does and does not claim. Cite this, not a reconstruction. |
 | [`cap/README.md`](cap/README.md) | The working code, rung by rung, with the numbers each one is graded against and the four failures worth keeping. |
 | [`agents/README.md`](agents/README.md) | The verification fleet: three agents that emit artefacts, never verdicts. |
-| [`PROOF-AUDIT.md`](PROOF-AUDIT.md) | **Roadmap stage 4, first pass complete**: all 28 implications of the frozen statement classified — no gap; ten glossed proofs completed in place (the invariance collapse, the tail's hidden monotonicity and sign conditions, the Lehmann pairing derived rather than "fixed by experiment"); four open citation checks (C-1…C-4) against HTW and Lehmann. |
+| [`PROOF-AUDIT.md`](PROOF-AUDIT.md) | **Roadmap stage 4, first pass complete**: all 28 implications of the frozen statement classified — no gap; ten glossed proofs completed in place (the invariance collapse, the tail's hidden monotonicity and sign conditions, the Lehmann pairing derived rather than "fixed by experiment"); and at the second pass **all four citation checks closed against sources** — HTW’s constant is exactly 1, the conventions match symbol for symbol, and the Lehmann step is Zimmermann–Mertins with our pencil verbatim. One finding: two HTW citation labels were wrong everywhere (AL-018). |
 | [`POST-AUDIT-ROADMAP.md`](POST-AUDIT-ROADMAP.md) | **What happens after AL-017**, staged so no step gets skipped: audit release → third-party clean-room reproduction → mathematical proof audit → adversarial theorem tests → expert review → publication package → only then the formal theorem claim. |
 
 ## The ladder
@@ -71,7 +71,7 @@ forms —
 
 — which `sici.py` encloses rigorously, so every matrix entry is a certified interval. From there:
 
-| j | certified enclosure | width | Corollary 3.7's a priori bound |
+| j | certified enclosure | width | Corollary 3.9's a priori bound |
 |---|---|---|---|
 | 1 | [0.2895674, 0.2895979] | **3.0e-5** | λ₁ < 0.3183099 |
 | 2 | [0.1508500, 0.1509279] | 7.8e-5 | λ₂ < 0.1591549 |
@@ -89,7 +89,7 @@ cross-check*, which is a better use for it: the certified interval contains what
 
 ### What is borrowed, and what is not
 
-Corollary 3.7 (Huang–Tong–Wei) is still load-bearing, but as an **input certificate**, not the answer: it supplies
+Corollary 3.9 (Huang–Tong–Wei) is still load-bearing, but as an **input certificate**, not the answer: it supplies
 `λ_{J+1} < 1/((J+1)π)`, which with our own certified lower bound on `λ_J` establishes the Lehmann shift
 hypothesis. The enclosure returned is ours and is far tighter than the corollary.
 
@@ -104,7 +104,7 @@ Intermediate-problem lower bounds run Weinstein → Aronszajn → **Bazley–Fox
 Beattie–Greenlee. Truncation of these constructions has been a named subject since Bazley & Fox (1961). Nothing in
 `lehmann.py` is a new theorem. What is problem-specific is the instantiation: the `AᵀB⁻¹A` reduction for *this*
 operator and basis, and the explicit certified tail. See [`LITERATURE-CHECK.md`](LITERATURE-CHECK.md), which also
-records a **rejected match** — Beattie–Greenlee has its own "Corollary 3.7", and it is not this one.
+records a **rejected match** — Beattie–Greenlee has its own "Corollary 3.9", and it is not this one.
 
 **The zbMATH Open novelty check ran 2026-08-26** (LITERATURE-CHECK, fifth check; AL-013): structured field
 search plus an exhaustive sweep of HTW's citations. Nothing found — including two zero-hit queries showing

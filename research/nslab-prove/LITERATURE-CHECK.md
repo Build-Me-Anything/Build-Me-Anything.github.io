@@ -310,9 +310,9 @@ Theoretical, Numerical and Machine Learning Approaches*, arXiv:2604.16842 — ci
 ## A REJECTED MATCH, kept as audit history rather than deleted
 
 A prior-art search identified **Beattie & Greenlee, *Convergence theorems for intermediate problems. II* (2002),
-Corollary 3.7** as a direct match for "our Corollary 3.7". **It is not a match.**
+Corollary 3.7** as a direct match for "our Corollary 3.7". **It is not a match** — and the label it collided with was itself wrong: **the HTW bracket is their Corollary 3.9** (AL-018; our documents mislabelled it 3.7, and HTW's actual 3.7 is the `c(f) ≠ 0` theorem).
 
-* **Ours** is Huang–Tong–Wei, arXiv:2209.08232, Corollary 3.7 — a *numeric two-sided bracket* on the profile
+* **Ours** is Huang–Tong–Wei, arXiv:2209.08232, Corollary **3.9** (mislabelled 3.7 until AL-018) — a *numeric two-sided bracket* on the profile
   operator's spectrum, `(2/π²)·λ̃_n ≤ λ_n < λ̃_n = 1/(nπ)`.
 * **Theirs** states that if `span{s_i}` is a core for the operator, the right-definite Temple–Lehmann method
   produces convergent lower bounds to every eigenvalue below the spectral cutoff.
@@ -334,7 +334,7 @@ self-adjoint operators and explicitly reduces the computation to matrix problems
 So **"truncation in intermediate problems" has been a named subject since 1961**, and none of that framework is
 ours. The lineage is Weinstein → Aronszajn → **Bazley–Fox** → Temple–Lehmann → Goerisch → **Beattie–Greenlee**
 (the last supplying convergence theory for the abstract methods). Beattie & Greenlee is genuine prior art for the
-machinery — just not for Huang–Tong–Wei's Corollary 3.7.
+machinery — just not for Huang–Tong–Wei's Corollary 3.9.
 
 ## What this leaves, stated narrowly
 
@@ -355,7 +355,7 @@ There are **two different "published values"** and they are not the same kind of
 
 | | what it is |
 |---|---|
-| `λ̃_n = 1/(nπ)` | an a priori **upper bound** from Corollary 3.7 — *not* an estimate of `λ_n` |
+| `λ̃_n = 1/(nπ)` | an a priori **upper bound** from Corollary 3.9 — *not* an estimate of `λ_n` |
 | `0.2896, 0.1509, …` | Appendix-A **estimates** of the eigenvalues, printed to four decimals |
 
 Our certified width of `3.0e-5` on `λ₁` is narrower than the `±5e-5` implied by the printed `0.2896`. That is a
@@ -364,7 +364,7 @@ a claim that their underlying mathematics is accurate only to four decimals. The
 substantially tighter certified enclosure of the eigenvalue than the broad a priori bound the published theorem
 supplies.*
 
-And the epistemic role of Corollary 3.7 in the certification is worth stating explicitly, because it is unusual:
+And the epistemic role of Corollary 3.9 in the certification is worth stating explicitly, because it is unusual:
 it is **not** used as the answer. It supplies `λ_{J+1} < 1/((J+1)π)`, which together with our own certified lower
 bound on `λ_J` establishes the Lehmann shift hypothesis. A published theorem used as an **input certificate**.
 

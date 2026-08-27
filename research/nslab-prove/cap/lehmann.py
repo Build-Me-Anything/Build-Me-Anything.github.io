@@ -16,7 +16,7 @@ the abstract methods.
 Nothing here is a new theorem. What is problem-specific is the *instantiation* in `problem_dg_profile.py` — the
 reduction of `A₂` to `AᵀB⁻¹A` for this operator and basis, and the explicit certified tail. See
 `../LITERATURE-CHECK.md` for the search, including one rejected match worth knowing about: Beattie–Greenlee also
-has a "Corollary 3.7", and it is **not** the Huang–Tong–Wei Corollary 3.7 this line cites.
+has a "Corollary 3.7", and it is **not** the Huang–Tong–Wei bracket this line cites (their Corollary 3.9; see AL-018 for the label history).
 
 The setting, and the sign that matters
 --------------------------------------
@@ -31,9 +31,9 @@ The hypothesis is that the number of eigenvalues of T below ρ is known — exac
 `−λ₁ … −λ_J`, this means `λ_{J+1} < −ρ < λ_J`, so it needs
 
   * a **lower** bound on `λ_J`  — ours, from `certified_bracket`; and
-  * an **upper** bound on `λ_{J+1}` — Corollary 3.7 of the source.
+  * an **upper** bound on `λ_{J+1}` — Corollary 3.9 of the source.
 
-So Lehmann does not remove the dependence on Corollary 3.7; it converts it from *the answer* into *an a priori
+So Lehmann does not remove the dependence on Corollary 3.9; it converts it from *the answer* into *an a priori
 input*, and returns bounds far sharper than the corollary itself. That distinction is the whole value here, and
 overstating it would be the kind of claim this line exists to avoid.
 

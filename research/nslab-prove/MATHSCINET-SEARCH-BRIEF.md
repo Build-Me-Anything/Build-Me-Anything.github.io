@@ -175,7 +175,8 @@ that a title/abstract cannot rule out.
 ## 4. Known false positives — do not chase these
 
 - **Beattie–Greenlee's "Corollary 3.7"** (*Convergence theorems for intermediate problems. II*): shares only a
-  label with Huang–Tong–Wei's Corollary 3.7. Two unrelated theorems.
+  label with what our earlier documents mislabelled as the HTW bracket (their **Corollary 3.9**; AL-018)
+  — and with HTW’s actual Theorem 3.7, the `c(f) ≠ 0` result. Three unrelated results, one label.
 - **The "Lehmann representation"** of Green's functions in many-body physics (Dyson equations, spectral
   functions): a name collision with Lehmann's eigenvalue bounds.
 - **"De Gregorio" as an author name**: G. De Gregorio (nuclear multiphonon spectroscopy) floods

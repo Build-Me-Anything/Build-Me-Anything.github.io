@@ -23,9 +23,9 @@ implication; this pass therefore re-derives rather than re-reads.
 | `DEP` | depends on a previous item |
 | `GAP` | gap / unresolved |
 
-**First-pass verdict, stated up front:** 28 implications classified; **no `GAP`**; four `CITE` items remain
-open (§6), all against Huang–Tong–Wei's published text or Lehmann's — none of them findings, all of them
-unfinished verifications. Three glosses in the frozen statement were completed here (P-14, P-17, P-24), and
+**Verdict, stated up front (updated at the second pass):** 28 implications classified; **no `GAP`**; and as
+of 2026-08-27 **all four `CITE` items are closed against sources** (§8) — with one finding: the frozen
+statement's HTW citation labels are wrong (AL-018), while every cited *statement* checks out exactly. Three glosses in the frozen statement were completed here (P-14, P-17, P-24), and
 one runtime guard was found to be **load-bearing for a hypothesis, not cosmetic** (P-21).
 
 ---
@@ -185,6 +185,46 @@ the tail's hidden monotonicity and sign conditions (P-18/P-20), and the Lehmann 
 independent derivations *in this document* rather than resting on the statement's prose or on experiment.
 What this pass cannot supply is what stage 8 exists for: hostile eyes that did not write any of it. The
 standing instruction for that review is unchanged — *find the first invalid implication.*
+
+## 8. Second pass (2026-08-27): the four citations closed against sources
+
+Verified against HTW's arXiv v2 HTML and the **v1 TeX source** (environments counted against the shared
+per-section theorem counter), and against the Zimmermann–Mertins line through its open self-contained
+re-derivation.
+
+- **C-1 CLOSED — and the constant is exactly 1.** HTW **Lemma 3.2** (`lem:compactness`), verbatim from the
+  v1 source: *"The linear map M: V → V is compact. In particular, ‖M(f)‖_{Ḣ¹} ≤ ‖f‖_{L²},
+  ‖M(f)‖_{Ḣ²([−1,1])} ≤ ‖f‖_{Ḣ¹}, for all f ∈ V."* The R2/R3 audit tails rest on constant 1; it holds.
+  P-03 → `CITE` closed.
+- **C-2 CLOSED — conventions match end to end.** HTW define `u = −(−Δ)^{−1/2}ω` with the log kernel exactly
+  as our (H2), `c(f) = (−Δ)^{−1/2}f(1)` exactly, their (3.3) verbatim, and their Hilbert transform is the
+  classical kernel `H(ω)(x) = (1/π) P.V. ∫ ω(y)/(x−y) dy`, whose symbol is `−i sgn ξ` — the one P-04's
+  derivation assumed. The bridging identity (H4) is therefore proved in matching conventions. P-04 → closed.
+- **C-3 CLOSED — the constant is the weak one, and the label was wrong.** The bracket is HTW **Corollary 3.9**
+  (`cor:eigenvalue_comparison`, identical in v1 and v2): `(2/π²)λ̃_n ≤ λ_n < λ̃_n` — i.e. the lower constant is
+  `2/(nπ³)`, precisely the coded gate; the earlier "0.2026/n" prose reading is dead. **Finding (AL-018):** our
+  documents — the frozen statement included — cited this as "Corollary 3.7", a label that exists in no
+  version: HTW's actual **Theorem 3.7** (`thm:cf_nonzero`) is the `c(f) ≠ 0` result, which our statement's §6
+  in turn misattributes to "Theorem 3.5" (their 3.5 is the uniqueness-up-to-constant corollary). Both
+  statements cited are true and correctly used; both labels were off. The frozen statement stays frozen; the
+  living documents are corrected; the log entry carries it. P-06 → closed.
+- **C-4 CLOSED — the theorem used is Zimmermann–Mertins, in an openly checkable form.** Primary:
+  S. Zimmermann & U. Mertins, *Variational bounds to eigenvalues of self-adjoint eigenvalue problems with
+  arbitrary spectrum*, Z. Anal. Anwendungen **14** (1995) 327–345. Checkable formulation:
+  Barrenechea–Boulton–Boussaïd (arXiv:1306.5354), who derive it **self-contained**: their weak eigenproblem
+  `(Z_t)` — `τ q_t(u,v) = l_t(u,v)` on the trial space, with `q_t(u,v) = ⟨(A−t)u,(A−t)v⟩`,
+  `l_t(u,v) = ⟨(A−t)u,v⟩` — **is our pencil verbatim**: `L = A₁ − ρA₀`, `R = A₂ − 2ρA₁ + ρ²A₀` with `t = ρ`.
+  Their Corollary 4: `t + 1/τ_j⁻(t)` bounds from below the j-th spectral point left of `t`, counting
+  multiplicities. With `A = T = −M` and that j-th point being `−λ_{J+1−j}` (P-22's count), this is exactly
+  `λ_{J+1−j} ≤ −ρ − 1/τ_j` — P-24's pairing, now carried by a published theorem rather than a derivation of
+  ours alone. Hypothesis discharge: `A` self-adjoint (P-03); trial space in `dom(A)` (finite span in `V`, `M`
+  bounded); `q_t` definite on the span ⇔ `R ≻ 0`, certified at runtime (P-23); the existence and count of the
+  `τ_j⁻` certified by the inertia count (P-22/P-25). Nothing in their formulation needs more. P-24 → closed.
+
+**§6's table is superseded by this section.** Residual reading debt: none against HTW; one optional
+cross-check that arXiv:1306.5354's published form (Numer. Math., under the revised title *Local two-sided
+bounds for eigenvalues of self-adjoint operators*) states Corollary 4 unchanged — cosmetic, since the arXiv
+derivation is self-contained and was verified directly from its source.
 
 ---
 
