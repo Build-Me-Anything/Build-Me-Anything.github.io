@@ -427,3 +427,38 @@ The claim stays exactly where AL-012 and the completion statement left it, with 
 > only — a general invariance remark could hide in a full text; that is the residual risk, named.
 
 The frozen statement's §8 wording is unchanged, as the freeze requires.
+
+## Addendum (2026-08-27): the battery mirror, and the Fichera correction
+
+Before handing the MathSciNet battery over (`MATHSCINET-SEARCH-BRIEF.md`), its genuinely new concept
+intersections — invariant subspace, Schur complement, "spectral enclosure", finite section, two-sided bounds,
+kernel-operator synonyms — were mirrored against zbMATH Open. Most returned zero or known material. Three
+results matter:
+
+**1. The two zero-hit queries of the fifth check were phrase artifacts, and the correction is the Fichera
+school.** `two-sided + eigenvalue bounds + integral operator` surfaced Noschese–Ricci (1999), *On the
+eigenvalues of a kernel* — rigorous two-sided bounds for the first five eigenvalues of Ostrowski's integral
+operator, refining Fichera–Sneider (1975) — and pulling that thread opened **Fichera's method of orthogonal
+invariants**: a classical school (~26 papers on zbMATH; Fichera 1965 *Sul calcolo degli autovalori*, 1982
+*Upper and lower bounds to eigenvalues*; Dirschmid 1970 *Zur Einschließung der Eigenwerte vollstetiger
+positiver Operatoren*; Fredholm-kernel computations through Leuzzi 1981 and Natalini–Noschese–Ricci 1999) of
+**rigorous two-sided eigenvalue bounds for compact positive operators, integral kernels included** — under
+Italian and German vocabulary the English phrase searches cannot see. Exactly the failure mode the battery's
+synonym section anticipated, caught on the open database first.
+
+**2. Classified on the five-question rule, the claim does not move.** Different operators; **trace-based
+invariants**, not an invariance collapse — no `A₂ = AᵀB⁻¹A`, no second Lehmann matrix at all; no tail doubling
+as a Galerkin truncation enclosure; no inertia counting; not the combination. But the *category* "rigorous
+two-sided bounds for a compact integral operator" is hereby **conceded as classical** alongside the Lehmann
+lineage, and any write-up claiming anything about integral operators must cite Fichera. The fifth check's
+zero-hit lines must be read as statements about *phrases*, never about the category.
+
+**3. "Spectral enclosure" has a third meaning.** Besides Lehmann-type certified computation, the phrase names
+the operator-matrix literature's analytic enclosures (Langer, Trunk, et al. — essential/point spectra of
+non-self-adjoint block operator matrices). Recorded beside the "Lehmann representation" and "Corollary 3.7"
+collisions.
+
+**Status: unchanged** — "no identified prior art" for the combination, now with the Fichera school named,
+classified, and conceded rather than invisible. The MathSciNet task inherits one sharpened instruction: read
+*inside* the orthogonal-invariants corpus for an invariance-collapse or tail-duality remark that titles and
+abstracts cannot rule out.

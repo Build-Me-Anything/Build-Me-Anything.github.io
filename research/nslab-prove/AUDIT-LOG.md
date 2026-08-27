@@ -191,6 +191,18 @@ numerical decision — `uncertainty ⇒ no certificate`, never `uncertainty ⇒ 
 | **Resolution** | Per the standing rule, the novelty claim changes **only if prior art appears; none did**, so the claim stays "**no identified prior art**" — with its evidentiary basis upgraded from web string searches to a structured database search and an exhaustive citation sweep. Two residual gaps, named rather than glossed: **MathSciNet remains unconsulted** (subscription), and the German-language 1980s Goerisch/Albrecht corpus was enumerated by title and abstract only — a general invariance remark could hide in a full text. The frozen statement's §8 is deliberately unedited. |
 | **Resulting commit** | (this commit) |
 
+### AL-014 — the battery mirror: a zero-hit was a phrase artifact, and the Fichera school is the correction
+
+| | |
+|---|---|
+| **Commit** | (this commit) |
+| **Rung / test** | — (novelty status); `LITERATURE-CHECK.md` fifth-check addendum; `MATHSCINET-SEARCH-BRIEF.md` §3 |
+| **Observation** | Mirroring the MathSciNet battery's new concept intersections against zbMATH Open surfaced **Fichera's method of orthogonal invariants** — a classical school (~26 papers; Fichera 1965/1982, Dirschmid 1970, Fichera–Sneider 1975, Noschese–Ricci 1999) of **rigorous two-sided eigenvalue bounds for compact positive operators including integral kernels**, invisible to AL-013's English phrase searches because its vocabulary is Italian and German. AL-013's two zero-hit queries were therefore **true about phrases and wrong as a reading of the category**. |
+| **Changes the theorem?** | No. |
+| **Changes the certificate?** | No. |
+| **Resolution** | Classified on the five-question rule (operator / reduction / tail-duality / Lehmann-inertia / combination): none match — trace-based invariants, no `A₂` collapse, no tail-as-truncation, no inertia counting. The claim stays "**no identified prior art**" for the combination; the *category* "rigorous two-sided bounds for a compact integral operator" is **conceded as classical** and must be cited in any write-up. Third name collision recorded: "spectral enclosure" in the operator-matrix literature. The MathSciNet brief inherits a sharpened instruction: read inside the orthogonal-invariants corpus for the two ingredients a title cannot rule out. The lesson is AL-002's, transposed to bibliography: **a zero-hit query is a statement about a phrase, and must not be promoted to a statement about the literature until the vocabulary producing it has been checked.** |
+| **Resulting commit** | (this commit) |
+
 ---
 
 *The mathematical claim under audit is fixed at tag `r4b-statement-v1`. Nothing in this log is a claim about the
