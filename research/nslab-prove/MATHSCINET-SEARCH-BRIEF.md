@@ -5,7 +5,10 @@ everything a person with MathSciNet access needs to run the remaining prior-art 
 of this project required. Four open mirrors are done — zbMATH Open, the HTW citation graph, arXiv metadata + full text, and
 Semantic Scholar (`LITERATURE-CHECK.md`, fifth check and its addenda; `AUDIT-LOG.md` AL-013 through AL-016) —
 and found no prior art for the combination — and one important *category*
-correction: the Fichera school (§3 below). MathSciNet is the half that needs a subscription, and its older
+correction: the Fichera school (§3 below). **The open-source search is closed** (commit `4f390e1`); this
+remaining check is **targeted, not exploratory** — its job is the two questions in §3, not accumulating more
+papers containing the word "eigenvalue". Record every query result as a *database result*; the *literature
+conclusion* is drawn only after the classification of §1. MathSciNet is the half that needs a subscription, and its older
 review corpus is precisely where a full-text remark could hide.
 
 **What this is for.** A frozen mathematical claim (tag `r4b-statement-v1`) carries the status **"no identified

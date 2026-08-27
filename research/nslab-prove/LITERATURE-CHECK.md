@@ -512,7 +512,7 @@ Semantic Scholar's bulk search (boolean phrase matching over titles and abstract
 coverage the other mirrors lack: closed-journal metadata beyond zbMATH's mathematics scope and arXiv's
 preprints. The battery's intersections were re-run there.
 
-**Zero-hits, every one:** `eigenvalue enclosure + integral operator`, `Lehmann + eigenvalue bounds + integral
+**Zero-hits in the title/abstract bulk search, every one:** `eigenvalue enclosure + integral operator`, `Lehmann + eigenvalue bounds + integral
 operator`, `spectral enclosure + integral operator`, `two-sided eigenvalue bounds + integral`,
 `verified eigenvalue + integral operator`, `eigenvalue bounds + Fredholm integral`,
 `eigenvalue enclosure + compact operator`, `De Gregorio + profile + spectrum`.
@@ -524,7 +524,38 @@ Goerisch; a glass-manufacturing paper). The complete `Lehmann-Maehly` corpus is 
 the table. `orthogonal invariants + integral operator` returns exactly **one** record: Romano 1975 on elastic
 frames — the Fichera school, already conceded.
 
-**Outcome: nothing new on the fourth surface.** Four open mirrors have now been run — zbMATH Open, the HTW
-citation graph, arXiv (metadata + full text), Semantic Scholar — each with different coverage, each finding
-the same lineages and none finding the combination. The standing novelty formulation above is unchanged, and
-its qualification (MathSciNet + Fichera full-text examination) remains the only open gate.
+A qualifier that must travel with every zero above, AL-014's lesson applied in advance: a zero result here
+means **no indexed title or abstract matched the supplied formulation** — a *database query result*, never by
+itself a *literature conclusion*. The literature conclusion is built from the four surfaces jointly, plus the
+classification of what they did find.
+
+**Outcome: nothing new on the fourth surface.** The open-source search closes here (commit `4f390e1`): more
+open-web searching now has diminishing returns, and further effort belongs to the two targeted questions the
+historical literature must answer, not to another general sweep.
+
+## The live position (2026-08-27)
+
+The strongest conclusion the completed open search supports, stated for reuse:
+
+> Four independent open literature surfaces have been searched: mathematical review metadata (zbMATH Open),
+> the complete HTW citation set, arXiv metadata and full text, and broad scholarly metadata covering
+> closed-journal publications (Semantic Scholar). These searches identify established prior art for individual
+> components — including rigorous spectral bounds for compact integral-kernel operators (the Fichera
+> orthogonal-invariants tradition) and finite-rank/separable-kernel reductions — but have identified no
+> instance combining the specific invariant-subspace reduction `M(V) ⊆ V ⇒ A₂ = AᵀB⁻¹A`, the associated
+> certified infinite-tail/truncation construction, and a Lehmann/inertia certificate for the resulting
+> nonlocal operator.
+>
+> The conclusion remains provisional pending MathSciNet review and targeted examination of the historical
+> Fichera/Goerisch/Albrecht literature.
+
+Each surface also exposed a distinct failure mode of searching itself — phrase search misses historical
+terminology (the Fichera vocabulary); citation search misses uncited parallel developments; arXiv misses the
+older and closed literature; broad metadata finds closed journals but is no substitute for mathematical
+review. That the four surfaces converge *despite* failing differently is the strength of the evidence — a
+better chain than the same zero four times.
+
+The remaining check (sixth check, AL-017) is **targeted, not exploratory**. It answers exactly two questions:
+(1) does the historical Fichera/Albrecht literature contain an equivalent invariance collapse? (2) does it
+contain a construction where the infinite tail simultaneously certifies the truncated spectral problem?
+Accumulating more papers containing the word "eigenvalue" answers neither.
