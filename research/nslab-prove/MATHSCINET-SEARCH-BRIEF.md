@@ -2,8 +2,9 @@
 
 **NSLab-Prove line, written 2026-08-27 (supersedes the 2026-08-26 draft).** A self-contained hand-off:
 everything a person with MathSciNet access needs to run the remaining prior-art check, with no other knowledge
-of this project required. The zbMATH Open half is done (`LITERATURE-CHECK.md`, fifth check and its addendum;
-`AUDIT-LOG.md` AL-013, AL-014) and found no prior art for the combination — and one important *category*
+of this project required. Four open mirrors are done — zbMATH Open, the HTW citation graph, arXiv metadata + full text, and
+Semantic Scholar (`LITERATURE-CHECK.md`, fifth check and its addenda; `AUDIT-LOG.md` AL-013 through AL-016) —
+and found no prior art for the combination — and one important *category*
 correction: the Fichera school (§3 below). MathSciNet is the half that needs a subscription, and its older
 review corpus is precisely where a full-text remark could hide.
 
@@ -198,9 +199,9 @@ The MR numbers make the search reproducible: another person must be able to retr
 
 ## 6. Where the outcome goes
 
-Either outcome is recorded as the **sixth check** in `LITERATURE-CHECK.md` and as entry **AL-016** in
-`AUDIT-LOG.md` (AL-013 is the zbMATH pass, AL-014 the battery mirror and Fichera correction, AL-015 the arXiv
-mirror and the standing novelty formulation). "Nothing found"
+Either outcome is recorded as the **sixth check** in `LITERATURE-CHECK.md` and as entry **AL-017** in
+`AUDIT-LOG.md` (AL-013 the zbMATH pass, AL-014 the battery mirror and Fichera correction, AL-015 the arXiv
+mirror and the standing novelty formulation, AL-016 the Semantic Scholar mirror). "Nothing found"
 is a result and is stated as flatly as a find. The frozen statement changes **only** if a candidate survives
 the five-question classification as the complete combination — and then by a recorded reopening under a new
 tag, never a silent edit.

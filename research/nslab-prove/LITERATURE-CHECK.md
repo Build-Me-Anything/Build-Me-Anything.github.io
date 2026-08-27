@@ -505,3 +505,26 @@ Adopted as the exact language for any write-up, superseding looser phrasings:
 The first sentence concedes the category; the second claims only the combination; the qualification names the
 open gate. Never state the category claim ("no prior work on rigorous eigenvalue bounds for integral
 operators") — the Fichera school makes it demonstrably false.
+
+## The Semantic Scholar mirror (2026-08-27): the fourth open surface, corroborating the other three
+
+Semantic Scholar's bulk search (boolean phrase matching over titles and abstracts, ~200M records) adds the one
+coverage the other mirrors lack: closed-journal metadata beyond zbMATH's mathematics scope and arXiv's
+preprints. The battery's intersections were re-run there.
+
+**Zero-hits, every one:** `eigenvalue enclosure + integral operator`, `Lehmann + eigenvalue bounds + integral
+operator`, `spectral enclosure + integral operator`, `two-sided eigenvalue bounds + integral`,
+`verified eigenvalue + integral operator`, `eigenvalue bounds + Fredholm integral`,
+`eigenvalue enclosure + compact operator`, `De Gregorio + profile + spectrum`.
+
+**The corpora, sized:** the complete `Goerisch` corpus is **33 records** — the known lineage plus one new
+member, Kleindienst 1992 (Temple/Goerisch-type lower bounds for helium triplet states: quantum-chemistry,
+atomic Schrödinger Hamiltonians, still differential) — and homonym noise (a student-debt sociologist named
+Goerisch; a glass-manufacturing paper). The complete `Lehmann-Maehly` corpus is **9 records**, all already in
+the table. `orthogonal invariants + integral operator` returns exactly **one** record: Romano 1975 on elastic
+frames — the Fichera school, already conceded.
+
+**Outcome: nothing new on the fourth surface.** Four open mirrors have now been run — zbMATH Open, the HTW
+citation graph, arXiv (metadata + full text), Semantic Scholar — each with different coverage, each finding
+the same lineages and none finding the combination. The standing novelty formulation above is unchanged, and
+its qualification (MathSciNet + Fichera full-text examination) remains the only open gate.

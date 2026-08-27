@@ -215,6 +215,18 @@ numerical decision — `uncertainty ⇒ no certificate`, never `uncertainty ⇒ 
 | **Resolution** | The **standing novelty formulation** is adopted (Michael's wording, 2026-08-27): the *category* — rigorous two-sided bounds for compact positive/integral-kernel operators, Fichera tradition included — is explicitly conceded as prior art; the claim is only the *combination* (invariance collapse + certified tail/truncation duality + Lehmann/inertia certificate for the nonlocal operator); and the conclusion is stated subject to the outstanding MathSciNet search and full-text examination of the historical Fichera/Goerisch/Albrecht corpus. The category claim is never to be stated — the Fichera school makes it demonstrably false. The MathSciNet outcome becomes **AL-016** (the brief's §6 updated accordingly). |
 | **Resulting commit** | (this commit) |
 
+### AL-016 — the Semantic Scholar mirror: the fourth open surface, and nothing new on it
+
+| | |
+|---|---|
+| **Commit** | (this commit) |
+| **Rung / test** | — (novelty status); `LITERATURE-CHECK.md`, Semantic Scholar mirror section |
+| **Observation** | The battery's intersections re-run on Semantic Scholar's bulk search (~200M records, the closed-journal coverage the other mirrors lack). Every intersection returns **zero**. The corpora sized exactly: `Goerisch` = 33 records (known lineage + Kleindienst 1992's quantum-chemistry lower bounds — atomic Hamiltonians, still differential — + homonym noise); `Lehmann-Maehly` = 9, all known; `orthogonal invariants + integral operator` = 1, Romano 1975 (Fichera school, already conceded). |
+| **Changes the theorem?** | No. |
+| **Changes the certificate?** | No. |
+| **Resolution** | Four open mirrors now stand — zbMATH Open (AL-013/014), the HTW citation graph, arXiv metadata + full text (AL-015), Semantic Scholar (this entry) — with different coverage, converging on the same lineages and no instance of the combination. The standing novelty formulation is unchanged; its qualification (MathSciNet + Fichera full-text examination) is the only open gate, and its outcome becomes **AL-017** (the brief's §6 updated). |
+| **Resulting commit** | (this commit) |
+
 ---
 
 *The mathematical claim under audit is fixed at tag `r4b-statement-v1`. Nothing in this log is a claim about the
