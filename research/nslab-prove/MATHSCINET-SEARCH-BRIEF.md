@@ -8,7 +8,9 @@ and found no prior art for the combination — and one important *category*
 correction: the Fichera school (§3 below). **The open-source search is closed** (commit `4f390e1`); this
 remaining check is **targeted, not exploratory** — its job is the two questions in §3, not accumulating more
 papers containing the word "eigenvalue". Record every query result as a *database result*; the *literature
-conclusion* is drawn only after the classification of §1. MathSciNet is the half that needs a subscription, and its older
+conclusion* is drawn only after the classification of §1. **Hand the researcher `AL-017-HANDOFF.md` first** — the
+one-page distillation (objective, the two questions, priority full texts, core queries, evidence format);
+this document is the reference behind it. MathSciNet is the half that needs a subscription, and its older
 review corpus is precisely where a full-text remark could hide.
 
 **What this is for.** A frozen mathematical claim (tag `r4b-statement-v1`) carries the status **"no identified
