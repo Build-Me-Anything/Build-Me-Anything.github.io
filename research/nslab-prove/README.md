@@ -21,6 +21,7 @@ It prints `CAP SUITES: ALL PASS (9 suites)` or it fails loudly. There is no thir
 | [`AUDIT-COMPLETION.md`](AUDIT-COMPLETION.md) | **The post-audit bridge**, tagged `r4b-audit-complete-v1`: the commit chain, the verdicts, the independence structure, the three findings that matter — and the precise definition of what "independently audited certificate" does and does not claim. Cite this, not a reconstruction. |
 | [`cap/README.md`](cap/README.md) | The working code, rung by rung, with the numbers each one is graded against and the four failures worth keeping. |
 | [`agents/README.md`](agents/README.md) | The verification fleet: three agents that emit artefacts, never verdicts. |
+| [`PROOF-AUDIT.md`](PROOF-AUDIT.md) | **Roadmap stage 4, first pass complete**: all 28 implications of the frozen statement classified — no gap; ten glossed proofs completed in place (the invariance collapse, the tail's hidden monotonicity and sign conditions, the Lehmann pairing derived rather than "fixed by experiment"); four open citation checks (C-1…C-4) against HTW and Lehmann. |
 | [`POST-AUDIT-ROADMAP.md`](POST-AUDIT-ROADMAP.md) | **What happens after AL-017**, staged so no step gets skipped: audit release → third-party clean-room reproduction → mathematical proof audit → adversarial theorem tests → expert review → publication package → only then the formal theorem claim. |
 
 ## The ladder
