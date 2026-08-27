@@ -203,6 +203,18 @@ numerical decision — `uncertainty ⇒ no certificate`, never `uncertainty ⇒ 
 | **Resolution** | Classified on the five-question rule (operator / reduction / tail-duality / Lehmann-inertia / combination): none match — trace-based invariants, no `A₂` collapse, no tail-as-truncation, no inertia counting. The claim stays "**no identified prior art**" for the combination; the *category* "rigorous two-sided bounds for a compact integral operator" is **conceded as classical** and must be cited in any write-up. Third name collision recorded: "spectral enclosure" in the operator-matrix literature. The MathSciNet brief inherits a sharpened instruction: read inside the orthogonal-invariants corpus for the two ingredients a title cannot rule out. The lesson is AL-002's, transposed to bibliography: **a zero-hit query is a statement about a phrase, and must not be promoted to a statement about the literature until the vocabulary producing it has been checked.** |
 | **Resulting commit** | (this commit) |
 
+### AL-015 — the arXiv mirror, and the novelty language fixed in its final narrow form
+
+| | |
+|---|---|
+| **Commit** | (this commit) |
+| **Rung / test** | — (novelty status); `LITERATURE-CHECK.md`, arXiv-mirror section and "standing novelty formulation" |
+| **Observation** | The battery mirrored against arXiv on both open surfaces — API metadata and Google's full-text index. Nothing new: the complete arXiv `Goerisch` corpus is six papers, all differential operators; the enclosure-with-integral-operator intersections return zero; the Fichera school has no arXiv revival. Two further non-hits classified: the classical **degenerate-kernel reduction** (finite-rank, exact, uncertified — not the combination: `M` is not finite-rank, and the collapse's certified *infinite* tail is the point) and a fourth name collision (`G. De Gregorio`, nuclear physics). |
+| **Changes the theorem?** | No. |
+| **Changes the certificate?** | No. |
+| **Resolution** | The **standing novelty formulation** is adopted (Michael's wording, 2026-08-27): the *category* — rigorous two-sided bounds for compact positive/integral-kernel operators, Fichera tradition included — is explicitly conceded as prior art; the claim is only the *combination* (invariance collapse + certified tail/truncation duality + Lehmann/inertia certificate for the nonlocal operator); and the conclusion is stated subject to the outstanding MathSciNet search and full-text examination of the historical Fichera/Goerisch/Albrecht corpus. The category claim is never to be stated — the Fichera school makes it demonstrably false. The MathSciNet outcome becomes **AL-016** (the brief's §6 updated accordingly). |
+| **Resulting commit** | (this commit) |
+
 ---
 
 *The mathematical claim under audit is fixed at tag `r4b-statement-v1`. Nothing in this log is a claim about the

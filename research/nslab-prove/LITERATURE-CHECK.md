@@ -462,3 +462,46 @@ collisions.
 classified, and conceded rather than invisible. The MathSciNet task inherits one sharpened instruction: read
 *inside* the orthogonal-invariants corpus for an invariance-collapse or tail-duality remark that titles and
 abstracts cannot rule out.
+
+## The arXiv mirror (2026-08-27): metadata and full text, nothing new — and two more non-hits classified
+
+The same battery run as a second open mirror: the arXiv API over metadata (phrase + Boolean), and Google's
+full-text index of arxiv.org for what titles and abstracts cannot see.
+
+**Metadata:** `eigenvalue enclosure + integral operator`, `eigenvalue bounds + integral operator`, and
+`spectral enclosure + integral operator` all return **zero**. The complete arXiv `Goerisch` corpus is **six
+papers, every one a differential operator** (elliptic/Laplacian/Maxwell; Vejchodský, Sekine et al.,
+Boulton–Hobiny, Barrenechea–Boulton–Boussaïd ×2, plus flux reconstruction). `Lehmann + eigenvalue bounds`
+returns only Liu–Oishi's polygonal Laplacian. `orthogonal invariants + eigenvalue` on arXiv is random-matrix
+theory — the Fichera school pre-dates arXiv and has no visible revival there.
+
+**Full text (Google over arxiv.org):** the same known corpus, plus the linearized-MHD enclosure line
+(differential again). Nothing pairing Lehmann-type machinery with an integral operator; nothing on De Gregorio
+beyond HTW, Chen–Hou–Huang, and the analytic spectral papers already classified.
+
+**Two more non-hits, classified rather than skimmed past:**
+
+- **The degenerate-kernel reduction** (e.g. arXiv 2511.14979, Hirai et al. 2025): a *separable* (finite-rank)
+  kernel reduces the integral eigenvalue problem to a finite matrix exactly and trivially. Classical
+  integral-equations material, and **not the combination**: HTW's `M` is not finite-rank — the collapse
+  `A₂ = AᵀB⁻¹A` is an *infinite* series whose certified tail is the whole point, and nothing in the
+  degenerate-kernel line certifies anything.
+- **A fourth name collision:** `G. De Gregorio` is a productive nuclear physicist; `"De Gregorio" + eigenvalue`
+  on arXiv returns their multiphonon spectroscopy papers. Recorded beside the other three collisions.
+
+## The standing novelty formulation (2026-08-27)
+
+Adopted as the exact language for any write-up, superseding looser phrasings:
+
+> The literature search identified established prior art for rigorous two-sided eigenvalue bounds for compact
+> positive / integral-kernel operators, including the Fichera orthogonal-invariants tradition. However, no
+> identified prior art has been found combining the specific invariance collapse `M(V) ⊆ V ⇒ A₂ = AᵀB⁻¹A`,
+> the associated certified tail/truncation construction, and a Lehmann/inertia certificate for the resulting
+> nonlocal operator.
+>
+> This conclusion remains subject to the outstanding MathSciNet search and targeted full-text examination of
+> the historical Fichera/Goerisch/Albrecht literature.
+
+The first sentence concedes the category; the second claims only the combination; the qualification names the
+open gate. Never state the category claim ("no prior work on rigorous eigenvalue bounds for integral
+operators") — the Fichera school makes it demonstrably false.

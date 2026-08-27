@@ -35,7 +35,9 @@ claim yourself: classify it on the five questions and report.
 **Not hits** (already conceded as classical): Lehmann/Maehly/Temple theory; Goerisch's method; Bazley–Fox
 truncation of intermediate problems (1961); Rayleigh–Ritz/Courant–Fischer; Sylvester inertia; interval
 arithmetic; FEM eigenvalue enclosures for differential operators (Behnke, Plum, Mertins, Boulton, Liu,
-Vejchodský, Carstensen …); and — added 2026-08-27 — **Fichera's orthogonal-invariants school** (§3).
+Vejchodský, Carstensen …); the classical **degenerate/separable-kernel reduction** (a finite-rank kernel
+reduces exactly to a matrix — `M` here is not finite-rank, and the certified *infinite* tail is the point);
+and — added 2026-08-27 — **Fichera's orthogonal-invariants school** (§3).
 
 ## 2. The query battery
 
@@ -170,6 +172,8 @@ that a title/abstract cannot rule out.
   label with Huang–Tong–Wei's Corollary 3.7. Two unrelated theorems.
 - **The "Lehmann representation"** of Green's functions in many-body physics (Dyson equations, spectral
   functions): a name collision with Lehmann's eigenvalue bounds.
+- **"De Gregorio" as an author name**: G. De Gregorio (nuclear multiphonon spectroscopy) floods
+  `"De Gregorio" + eigenvalue` queries on arXiv and possibly MathSciNet.
 - **"Spectral enclosure" in the operator-matrix literature** (Langer, Trunk, et al., block operator matrices):
   analytic enclosures of essential/point spectra for non-self-adjoint operator matrices — not certified
   computation, different sense of the word.
@@ -194,8 +198,9 @@ The MR numbers make the search reproducible: another person must be able to retr
 
 ## 6. Where the outcome goes
 
-Either outcome is recorded as the **sixth check** in `LITERATURE-CHECK.md` and as entry **AL-015** in
-`AUDIT-LOG.md` (AL-013 is the zbMATH pass, AL-014 the battery mirror and Fichera correction). "Nothing found"
+Either outcome is recorded as the **sixth check** in `LITERATURE-CHECK.md` and as entry **AL-016** in
+`AUDIT-LOG.md` (AL-013 is the zbMATH pass, AL-014 the battery mirror and Fichera correction, AL-015 the arXiv
+mirror and the standing novelty formulation). "Nothing found"
 is a result and is stated as flatly as a find. The frozen statement changes **only** if a candidate survives
 the five-question classification as the complete combination — and then by a recorded reopening under a new
 tag, never a silent edit.
