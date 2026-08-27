@@ -25,7 +25,9 @@ Fichera 1965 *Sul calcolo degli autovalori*; Fichera 1965 *Linear elliptic diffe
 problems* (Springer LNM 8, the method's exposition); Fichera 1975 *Osservazioni e risultati… taluni operatori
 positivi*; Fichera 1976 *Approximation of the eigenvectors of a positive compact operator*; Fichera 1982
 *Upper and lower bounds to eigenvalues*; Fichera–Sneider 1975 (Ostrowski's kernel); Dirschmid 1970 *Zur
-Einschließung der Eigenwerte vollstetiger positiver Operatoren… I*; Bassotti 2000 (method survey); Leuzzi 1981
+Einschließung der Eigenwerte vollstetiger positiver Operatoren… I* **and II** (metadata confirms this is
+genuinely integral-equation territory — the right *category*, which is exactly why it needs the full-text
+Q1/Q2 reading; category membership answers neither question); Bassotti 2000 (method survey); Leuzzi 1981
 (Fredholm kernel); Noschese–Ricci 1999; Natalini–Noschese–Ricci 1999.
 
 **Goerisch/Albrecht German corpus (Lehmann-type machinery):** Goerisch 1980 *Eine Verallgemeinerung eines
@@ -44,6 +46,13 @@ operator"` · `"Lehmann" AND "compact operator" AND spectrum` · `"De Gregorio" 
 representation" (Green's functions); "spectral enclosure" in the block-operator-matrix literature (Langer,
 Trunk — analytic, different sense); G. De Gregorio (nuclear physicist); separable/degenerate-kernel
 reductions (finite-rank — the exact finite reduction is trivial there and is not the claim).
+
+## The decision tree — per paper
+
+    (Q1, Q2) = (no, no)   not the claimed mechanism — one line, move on
+             = (yes, no)  partial prior art — capture the exact equation/passage
+             = (no, yes)  partial prior art — capture the exact equation/passage
+             = (yes, yes) MAJOR FINDING — stop and send immediately
 
 ## Evidence to return
 
