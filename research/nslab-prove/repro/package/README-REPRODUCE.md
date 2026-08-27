@@ -28,6 +28,18 @@ The runner first checks every file against `MANIFEST.sha256` and refuses to run 
 verifies no prover module is present or loaded; then it runs the four audits in ladder order and prints one
 verdict per rung. Exit code 0 means `ACCEPT` at every rung.
 
+**Run the other half of the experiment too:**
+
+```bash
+python reproduce.py --demonstrate-refusal
+```
+
+After the ACCEPT run this tampers each certificate **in memory** (the shipped files are never modified) and
+shows every falsification REJECTED — a valid certificate is accepted, a falsified one is refused, and an
+altered package is refused by the manifest before any mathematics runs. To see the third layer yourself,
+change any byte of any shipped file and rerun: the manifest check refuses first. A verification experiment
+has both outcomes on demand; a program that can only say yes demonstrates nothing.
+
 ## What is in the box
 
 | path | contents |

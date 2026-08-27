@@ -46,6 +46,65 @@ def check_manifest():
     print('manifest ok — every file hashes as shipped')
 
 
+def demonstrate_refusal():
+    """The other half of the experiment: a falsified certificate must be REJECTED.
+
+    Each certificate is loaded, tampered IN MEMORY (the shipped files are never touched, so the manifest
+    stays intact), and re-audited. One canonical corruption per rung. To see the third refusal layer, edit
+    any byte of any shipped file and run `python reproduce.py` — the manifest check refuses before any
+    mathematics runs.
+    """
+    import auditor_r4b
+    import auditor_r4b_a2
+    import auditor_r4b_lehmann
+    import auditor_r4b_final
+    from fractions import Fraction
+
+    def load(name):
+        with io.open(os.path.join(HERE, 'certificates', name), encoding='utf-8') as f:
+            return json.load(f)
+
+    def t_gram(doc):
+        lo, hi = doc['gram']['1,1']
+        doc['gram']['1,1'] = [str(Fraction(lo) + Fraction(1, 1000)), str(Fraction(hi) + Fraction(1, 1000))]
+        return doc, 'Gram entry A_1,1 shifted by 1e-3'
+
+    def t_a2(doc):
+        lo, hi = doc['a2']['1,1']
+        doc['a2']['1,1'] = [str(Fraction(lo) + Fraction(1, 1000)), str(Fraction(hi) + Fraction(1, 1000))]
+        return doc, 'A2 entry shifted by 1e-3'
+
+    def t_leh(doc):
+        doc['upper'][0] = str(Fraction(doc['upper'][0]) - Fraction(1, 10 ** 12))
+        return doc, 'claimed U_1 understated below the sup its own bracket supports'
+
+    def t_fin(doc):
+        doc['enclosures'][1][0], doc['enclosures'][2][0] = doc['enclosures'][2][0], doc['enclosures'][1][0]
+        return doc, 'assembly corruption: L_2 and L_3 swapped'
+
+    cases = [('Rung 1', auditor_r4b, 'certificate-r4b-gram.json', t_gram),
+             ('Rung 2', auditor_r4b_a2, 'certificate-r4b-a2.json', t_a2),
+             ('Rung 3', auditor_r4b_lehmann, 'certificate-r4b-lehmann.json', t_leh),
+             ('Rung 4', auditor_r4b_final, 'certificate-r4b-final.json', t_fin)]
+    print()
+    print('refusal demonstration — every tampered certificate must be REJECTED:')
+    all_ok = True
+    for label, mod, cert, tamper in cases:
+        doc, what = tamper(load(cert))
+        verdict, _findings = mod.audit_doc(doc)
+        ok = verdict == 'REJECT'
+        all_ok = all_ok and ok
+        print('  %s  %-58s -> %-7s %s' % (label, what, verdict, 'ok' if ok else 'PROBLEM: expected REJECT'))
+    print()
+    if all_ok:
+        print('RESULT: every falsified certificate was refused. Together with the ACCEPT run this is the')
+        print('experiment: valid -> ACCEPT, tampered -> REJECT, altered package -> manifest refusal.')
+        return 0
+    print('RESULT: a tampered certificate was NOT rejected — report this immediately; it is a finding')
+    print('about the auditors, and a serious one.')
+    return 1
+
+
 def main():
     print('=' * 90)
     print('R4b clean-room reproduction')
@@ -88,6 +147,10 @@ def main():
             if f.startswith('REJECT'):
                 print('    ', f)
     print()
+    if all_ok and '--demonstrate-refusal' in sys.argv:
+        rc = demonstrate_refusal()
+        if rc:
+            return rc
     if all_ok:
         print('RESULT: ACCEPT at every rung — the reproduction succeeded.')
         print('This reproduces the audit verdict. It does not, by itself, prove the theorem;')
