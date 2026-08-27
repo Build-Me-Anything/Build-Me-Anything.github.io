@@ -1,7 +1,7 @@
 # Provenance
 
 Assembled from https://github.com/Build-Me-Anything/Build-Me-Anything.github.io
-(`research/nslab-prove/`), commit `38d350d`.
+(`research/nslab-prove/`), commit `9d9456f`.
 
 The frozen statement is tag `r4b-statement-v1` = `0d7c663`; the completed audit is tag
 `r4b-audit-complete-v1` = `8ccecac`. Tags present at assembly: r4b-audit-complete-v1, r4b-statement-v1.

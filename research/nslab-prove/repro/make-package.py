@@ -85,6 +85,10 @@ def main():
     shutil.copy2(os.path.join(HERE, 'reproduce.py'), os.path.join(PKG, 'reproduce.py'))
     shutil.copy2(os.path.join(HERE, 'README-REPRODUCE.md'), os.path.join(PKG, 'README-REPRODUCE.md'))
 
+    # Pin every packaged byte against git's line-ending conversion: the manifest hashes exact bytes, and a
+    # CRLF checkout on another machine would otherwise make a pristine clone refuse itself.
+    io.open(os.path.join(PKG, '.gitattributes'), 'w', encoding='utf-8', newline='\n').write('* -text\n')
+
     head = git('rev-parse', '--short', 'HEAD')
     tags = git('tag', '-l')
     prov = io.open(os.path.join(PKG, 'PROVENANCE.md'), 'w', encoding='utf-8', newline='\n')
