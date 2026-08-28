@@ -603,6 +603,41 @@ reached even (yes, no).
 4. **MathSciNet reviews of all the above** (AMS reviewers frequently describe methods where zbMATH's
    digitisation carries none) **+ the core query battery.**
 
+## The AL-017b synthesis matrix, seeded (2026-08-28)
+
+AL-017 is now two residual questions: **AL-017a** — the mechanism check against the remaining primary sources
+(the researcher's task, `AL-017-HANDOFF.md`); **AL-017b** — this matrix, completed once 017a returns. The
+final matrix is what makes the novelty argument auditable by a referee at a glance. Current state:
+
+| prior art | Q1 (invariance collapse) | Q2 (tail = truncation cert.) | Lehmann-type | non-finite-rank / infinite | same combination |
+|---|---|---|---|---|---|
+| Fichera school (orthogonal invariants) | **No** (kernel traces; operator applied in kernel form) | **No** (exact invariant defect / Aronszajn perturbation) | No | Yes | **No** |
+| Noschese–Ricci / NNR inverse iteration | **No** | **No** (Aronszajn a priori bound) | No | Yes | **No** |
+| separable/degenerate-kernel reductions | trivially exact (finite-rank) | n/a (no tail exists) | No | **No** | **No** |
+| verified-Lehmann FEM line (Behnke…Boulton) | ? (differential operators; T applied directly) | ? | Yes | Yes | ? — no instance found on any surface |
+| Goerisch/Albrecht German corpus | **?** | **?** | Yes | ? | **?** |
+| Dirschmid I/II | **?** (references suggest Schur-type) | **?** | ? (no Lehmann-family citation) | Yes | **?** |
+| **this construction** | **Yes** | **Yes** | **Yes** | **Yes** | **Yes** |
+
+The `?` rows are exactly AL-017a's job. A single row turning all-Yes ends the novelty claim; every row
+staying non-matching upgrades its basis once more — to mechanism-level exclusion across the field.
+
+## The paper's novelty paragraph (draft language, 2026-08-28)
+
+Fixed now so the eventual write-up cannot drift into the demonstrably false category claim:
+
+> Classical orthogonal-invariant methods already provide rigorous two-sided eigenvalue bounds for compact
+> positive operators, including integral operators. The present construction does not claim novelty for that
+> category of result. Its proposed novelty instead concerns the combination of an invariant-subspace collapse
+> of the Lehmann second moment, an infinite-tail enclosure which simultaneously controls the Galerkin
+> truncation, and subsequent Lehmann/inertia certification.
+
+Three boundaries that travel with it, none upgradeable by AL-019: (i) the conclusion is *"no identified prior
+art for the specific claimed combination in the literature examined to date"* — never "this has never been
+done"; (ii) novelty says nothing about *correctness*, which is the external proof-review question; (iii) even
+a fully negative AL-017 supports a **literature-search conclusion, not absolute historical priority** — an
+unindexed thesis, proceedings note, or differently named construction can always exist, and the paper says so.
+
 *Search performed 2026-08-28 via api.zbmath.org (review texts), etna.ricam.oeaw.ac.at and
 lematematiche.dmi.unict.it (full texts), by the project. Nothing here changes the standing novelty
 formulation; the conclusion remains provisional exactly as stated there.*

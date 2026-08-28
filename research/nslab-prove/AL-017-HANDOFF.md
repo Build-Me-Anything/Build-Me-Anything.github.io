@@ -1,4 +1,8 @@
-# AL-017 handoff — MathSciNet / historical full-text check (one page)
+# AL-017a handoff — the historical mechanism check (one page)
+
+*(AL-017 is split: **AL-017a**, this document — the Q1/Q2 mechanism check against the remaining primary
+sources and MathSciNet reviews, run by you; **AL-017b** — the novelty-synthesis matrix, produced on the
+project side from your findings. You only run 017a.)*
 
 **Objective.** Close the last gate on a novelty claim. A certified spectral-enclosure construction claims, as
 its only potentially new content, this **combination**: for a compact self-adjoint *nonlocal integral*
