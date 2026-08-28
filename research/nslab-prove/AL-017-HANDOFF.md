@@ -18,16 +18,26 @@ Comm. Math. Phys. 402 (2023), **MR4581109**) found prior art for the *components
    simultaneously as the rigorous enclosure of the truncated spectral problem — the tail being part of the
    certificate, not an approximation error?
 
-## Priority full texts (examine for Q1/Q2; titles/abstracts already checked and silent)
+## Already examined via open access (2026-08-28 — see LITERATURE-CHECK, sixth check partial)
 
-**Fichera school (orthogonal invariants — rigorous two-sided bounds for compact positive operators):**
+**Full text, (Q1,Q2) = (no,no):** Natalini–Noschese–Ricci 1999 (ETNA — exposes Fichera's bound as
+kernel-trace invariants with an exact invariant defect + Aronszajn perturbation bounds) and Noschese–Ricci
+1999 (Le Matematiche — confirms, and characterises Fichera–Sneider 1975 and Firmani–Leuzzi at second hand).
+**Review level, no signal:** Behnke–Goerisch 1994, Bassotti 2000, Fichera 1982. **Dirschmid II's reference
+list** (Schur 1909, Kantorovich–Akilov, Sz.-Nagy; no Lehmann-family citation) suggests a Schur-type route —
+unconfirmed. The school's mechanism is trace-based, verified from its own expositions; your job is to confirm
+no member of the corpus deviates from it.
+
+## Priority full texts still needing eyes (examine for Q1/Q2)
+
+**Highest value first — Dirschmid I & II** (Computing 5 (1970) 17–26 and 119–127): the one corpus item whose
+mechanism is not yet pinned.
+
+**Fichera school (expected to match the trace mechanism; confirm no side construction deviates):**
 Fichera 1965 *Sul calcolo degli autovalori*; Fichera 1965 *Linear elliptic differential systems and eigenvalue
 problems* (Springer LNM 8, the method's exposition); Fichera 1975 *Osservazioni e risultati… taluni operatori
 positivi*; Fichera 1976 *Approximation of the eigenvectors of a positive compact operator*; Fichera 1982
-*Upper and lower bounds to eigenvalues*; Fichera–Sneider 1975 (Ostrowski's kernel); Dirschmid 1970 *Zur
-Einschließung der Eigenwerte vollstetiger positiver Operatoren… I* **and II** (metadata confirms this is
-genuinely integral-equation territory — the right *category*, which is exactly why it needs the full-text
-Q1/Q2 reading; category membership answers neither question); Bassotti 2000 (method survey); Leuzzi 1981
+*Upper and lower bounds to eigenvalues*; Fichera–Sneider 1975 (Ostrowski's kernel); Bassotti 2000 (method survey); Leuzzi 1981
 (Fredholm kernel); Noschese–Ricci 1999; Natalini–Noschese–Ricci 1999.
 
 **Goerisch/Albrecht German corpus (Lehmann-type machinery):** Goerisch 1980 *Eine Verallgemeinerung eines
