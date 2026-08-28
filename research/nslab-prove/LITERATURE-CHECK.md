@@ -559,3 +559,50 @@ The remaining check (sixth check, AL-017) is **targeted, not exploratory**. It a
 (1) does the historical Fichera/Albrecht literature contain an equivalent invariance collapse? (2) does it
 contain a construction where the infinite tail simultaneously certifies the truncated spectral problem?
 Accumulating more papers containing the word "eigenvalue" answers neither.
+
+---
+
+# Sixth check, partial (2026-08-28): AL-017 run as far as open access goes
+
+The targeted historical examination — the two questions of `AL-017-HANDOFF.md` — executed against everything
+reachable without a subscription: **zbMATH Open review texts** (one level deeper than the fifth check's
+titles/abstracts) and **two full texts that turned out to be open access**. `AL-017` remains reserved for the
+completion (MathSciNet reviews + the paywalled full texts); this pass shrinks that task rather than replacing
+it.
+
+## What was examined, at what level, and the verdicts
+
+| item | level reached | (Q1, Q2) | mechanism found |
+|---|---|---|---|
+| **Natalini–Noschese–Ricci 1999** (ETNA 9, 128–136 — open access) | **full text** | **(no, no)** | The school's own exposition of Fichera's upper bound: orthogonal invariants `Iⁿₛ(T)` are **kernel traces** — multiple integrals of Fredholm determinants of the *iterated* kernel — and the bound's numerator is the exactly computed **invariant defect** `Iⁿₛ(T) − Iⁿₛ(P_ν T P_ν)`. The operator is applied (in kernel form); nothing is invariance-collapsed; no tail estimate doubles as a Galerkin enclosure. Their own alternative: Nyström + inverse power + **Aronszajn kernel-perturbation bound** `‖K − K̃‖_{L²}` — a priori, uniform, not a tail. |
+| **Noschese–Ricci 1999** (Le Matematiche 54, 309–317 — open access) | **full text** | **(no, no)** | Confirms the mechanism end to end and characterises three more corpus items at second hand: **Fichera–Sneider 1975** = Rayleigh–Ritz below + orthogonal invariants above; **Ghizzetti** = Legendre-basis simplification of the lower half; **Firmani–Leuzzi** = "a refinement of the orthogonal invariants technique". |
+| **Behnke–Goerisch 1994** | review text | no signal | Framework survey (sesquilinear-form eigenproblem, bounds theory, five worked examples — all matrices/ODE/PDE). Nothing on invariance or tail-as-certificate at review level. |
+| **Bassotti 2000** | review text | no signal | Pedagogical survey of the invariants method, "not in the most general form, no proofs". |
+| **Fichera 1982** | review summary | no signal | Two topics per the review: extensions of **Trefftz's 1933 formula** and explicit kernel constructions — a lead, not an answer. |
+| **Dirschmid 1970 I & II** (Computing 5) | metadata + **reference list** | open | No review text, but Part II's references are **Schur 1909** (linear homogeneous integral equations), Kantorovich–Akilov, Sz.-Nagy, Part I — **no Lehmann, Temple, Maehly, or Bazley–Fox citation**. Weak-but-real evidence the route is Schur-type trace/norm inequalities rather than Lehmann-shaped; full text still required. |
+| Fichera 1965 ×2, 1975, 1976; Goerisch 1980/81/84/86; Goerisch–Albrecht | metadata only | open | zbMATH digitised no review text for these; nothing reachable openly. |
+
+## What this pass establishes
+
+**The Fichera school's core mechanism is now verified at full-text level, from the school's own expositions,
+to be trace-based** — the architectural opposite of the claimed combination on both questions: they compute
+quantities of the operator by *applying it analytically in kernel form* (iterated kernels under multiple
+integrals), where the claimed construction's point is that the operator is *never applied*; and their
+truncation control is an exact invariant defect or an Aronszajn perturbation bound, never a tail estimate
+that is itself the Galerkin enclosure. Every item examined at any level classifies **(no, no)**; nothing
+reached even (yes, no).
+
+## What remains for the subscription/library researcher — the shrunken task
+
+1. **Dirschmid I & II full texts** (Computing 5, Springer) — the one corpus item whose mechanism is not yet
+   pinned; the reference list suggests Schur-type inequalities, and the full text should confirm or refute.
+2. **Fichera 1965 (LNM 8 + Cagliari), 1975, 1976 full texts** — expected to match the school mechanism now
+   verified from its own later expositions; confirm no side construction deviates.
+3. **The Goerisch/Albrecht German corpus full texts** — the Lehmann side proper, wholly unexamined beyond
+   Behnke–Goerisch's review.
+4. **MathSciNet reviews of all the above** (AMS reviewers frequently describe methods where zbMATH's
+   digitisation carries none) **+ the core query battery.**
+
+*Search performed 2026-08-28 via api.zbmath.org (review texts), etna.ricam.oeaw.ac.at and
+lematematiche.dmi.unict.it (full texts), by the project. Nothing here changes the standing novelty
+formulation; the conclusion remains provisional exactly as stated there.*

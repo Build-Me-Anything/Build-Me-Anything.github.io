@@ -242,6 +242,21 @@ order because the proof audit reached its sources first.)*
 | **Resolution** | The frozen statement is deliberately not edited (AL-007 discipline); its labels are corrected by this entry and by `PROOF-AUDIT.md` §8, and any future statement version fixes them under a new tag. All living documents and code comments corrected (`Corollary 3.7 → 3.9`, `Theorem 3.5 → 3.7` for `c(f) ≠ 0`); the tagged `AUDIT-COMPLETION.md` snapshot is likewise left as tagged. The irony is recorded as the lesson: the line had already logged a warning about *Beattie–Greenlee's* "Corollary 3.7" label collision — while its own "3.7" was wrong. **Three unrelated results now share that label in our history** (Beattie–Greenlee's convergence corollary, HTW's `c(f) ≠ 0` theorem, and the mislabelled bracket), and the prior-art briefs are updated so the next searcher inherits the full map. Check a label against the source's numbering, not against your own documents' repetition of it. |
 | **Resulting commit** | (this commit) |
 
+### AL-019 — AL-017 run as far as open access goes: the school's mechanism pinned, the task shrunk
+
+*(AL-017 stays reserved for the completed MathSciNet/full-text check; this entry records its partial
+discharge by open means, 2026-08-28.)*
+
+| | |
+|---|---|
+| **Commit** | (this commit) |
+| **Rung / test** | — (novelty, targeted); `LITERATURE-CHECK.md` sixth check (partial) |
+| **Observation** | The two questions of the handoff executed against zbMATH Open **review texts** and two full texts that proved open access. **Two priority papers examined at full-text level, both (Q1, Q2) = (no, no)**: Natalini–Noschese–Ricci (ETNA 1999) exposes Fichera's own upper bound as **kernel-trace invariants** with an exactly computed invariant defect for truncation, plus Aronszajn kernel-perturbation error bounds; Noschese–Ricci (Le Matematiche 1999) confirms the mechanism and characterises Fichera–Sneider 1975, Ghizzetti, and Firmani–Leuzzi at second hand. Review level: Behnke–Goerisch 1994, Bassotti 2000, Fichera 1982 — no signal. Dirschmid II's **reference list** (Schur 1909, Kantorovich–Akilov, Sz.-Nagy; no Lehmann/Temple/Maehly/Bazley–Fox) points away from a Lehmann-shaped route without settling it. |
+| **Changes the theorem?** | No. |
+| **Changes the certificate?** | No. |
+| **Resolution** | The Fichera school's core mechanism is now **verified from its own expositions to be the architectural opposite of the claimed combination on both questions**: the operator is applied analytically in kernel form where the claimed construction never applies it, and truncation is controlled by an exact trace defect or a perturbation bound, never by a tail that is itself the Galerkin enclosure. Every examined item classifies (no, no); nothing reached even (yes, no). The standing novelty formulation is unchanged and remains provisional. The researcher's task shrinks to: Dirschmid I/II full texts (the one unpinned mechanism), the Fichera 1965/75/76 and Goerisch/Albrecht full texts, MathSciNet reviews, and the core battery — recorded in the updated handoff. |
+| **Resulting commit** | (this commit) |
+
 ---
 
 *The mathematical claim under audit is fixed at tag `r4b-statement-v1`. Nothing in this log is a claim about the
