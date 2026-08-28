@@ -64,6 +64,13 @@ blow-up" without the domain.
   no vote, no consensus step; agents sharing a model share blind spots, so their agreement is weak evidence.
 - **Certificates cannot vouch for their own relevance.** Soundness is machine-checkable. Whether the theorem is
   the one the problem needs is not — that is what R3 cost, and what the fleet exists to catch.
+- **Three axes, never conflated** (fixed 2026-08-28): **A** — computational certification (the independent
+  machinery accepts the certificate); **B** — mathematical validity (the implications actually hold); **C** —
+  novelty (no identified prior construction combines the ingredients). A does not prove B; C does not prove
+  B; B does not imply C. Every status line in this directory says which axis it is on. Current position:
+  A internally complete; reproducibility packaged; falsification internally passed; C narrowly supported, not
+  closed (AL-017a pending); **B awaiting genuinely independent attack — the consequential open question.**
+  An expert finding a flaw is not a failure of this architecture; it is the architecture doing its job.
 
 ## Where R4b stands: a certified two-sided enclosure, both halves ours
 
